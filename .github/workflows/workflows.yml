@@ -80,8 +80,6 @@ jobs:
       - name: Docker Tag Images
         run: |
           docker tag my-server:latest ${{ secrets.DOCKER_USERNAME }}/my-server:latest
-          docker tag mysql:latest ${{ secrets.DOCKER_USERNAME }}/mysql:latest
-
       # Docker Compose 이미지 푸시
       - name: Docker Compose Push
         run: docker compose push
