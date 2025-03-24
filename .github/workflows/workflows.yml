@@ -56,7 +56,6 @@ jobs:
       # Compose 빌드
       - name: Docker Compose Build
         run: |
-#          echo "${{ secrets.ENV_FILE }}" > .env
           printf "${{ secrets.ENV_FILE }}" > .env
           docker compose build
 
