@@ -67,12 +67,22 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Docker Compose 빌드 & 푸시 (이미지를 자동으로 빌드하고 Docker Hub에 푸시)
-      - name: Build & Push Docker Images
+      # Docker Compose 빌드
+      - name: Docker Compose Build
         run: |
           docker compose build
-          docker tag my-server:latest ${{ secrets.DOCKER_USERNAME }}/globaltimes:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/globaltimes:latest
+
+      # 이미지 태그 (MySQL 이미지와 서버 이미지 모두 태그)
+      - name: Docker Tag Images
+        run: |
+          docker tag my-server:latest ${{ secrets.DOCKER_USERNAME }}/my-server:latest
+          docker tag mysql:latest ${{ secrets.DOCKER_USERNAME }}/mysql:latest
+
+      # Docker 이미지 푸시
+      - name: Docker Push Images
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/my-server:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/mysql:latest
 
   deploy:
     runs-on: ubuntu-latest
