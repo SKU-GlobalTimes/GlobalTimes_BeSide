@@ -48,10 +48,16 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew clean build -x test
 
+      # ENV_FILE 확인
+      - name: Debug ENV_FILE
+        run: |
+          echo "${{ secrets.ENV_FILE }}"
+
       # Compose 빌드
       - name: Docker Compose Build
         run: |
-          echo "${{ secrets.ENV_FILE }}" > .env
+#          echo "${{ secrets.ENV_FILE }}" > .env
+          printf "${{ secrets.ENV_FILE }}" > .env
           docker compose build
 
       # Docker Hub 로그인
@@ -73,7 +79,7 @@ jobs:
 
       - name: Docker Tag Images
         run: |
-          docker tag my-server:latest ${{ secrets.DOCKER_USERNAME }}/my-server:latest
+          docker tag ${{ secrets.DOCKER_USERNAME }}/my-server:latest ${{ secrets.DOCKER_USERNAME }}/my-server:latest
 
       - name: Docker Push My-Server Image
         run: |
@@ -112,7 +118,7 @@ jobs:
             cd ~/app
             
             # Create .env file
-            echo "${{ secrets.ENV_FILE }}" > .env
+            printf "${{ secrets.ENV_FILE }}" > .env
             
             # 1️⃣ 최신 Docker 이미지 풀
             docker compose pull
