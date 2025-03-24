@@ -80,9 +80,10 @@ jobs:
       - name: Docker Tag Images
         run: |
           docker tag my-server:latest ${{ secrets.DOCKER_USERNAME }}/my-server:latest
-      # Docker Compose 이미지 푸시
-      - name: Docker Compose Push
-        run: docker compose push
+
+      - name: Docker Push My-Server Image
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/my-server:latest
 
   deploy:
     runs-on: ubuntu-latest
