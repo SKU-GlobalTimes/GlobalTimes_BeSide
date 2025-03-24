@@ -83,6 +83,14 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
+      # 깃허브 레포지토리 코드 다운로드
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ✅ 파일이 실제로 존재하는지 확인하는 단계 추가
+      - name: Check docker-compose.yml existence
+        run: ls -al
+
       # 파일 복사
       - name: Copy docker-compose.yml to Server
         uses: appleboy/scp-action@master
