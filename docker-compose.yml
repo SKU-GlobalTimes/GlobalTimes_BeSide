@@ -3,7 +3,7 @@ services:
     build: .
     env_file:
       - .env
-    image: mark117/my-server:latest  # 이미지 이름을 명시적으로 설정
+    image: my-server:latest  # 이미지 이름을 명시적으로 설정
     ports:
       - 8080:8080
     environment:
