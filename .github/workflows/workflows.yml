@@ -72,6 +72,11 @@ jobs:
         run: |
           docker compose build
 
+      # 빌드된 이미지 확인 (디버깅용)
+      - name: List Docker images
+        run: |
+          docker images
+
       - name: Docker Tag Images
         run: |
           docker tag my-server:latest ${{ secrets.DOCKER_USERNAME }}/my-server:latest
