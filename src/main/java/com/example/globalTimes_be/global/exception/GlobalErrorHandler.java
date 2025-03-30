@@ -4,12 +4,17 @@ import com.example.globalTimes_be.global.apiPayload.code.ApiResponse;
 import com.example.globalTimes_be.global.apiPayload.code.status.GlobalErrorStatus;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.nio.file.AccessDeniedException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestControllerAdvice
@@ -20,6 +25,24 @@ public class GlobalErrorHandler {
     public ResponseEntity<ApiResponse> handleIllegalArgumentException(IllegalArgumentException e){
         log.warn("IllegalArgumentException Error", e);
         return ApiResponse.fail(GlobalErrorStatus._BAD_REQUEST.getResponse());
+    }
+
+    //validation 에러
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse> handleValidationExceptions(MethodArgumentNotValidException e){
+        log.warn("MethodArgumentNotValidException Error", e);
+        // 유효성 검사 오류 메시지 가져오기
+        List<String> errorMessages = e.getBindingResult()
+                .getAllErrors()
+                .stream()
+                .map(DefaultMessageSourceResolvable::getDefaultMessage)
+                .collect(Collectors.toList());
+
+        // 에러 메시지가 없으면 기본 메시지 반환
+        String message = errorMessages.isEmpty() ? "유효성 검사 실패" : String.join(", ", errorMessages);
+
+        // ApiResponse로 반환
+        return ApiResponse.fail(message, HttpStatus.BAD_REQUEST);
     }
 
     // 401 Unauthorized 인증 실패 에러
