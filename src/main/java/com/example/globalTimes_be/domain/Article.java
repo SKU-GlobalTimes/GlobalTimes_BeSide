@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 
@@ -35,7 +34,10 @@ public class Article {
     private String content; // 본문 서두
 
     @Column(name = "crawled_content", columnDefinition = "TEXT")
-    private String crawledContent;
+    private String crawledContent; // 크롤링된 기사 원문
+
+    @Column( name = "summary", columnDefinition = "TEXT")
+    private String summary; // 크롤링 이후 요약된 데이터 ( Gpt Response )
 
     @Column(name = "url", nullable = false)
     private String url;
@@ -60,6 +62,7 @@ public class Article {
         article.description = description;
         article.content = content;
         article.crawledContent = null;
+        article.summary = null;
         article.url = url;
         article.urlToImage = urlToImage;
         // article.viewCount = (viewCount != null) ? viewCount : 0L;
