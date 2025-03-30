@@ -17,7 +17,7 @@ public class Source {
     private Long id;
 
     @NotNull
-    @Column(name = "source_name", unique = true)
+    @Column(name = "source_name", unique = true, nullable = false)
     private String sourceName; // 중복 불가능 
 
     @Column(name = "source_api_id", nullable = true)

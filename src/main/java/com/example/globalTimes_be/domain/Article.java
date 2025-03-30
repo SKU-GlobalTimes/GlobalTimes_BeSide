@@ -21,17 +21,17 @@ public class Article {
     @JoinColumn(name = "source_id")  // Source 테이블의 id를 참조
     private Source source;  // sourceName과 연결되는 Source 객체
 
-    @Column(name = "author")
+    @Column(name = "author", nullable = false)
     private String author;
 
     @Column(name = "title", nullable = false)
     private String title;
 
-    @Column(name = "description", columnDefinition = "TEXT")
-    private String description; // 본문 요약
+    @Column(name = "description", nullable = false, columnDefinition = "TEXT")
+    private String description; // 본문 요약 ( NewsApi 자체 제공 )
 
-    @Column(name = "content", columnDefinition = "TEXT")
-    private String content; // 본문 서두
+    @Column(name = "content", nullable = false, columnDefinition = "TEXT")
+    private String content; // 본문 서두 ( 일정 글자 이상 제공 X )
 
     @Column(name = "crawled_content", columnDefinition = "TEXT")
     private String crawledContent; // 크롤링된 기사 원문
@@ -42,13 +42,13 @@ public class Article {
     @Column(name = "url", nullable = false)
     private String url;
 
-    @Column(name = "url_to_image", columnDefinition = "TEXT")
+    @Column(name = "url_to_image", nullable = false, columnDefinition = "TEXT")
     private String urlToImage; // 원문 기사 썸네일
 
-    @Column(name = "published_at")
+    @Column(name = "published_at", nullable = false)
     private LocalDateTime publishedAt; // 발행 일자
 
-    @Column(name = "view_count", nullable = false)
+    @Column(name = "view_count")
     private Long viewCount = 0L;
 
     // 정적 팩토리 메소드
