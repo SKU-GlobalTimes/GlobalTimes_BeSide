@@ -1,8 +1,8 @@
-package com.example.globalTimes_be.controller;
+package com.example.globalTimes_be.domain.article.controller;
 
 import com.example.globalTimes_be.ApiDoc.ArticleApiDocumentation;
-import com.example.globalTimes_be.Service.ArticleService;
-import com.example.globalTimes_be.dto.ArticleResponseDto;
+import com.example.globalTimes_be.domain.article.service.ArticleService;
+import com.example.globalTimes_be.domain.article.dto.ArticleResponseDto;
 import com.example.globalTimes_be.global.apiPayload.code.ApiResponse;
 import com.example.globalTimes_be.global.apiPayload.code.status.GlobalSuccessStatus;
 import lombok.RequiredArgsConstructor;

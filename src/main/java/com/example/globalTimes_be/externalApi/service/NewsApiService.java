@@ -1,9 +1,12 @@
-package com.example.globalTimes_be.externalApi;
+package com.example.globalTimes_be.externalApi.service;
 
-import com.example.globalTimes_be.domain.Article;
-import com.example.globalTimes_be.domain.Source;
-import com.example.globalTimes_be.repository.ArticleRepository;
-import com.example.globalTimes_be.repository.SourceRepository;
+import com.example.globalTimes_be.domain.article.entity.Article;
+import com.example.globalTimes_be.domain.source.entity.Source;
+import com.example.globalTimes_be.domain.article.repository.ArticleRepository;
+import com.example.globalTimes_be.domain.source.repository.SourceRepository;
+import com.example.globalTimes_be.externalApi.dto.NewsApiArticleDto;
+import com.example.globalTimes_be.externalApi.dto.NewsApiResponseDto;
+import com.example.globalTimes_be.externalApi.dto.NewsApiSourceDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

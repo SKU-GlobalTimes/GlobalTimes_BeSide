@@ -1,4 +1,4 @@
-package com.example.globalTimes_be.dto;
+package com.example.globalTimes_be.domain.article.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

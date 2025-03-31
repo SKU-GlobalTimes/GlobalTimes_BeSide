@@ -1,8 +1,8 @@
-package com.example.globalTimes_be.Service;
+package com.example.globalTimes_be.domain.article.service;
 
-import com.example.globalTimes_be.domain.Article;
-import com.example.globalTimes_be.dto.ArticleResponseDto;
-import com.example.globalTimes_be.repository.ArticleRepository;
+import com.example.globalTimes_be.domain.article.entity.Article;
+import com.example.globalTimes_be.domain.article.dto.ArticleResponseDto;
+import com.example.globalTimes_be.domain.article.repository.ArticleRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;

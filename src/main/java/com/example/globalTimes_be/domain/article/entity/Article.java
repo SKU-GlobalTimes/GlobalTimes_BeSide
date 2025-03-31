@@ -1,5 +1,6 @@
-package com.example.globalTimes_be.domain;
+package com.example.globalTimes_be.domain.article.entity;
 
+import com.example.globalTimes_be.domain.source.entity.Source;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;

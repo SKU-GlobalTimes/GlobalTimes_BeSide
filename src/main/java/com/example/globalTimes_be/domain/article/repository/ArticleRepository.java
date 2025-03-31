@@ -1,6 +1,6 @@
-package com.example.globalTimes_be.repository;
+package com.example.globalTimes_be.domain.article.repository;
 
-import com.example.globalTimes_be.domain.Article;
+import com.example.globalTimes_be.domain.article.entity.Article;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -1,4 +1,4 @@
-package com.example.globalTimes_be.domain;
+package com.example.globalTimes_be.domain.source.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
