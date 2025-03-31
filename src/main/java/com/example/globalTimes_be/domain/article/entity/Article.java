@@ -81,6 +81,11 @@ public class Article {
         this.source = source;
     }
 
+    //크롤링한 기사 업데이트
+    public void updateCrawledContent(String crawledContent) {
+        this.crawledContent = crawledContent;
+    }
+
     // get/{id} 와 같이 특정 뉴스 조회시 viewCount 증가
     public void increaseViewCount() {
         this.viewCount++;
