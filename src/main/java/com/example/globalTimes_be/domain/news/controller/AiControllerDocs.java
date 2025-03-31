@@ -35,18 +35,6 @@ public interface AiControllerDocs {
                             """)
                     )
             ),
-            @ApiResponse(responseCode = "400", description = "해당 기사의 정보가 없습니다.",
-                    content = @Content(mediaType = "application/json",
-                            examples = @ExampleObject(value = """
-                                {
-                                  "timestamp": "2024-10-30T15:38:12.43483271",
-                                  "isSuccess": false,
-                                  "message": "해당 기사의 정보가 없습니다.",
-                                  "data": null
-                                }
-                                """)
-                    )
-            ),
             @ApiResponse(responseCode = "400", description = "해당 언론사는 요약 정보 제공이 불가능합니다.",
                     content = @Content(mediaType = "application/json",
                             examples = @ExampleObject(value = """

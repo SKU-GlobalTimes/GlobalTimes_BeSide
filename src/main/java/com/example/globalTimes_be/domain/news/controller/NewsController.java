@@ -1,9 +1,6 @@
 package com.example.globalTimes_be.domain.news.controller;
 
-import com.example.globalTimes_be.domain.news.dto.request.NewsReqDTO;
 import com.example.globalTimes_be.domain.news.dto.response.NewsResDTO;
-import com.example.globalTimes_be.domain.news.entity.NewsEntity;
-import com.example.globalTimes_be.domain.news.repository.NewsRepository;
 import com.example.globalTimes_be.domain.news.service.NewsService;
 import com.example.globalTimes_be.global.apiPayload.code.ApiResponse;
 import com.example.globalTimes_be.global.apiPayload.code.status.GlobalSuccessStatus;

@@ -1,13 +1,14 @@
-package com.example.globalTimes_be.externalApi.service;
+package com.example.globalTimes_be.domain.externalApi.service;
 
 import com.example.globalTimes_be.domain.article.entity.Article;
 import com.example.globalTimes_be.domain.source.entity.Source;
 import com.example.globalTimes_be.domain.article.repository.ArticleRepository;
 import com.example.globalTimes_be.domain.source.repository.SourceRepository;
-import com.example.globalTimes_be.externalApi.dto.NewsApiArticleDto;
-import com.example.globalTimes_be.externalApi.dto.NewsApiResponseDto;
-import com.example.globalTimes_be.externalApi.dto.NewsApiSourceDto;
+import com.example.globalTimes_be.domain.externalApi.dto.NewsApiArticleDto;
+import com.example.globalTimes_be.domain.externalApi.dto.NewsApiResponseDto;
+import com.example.globalTimes_be.domain.externalApi.dto.NewsApiSourceDto;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -22,6 +23,9 @@ public class NewsApiService {
     private final ArticleRepository articleRepository;
     private final SourceRepository sourceRepository;
 
+    @Value("${spring.newsapi.api-key}")
+    String apiKey;
+
     @Autowired
     public NewsApiService(RestTemplate restTemplate, ArticleRepository articleRepository, SourceRepository sourceRepository) {
         this.restTemplate = restTemplate;
@@ -31,12 +35,11 @@ public class NewsApiService {
 
     @Transactional
     public void fetchAndSaveNews(int targetSize) {
-
         int page = 0;
         int pageSize = 20;  // 한 페이지당 최대 100개 ( 단일 요청 ) : 우선 테스트용 ( default 는 20 )
         int savedCount = 0;
 
-        String apiUrl = "https://newsapi.org/v2/top-headlines?country=us&apiKey={key}&pageSize=" + pageSize;
+        String apiUrl = "https://newsapi.org/v2/top-headlines?country=us&apiKey="+ apiKey + "&pageSize=" + pageSize;
         while(savedCount < targetSize){
 
             String finalApiUrl = apiUrl + "&page=" + page;

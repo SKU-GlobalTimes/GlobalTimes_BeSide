@@ -48,8 +48,30 @@ public interface NewsControllerDocs {
                             """)
                     )
             ),
-            @ApiResponse(responseCode = "400", description = "해당 기사의 정보가 없습니다."),
-            @ApiResponse(responseCode = "500", description = "서버 에러가 발생하였습니다."),
+            @ApiResponse(responseCode = "400", description = "해당 기사의 정보가 없습니다.",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                                {
+                                  "timestamp": "2024-10-30T15:38:12.43483271",
+                                  "isSuccess": false,
+                                  "message": "해당 기사의 정보가 없습니다.",
+                                  "data": null
+                                }
+                                """)
+                    )
+            ),
+            @ApiResponse(responseCode = "500", description = "서버 에러가 발생하였습니다.",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                                {
+                                  "timestamp": "2024-10-30T15:38:12.43483271",
+                                  "isSuccess": false,
+                                  "message": "서버 에러가 발생하였습니다.",
+                                  "data": null
+                                }
+                                """)
+                    )
+            ),
     })
     public ResponseEntity<?> getNewsDetail(
             @Parameter(description = "뉴스기사 ID", example = "1")

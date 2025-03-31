@@ -1,12 +1,14 @@
-package com.example.globalTimes_be.ApiDoc;
+package com.example.globalTimes_be.domain.article.ApiDoc;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestParam;
 
+@Tag(name = "메인 페이지", description = "메인페이지 관련 API입니다.")
 public interface ArticleApiDocumentation {
 
     @Operation(summary = "기사 최신 순 조회", description = "최신 기사 목록을 조회하는 API (최신순 정렬)")

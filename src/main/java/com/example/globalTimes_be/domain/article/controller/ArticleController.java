@@ -1,6 +1,6 @@
 package com.example.globalTimes_be.domain.article.controller;
 
-import com.example.globalTimes_be.ApiDoc.ArticleApiDocumentation;
+import com.example.globalTimes_be.domain.article.ApiDoc.ArticleApiDocumentation;
 import com.example.globalTimes_be.domain.article.service.ArticleService;
 import com.example.globalTimes_be.domain.article.dto.ArticleResponseDto;
 import com.example.globalTimes_be.global.apiPayload.code.ApiResponse;
