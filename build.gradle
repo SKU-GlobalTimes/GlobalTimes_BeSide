@@ -47,9 +47,6 @@ dependencies {
 	//crawling
 	implementation 'org.jsoup:jsoup:1.16.1'
 
-	//xml
-	implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml'
-
 	//WebClient
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
