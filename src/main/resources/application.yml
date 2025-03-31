@@ -11,3 +11,9 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+
+  openai:
+    api-key: ${OPENAI_API_KEY}
+
+  newsapi:
+    api-key: ${NEWS_API_KEY}
