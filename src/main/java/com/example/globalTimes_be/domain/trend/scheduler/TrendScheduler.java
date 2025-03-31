@@ -2,8 +2,6 @@ package com.example.globalTimes_be.domain.trend.scheduler;
 
 import com.example.globalTimes_be.domain.trend.dto.resonse.TrendDTO;
 import com.example.globalTimes_be.domain.trend.service.TrendService;
-import com.example.globalTimes_be.global.redis.RedisUtil;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,7 +9,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
