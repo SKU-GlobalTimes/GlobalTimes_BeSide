@@ -79,4 +79,9 @@ public class Article {
     public void updateSource(Source source) {
         this.source = source;
     }
+
+    // get/{id} 와 같이 특정 뉴스 조회시 viewCount 증가
+    public void increaseViewCount() {
+        this.viewCount++;
+    }
 }
