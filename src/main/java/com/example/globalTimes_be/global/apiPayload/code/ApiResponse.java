@@ -50,6 +50,18 @@ public record ApiResponse(
                 );
     }
 
+    public static ResponseEntity<ApiResponse> fail(ResponseDTO responseDTO, Object data) {
+        return ResponseEntity
+                .status(responseDTO.httpStatus())
+                .body(
+                        ApiResponse.builder()
+                                .isSuccess(false)
+                                .message(responseDTO.message())
+                                .data(data)
+                                .build()
+                );
+    }
+
     public static ResponseEntity<ApiResponse> fail(ResponseDTO responseDTO) {
         return ResponseEntity
                 .status(responseDTO.httpStatus())
