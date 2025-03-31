@@ -30,5 +30,6 @@ services:
       interval: 5s # 5초 간격으로 체크
       retries: 10 # 10번까지 재시도
 
+
 volumes:
   mysql_data:

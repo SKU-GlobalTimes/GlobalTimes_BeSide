@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Builder
 @Schema(description = "최신 뉴스 데이터 DTO")
@@ -21,5 +23,5 @@ public class RecentNewsDTO {
     private String urlToImage;
 
     @Schema(description = "작성일", example = "2025-03-27T19:52:00Z")
-    private String publishedAt;
+    private LocalDateTime publishedAt;
 }

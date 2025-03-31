@@ -1,11 +1,11 @@
 package com.example.globalTimes_be.domain.news.service;
 
+import com.example.globalTimes_be.domain.article.entity.Article;
+import com.example.globalTimes_be.domain.article.repository.ArticleRepository;
 import com.example.globalTimes_be.domain.news.dto.response.NewsDetailDTO;
 import com.example.globalTimes_be.domain.news.dto.response.NewsResDTO;
 import com.example.globalTimes_be.domain.news.dto.response.RecentNewsDTO;
-import com.example.globalTimes_be.domain.news.entity.NewsEntity;
 import com.example.globalTimes_be.domain.news.exception.NewsErrorStatus;
-import com.example.globalTimes_be.domain.news.repository.NewsRepository;
 import com.example.globalTimes_be.global.exception.BaseException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,36 +25,41 @@ import java.util.List;
 @RequiredArgsConstructor
 @Service
 public class NewsService {
-    private final NewsRepository newsRepository;
+    private final ArticleRepository articleRepository;
 
     //아이디를 받으면 DB에서 조회 후 값 반환
     public NewsResDTO getNewsDetail(Long id) {
         //뉴스 정보 가져옴
-        NewsEntity newsEntity = newsRepository.findById(id)
+        Article article = articleRepository.findById(id)
                 .orElseThrow(() -> new BaseException(NewsErrorStatus._EMPTY_NEWS_DATA.getResponse()));
+
+        //뉴스 조회수 증가 및 저장
+        article.increaseViewCount();
+        articleRepository.save(article);
 
         //상세 뉴스 정보를 DTO로 담음
         NewsDetailDTO newsDetailDTO = NewsDetailDTO.builder()
-                .sourceName(newsEntity.getSourceName())
-                .author(newsEntity.getAuthor())
-                .title(newsEntity.getTitle())
-                .url(newsEntity.getUrl())
-                .urlToImage(newsEntity.getUrlToImage())
-                .publishedAt(newsEntity.getPublishedAt())
+                .sourceName(article.getSource().getSourceName())
+                .author(article.getAuthor())
+                .title(article.getTitle())
+                .viewCount(article.getViewCount())
+                .url(article.getUrl())
+                .urlToImage(article.getUrlToImage())
+                .publishedAt(article.getPublishedAt())
                 .build();
 
         //0번째 페이지, 한 페이지에 20개
         Pageable pageable = PageRequest.of(0, 20);
 
         //최신 뉴스 정보를 20개 가져옴
-        List<NewsEntity> newsEntityList = newsRepository.findAll(pageable).getContent();
+        List<Article> articleList = articleRepository.findAllByOrderByPublishedAtDesc(pageable).getContent();
 
         //최신 뉴스 정보를 DTO에 넣음
-        List<RecentNewsDTO> recentNewsDTOList = newsEntityList.stream()
+        List<RecentNewsDTO> recentNewsDTOList = articleList.stream()
             .map(news -> {
                 return RecentNewsDTO.builder()
                         .id(news.getId())
-                        .sourceName(news.getSourceName())
+                        .sourceName(news.getSource().getSourceName())
                         .title(news.getTitle())
                         .urlToImage(news.getUrlToImage())
                         .publishedAt(news.getPublishedAt())
@@ -73,18 +78,18 @@ public class NewsService {
     @Transactional
     public String getArticleCrawledContent(Long id) {
         //뉴스 정보 가져옴
-        NewsEntity newsEntity = newsRepository.findById(id)
+        Article article = articleRepository.findById(id)
                 .orElseThrow(() -> new BaseException(NewsErrorStatus._EMPTY_NEWS_DATA.getResponse()));
 
-        System.out.println("newsEntity: " + newsEntity.getUrl());
+        System.out.println("newsEntity: " + article.getUrl());
 
-        String crawledContent = newsEntity.getCrawledContent();
+        String crawledContent = article.getCrawledContent();
 
         //content가 null이면 크롤링 해오고 db에 저장
         if (crawledContent == null) {
 
             // 크롤러로 기사 원문 가져옴
-            crawledContent = getCrawlerUrl(newsEntity.getUrl());
+            crawledContent = getCrawlerUrl(article.getUrl());
 
             // 크롤링 실패시 에러처리
             if (crawledContent == null) {
@@ -92,8 +97,8 @@ public class NewsService {
             }
 
             //DB에 저장
-            newsEntity.setCrawledContent(crawledContent);
-            newsRepository.save(newsEntity);
+            article.updateCrawledContent(crawledContent);
+            articleRepository.save(article);
         }
 
         return crawledContent;

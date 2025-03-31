@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Builder
 @Schema(description = "상세 뉴스 페이지 응답 DTO")
@@ -17,6 +19,9 @@ public class NewsDetailDTO {
     @Schema(description = "제목", example = "Trump Auto Tariffs: Car Import...")
     private String title;
 
+    @Schema(description = "조회수", example = "1")
+    private Long viewCount;
+
     @Schema(description = "원본기사 url", example = "https://www.bbc.com/news...")
     private String url;
 
@@ -24,5 +29,5 @@ public class NewsDetailDTO {
     private String urlToImage;
 
     @Schema(description = "작성일", example = "2025-03-27T19:52:00Z")
-    private String publishedAt;
+    private LocalDateTime publishedAt;
 }
