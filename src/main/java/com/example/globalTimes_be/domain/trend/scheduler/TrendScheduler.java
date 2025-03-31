@@ -30,8 +30,8 @@ public class TrendScheduler {
         saveTrendApi();
     }
 
-    //0시5초, 4시5초, 8시5초, 12시5초, 16시5초, 20시5초마다 갱신
-    @Scheduled(cron = "5 0 0,4,8,12,16,20 * * *")
+    //1시간 마다 갱신
+    @Scheduled(cron = "0 0 */1 * * *")
     public void saveTrendApi(){
         //나라 코드 리스트 생성
         List<String> countries = new ArrayList<>
