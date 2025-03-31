@@ -14,11 +14,11 @@ import java.util.List;
 @RestController
 @RequestMapping("/test/trend")
 public class TrendTestController {
-    private final TrendScheduler trendScheduler;
-
-    @GetMapping
-    public String saveTrend(){
-        trendScheduler.saveTrendApi();
-        return "ok_!";
-    }
+//    private final TrendScheduler trendScheduler;
+//
+//    @GetMapping
+//    public String saveTrend(){
+//        trendScheduler.saveTrendApi();
+//        return "ok_!";
+//    }
 }
