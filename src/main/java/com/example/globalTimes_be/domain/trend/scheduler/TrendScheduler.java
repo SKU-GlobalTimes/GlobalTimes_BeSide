@@ -2,8 +2,6 @@ package com.example.globalTimes_be.domain.trend.scheduler;
 
 import com.example.globalTimes_be.domain.trend.dto.resonse.TrendDTO;
 import com.example.globalTimes_be.domain.trend.service.TrendService;
-import com.example.globalTimes_be.global.redis.RedisUtil;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,7 +9,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -33,8 +30,8 @@ public class TrendScheduler {
         saveTrendApi();
     }
 
-    //0시5초, 4시5초, 8시5초, 12시5초, 16시5초, 20시5초마다 갱신
-    @Scheduled(cron = "5 0 0,4,8,12,16,20 * * *")
+    //1시간 마다 갱신
+    @Scheduled(cron = "0 0 */1 * * *")
     public void saveTrendApi(){
         //나라 코드 리스트 생성
         List<String> countries = new ArrayList<>
