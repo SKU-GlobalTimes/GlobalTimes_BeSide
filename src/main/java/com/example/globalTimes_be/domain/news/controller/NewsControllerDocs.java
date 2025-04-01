@@ -30,6 +30,7 @@ public interface NewsControllerDocs {
                                             "sourceName": "Politico",
                                             "author": "Seb Starcevic",
                                             "title": "Trump floats possibility of compensation for Jan. 6 rioters - POLITICO",
+                                            "viewCount": 1,
                                             "url": "https://www.politico.com/news/2025/03/25/trump-floats-possibility-of-compensation-for-jan-6-rioters-00250063",
                                             "urlToImage": "https://static.politico.com/7a/af/06aa55284352997b83a000983381/trump-63887.jpg",
                                             "publishedAt": "2025-03-26T03:00:31Z"
