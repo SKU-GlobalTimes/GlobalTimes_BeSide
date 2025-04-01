@@ -1,5 +1,7 @@
 package com.example.globalTimes_be.domain.news.service;
 
+import com.example.globalTimes_be.domain.news.exception.NewsErrorStatus;
+import com.example.globalTimes_be.global.exception.BaseException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -43,6 +45,6 @@ public class AiService {
             Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
             return (String) message.get("content");
         }
-        return "응답을 처리할 수 없습니다.";
+        throw new BaseException(NewsErrorStatus._GPT_ERROR.getResponse());
     }
 }

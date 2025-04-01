@@ -12,7 +12,9 @@ public enum NewsErrorStatus implements BaseResponse {
 
     _EMPTY_NEWS_DATA(HttpStatus.BAD_REQUEST, "해당 기사의 정보가 없습니다,"),
 
-    _CRAWLER_ERROR(HttpStatus.BAD_REQUEST, "해당 언론사는 요약 정보 제공이 불가능합니다."),
+    _CRAWLER_ERROR(HttpStatus.BAD_REQUEST, "해당 언론사는 요약 정보 제공이 불가능합니다. (크롤링 불가)"),
+
+    _GPT_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "GPT 요약 중 에러가 발생하였습니다."),
     ;
 
     private final HttpStatus httpStatus;
