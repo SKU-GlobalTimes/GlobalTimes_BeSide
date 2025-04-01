@@ -90,8 +90,6 @@ public class NewsService {
         Article article = articleRepository.findById(id)
                 .orElseThrow(() -> new BaseException(NewsErrorStatus._EMPTY_NEWS_DATA.getResponse()));
 
-        System.out.println("newsEntity: " + article.getUrl());
-
         String crawledContent = article.getCrawledContent();
 
         //content가 null이면 크롤링 해오고 db에 저장
