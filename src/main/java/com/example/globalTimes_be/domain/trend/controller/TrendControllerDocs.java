@@ -12,7 +12,7 @@ import jakarta.validation.constraints.NotNull;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestParam;
 
-@Tag(name = "실시간 검색어", description = "실시간 검색어 관련 API입니다.")
+@Tag(name = "실시간 검색어 페이지", description = "실시간 검색어 관련 API입니다.")
 public interface TrendControllerDocs {
 
     @Operation(summary = "나라별 실시간 검색어 데이터 응답",
@@ -58,28 +58,26 @@ public interface TrendControllerDocs {
                                 """)
                     )
             ),
-            @ApiResponse(responseCode = "400", description = "역직렬화에 실패하였습니다.",
-                    content = @Content(mediaType = "application/json",
-                            examples = @ExampleObject(value = """
-                                {
-                                  "timestamp": "2024-10-30T15:38:12.43483271",
-                                  "isSuccess": false,
-                                  "message": "역직렬화에 실패하였습니다.",
-                                  "data": null
-                                }
-                                """)
-                    )
-            ),
+
             @ApiResponse(responseCode = "500", description = "서버 에러가 발생하였습니다.",
                     content = @Content(mediaType = "application/json",
-                            examples = @ExampleObject(value = """
-                                {
-                                  "timestamp": "2024-10-30T15:38:12.43483271",
-                                  "isSuccess": false,
-                                  "message": "서버 에러가 발생하였습니다.",
-                                  "data": null
-                                }
-                                """)
+                            examples = {@ExampleObject(name="서버에러", value = """
+                                    {
+                                      "timestamp": "2024-10-30T15:38:12.43483271",
+                                      "isSuccess": false,
+                                      "message": "서버 에러가 발생하였습니다.",
+                                      "data": null
+                                    }
+                                    """),
+                                    @ExampleObject(name="역직렬화 실패", value = """
+                                    {
+                                      "timestamp": "2024-10-30T15:38:12.43483271",
+                                      "isSuccess": false,
+                                      "message": "역직렬화에 실패하였습니다.",
+                                      "data": null
+                                    }
+                                    """)
+                            }
                     )
             ),
     })
