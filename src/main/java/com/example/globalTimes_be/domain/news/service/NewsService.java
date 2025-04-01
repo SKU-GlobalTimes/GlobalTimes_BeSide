@@ -74,6 +74,15 @@ public class NewsService {
                 .build();
     }
 
+    //크롤링 실패 시 본문 서두 반환
+    public String getArticleContent(Long id) {
+        //뉴스 정보 가져옴
+        Article article = articleRepository.findById(id)
+                .orElseThrow(() -> new BaseException(NewsErrorStatus._EMPTY_NEWS_DATA.getResponse()));
+
+        return article.getContent();
+    }
+
     //DB에 뉴스 기사가 없으면 원본 뉴스 사이트에서 크롤링해옴
     @Transactional
     public String getArticleCrawledContent(Long id) {
@@ -91,9 +100,9 @@ public class NewsService {
             // 크롤러로 기사 원문 가져옴
             crawledContent = getCrawlerUrl(article.getUrl());
 
-            // 크롤링 실패시 에러처리
+            // 크롤링 실패시 return;
             if (crawledContent == null) {
-                throw new BaseException(NewsErrorStatus._CRAWLER_ERROR.getResponse());
+                return null;
             }
 
             //DB에 저장
