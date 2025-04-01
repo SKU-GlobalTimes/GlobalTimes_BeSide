@@ -39,11 +39,11 @@ public interface AiControllerDocs {
                     content = @Content(mediaType = "application/json",
                             examples = @ExampleObject(value = """
                                 {
-                                  "timestamp": "2024-10-30T15:38:12.43483271",
-                                  "isSuccess": false,
-                                  "message": "해당 언론사는 요약 정보 제공이 불가능합니다.",
-                                  "data": null
-                                }
+                                     "timestamp": "2025-04-01T13:37:56.6982049",
+                                     "isSuccess": false,
+                                     "message": "해당 언론사는 요약 정보 제공이 불가능합니다.",
+                                     "data": "NEWARK With a mastery of collaborative, often pretty basketball that belied both its youth and the volatile state of the college sport, Duke soared to the programs 18th Final Four on Saturday night, … [+5884 chars]"
+                                 }
                                 """)
                     )
             ),
