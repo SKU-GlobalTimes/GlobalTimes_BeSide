@@ -1,96 +1,100 @@
 package com.example.globalTimes_be.externalApi.service;
 
 import com.example.globalTimes_be.domain.article.entity.Article;
+import com.example.globalTimes_be.domain.article.service.ArticleService;
 import com.example.globalTimes_be.domain.source.entity.Source;
 import com.example.globalTimes_be.domain.article.repository.ArticleRepository;
 import com.example.globalTimes_be.domain.source.repository.SourceRepository;
+import com.example.globalTimes_be.domain.source.service.SourceService;
 import com.example.globalTimes_be.externalApi.dto.NewsApiArticleDto;
 import com.example.globalTimes_be.externalApi.dto.NewsApiResponseDto;
 import com.example.globalTimes_be.externalApi.dto.NewsApiSourceDto;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 // 전적인 API 호출 ( 외부 ) 처리 및 관리하는 서비스 레이어
+@Slf4j
 @Service
 public class NewsApiService {
 
     private final RestTemplate restTemplate;
     private final ArticleRepository articleRepository;
     private final SourceRepository sourceRepository;
+    private final SourceService sourceService;
+
+    private static final List<String> COUNTRIES = Arrays.asList("us", "kr", "jp", "gb", "fr", "de", "it", "ca", "au", "in");
+    private static final List<String> CATEGORY_LIST = Arrays.asList(null, "business", "science", "technology");  // general : default
 
     @Autowired
-    public NewsApiService(RestTemplate restTemplate, ArticleRepository articleRepository, SourceRepository sourceRepository) {
+    public NewsApiService(RestTemplate restTemplate, ArticleRepository articleRepository, SourceRepository sourceRepository, ArticleService articleService, SourceService sourceService) {
         this.restTemplate = restTemplate;
         this.articleRepository = articleRepository;
         this.sourceRepository = sourceRepository;
+        this.sourceService = sourceService;
     }
 
-    @Transactional
-    public void fetchAndSaveNews(int targetSize) {
+    @Scheduled(fixedRate = 300000, initialDelay = 10000) // 5분마다 실행 ( 초기 10 초 지연 )
+    public void fetchAndSaveNews() {
+        int pageSize = 100; // 최대 100개 요청
 
-        int page = 0;
-        int pageSize = 20;  // 한 페이지당 최대 100개 ( 단일 요청 ) : 우선 테스트용 ( default 는 20 )
-        int savedCount = 0;
+        int totalNewArticles = 0;
 
-        String apiUrl = "https://newsapi.org/v2/top-headlines?country=us&apiKey={key}&pageSize=" + pageSize;
-        while(savedCount < targetSize){
+        for (String country : COUNTRIES) {
+            for (String category : CATEGORY_LIST) {
+                String categoryParam = (category == null) ? "" : "&category=" + category;
+                String apiUrl = "https://newsapi.org/v2/top-headlines?"
+                        + "country=" + country
+                        + categoryParam
+                        + "&pageSize=" + pageSize
+                        + "&apiKey=" + "{API_KEY}";
 
-            String finalApiUrl = apiUrl + "&page=" + page;
+                ResponseEntity<NewsApiResponseDto> responseEntity = restTemplate.getForEntity(apiUrl, NewsApiResponseDto.class);
+                NewsApiResponseDto response = responseEntity.getBody();
 
-            // 목표로 하는 데이터 수 적재 실패 시 while loop - 추가적으로 요청해서 targetSize에 도달할 때 까지 반복
-            NewsApiResponseDto response = restTemplate.getForObject(finalApiUrl, NewsApiResponseDto.class);
-            if (response == null || response.getArticles() == null || response.getArticles().isEmpty()) {
-                break;
-                // null : 리스트 자체가 없는 경우
-                // isEmpty : 존재하지만 내부 요소가 없는 경우 -> 두가지 경우 전부 판단 ( NullPointer )
-            }
-
-            for (NewsApiArticleDto articleDto : response.getArticles()) {
-                // DTO -> Entity 변환
-
-                if(isInvalid(articleDto)){
-                    continue; // 각 항목 null 체크
-                }
-
-                // 아니라면 엔티티로 변환
-                Article article = mapDtoToEntity(articleDto);
-
-                // 기사 중복 체크 ( 이미 저장된 것이라면 제외 )
-                if (articleRepository.existsByUrl(article.getUrl())) {
+                if (response == null || response.getArticles() == null || response.getArticles().isEmpty()) {
+                    System.out.println("가져올 뉴스 없음: " + country + " / " + (category == null ? "general" : category));
                     continue;
                 }
 
-                Source source = article.getSource();
+                List<NewsApiArticleDto> articles = response.getArticles();
+                List<String> urls = articles.stream().map(NewsApiArticleDto::getUrl).collect(Collectors.toList());
 
-                if (source != null) {
-                    // null Pointer Ex 방지
-                    if (source.getSourceName() == null || source.getSourceName().isEmpty()) {
-                        continue;
-                    }
-                    Optional<Source> existingSource = sourceRepository.findBySourceName(source.getSourceName());
-                    if (existingSource.isPresent()) {
-                        // 존재하면 그대로 쓰고
-                        article.updateSource(existingSource.get());
-                    } else {
-                        sourceRepository.save(source);
-                    }
-                }
+                // 기존 저장된 URL 조회 (중복 방지)
+                Set<String> existingUrls = articleRepository.findExistingUrls(urls);
 
-                // Article 저장 ( Source 먼저 저장해야 ( FK -> 영속성 관련 )
-                articleRepository.save(article);
-                savedCount++; // 이렇게하면 이거 무조건 근데, 성능 문제 생김. ( 개별 쿼리 형태 )
-                // 루프 개별적으로 순회 하는거 이거 전에 플젝에서도 수정함. 잊지말기 (list 형태로 saveAll 추후 반드시 수정하고. )
+                // Source 캐싱
+                List<String> sourceNames = articles.stream()
+                        .map(NewsApiArticleDto::getSource)
+                        .filter(Objects::nonNull)
+                        .map(NewsApiSourceDto::getName)
+                        .filter(Objects::nonNull)
+                        .distinct()
+                        .collect(Collectors.toList());
 
-                if (savedCount >= targetSize) {
-                    return;
+                Map<String, Source> sourceCache = sourceService.preloadSources(sourceNames);
+
+                String safeCategory = (category == null) ? "general" : category;
+
+                List<Article> articleList = articles.stream()
+                        .filter(articleDto -> !isInvalid(articleDto) && !existingUrls.contains(articleDto.getUrl()))
+                        .map(articleDto -> mapDtoToEntity(articleDto, country, safeCategory)) // NULL 방지
+                        .collect(Collectors.toList());
+
+                if (!articleList.isEmpty()) {
+                    articleRepository.saveAll(articleList);
+                    System.out.println(country + " / " + (category == null ? "general" : category) + " - " + articleList.size() + "개 저장 완료");
+                    totalNewArticles += articleList.size();
                 }
             }
-            page++;
         }
+        System.out.println("총 저장된 신규 기사: " + totalNewArticles + "개");
     }
 
     private boolean isInvalid(NewsApiArticleDto dto){
@@ -106,9 +110,11 @@ public class NewsApiService {
                 dto.getSource().getName().isEmpty();
     }
 
-    private Article mapDtoToEntity(NewsApiArticleDto articleDto) {
-        // NewsApiSourceDto를 Source 객체로
-        Source source = mapSourceDtoToEntity(articleDto.getSource());
+    private Article mapDtoToEntity(NewsApiArticleDto articleDto, String countryCode, String category) {
+        // Source가 null이 아닐 경우에만 변환
+        Source source = (articleDto.getSource() != null && articleDto.getSource().getName() != null)
+                ? mapSourceDtoToEntity(articleDto.getSource())
+                : Source.createSource("Unknown", null); // 기본값 설정
 
         return Article.createArticle(
                 source,
@@ -118,17 +124,18 @@ public class NewsApiService {
                 articleDto.getContent(),
                 articleDto.getUrl(),
                 articleDto.getUrlToImage(),
-                articleDto.getPublishedAt()
+                articleDto.getPublishedAt(),
+                countryCode,
+                (category == null ? "general" : category)
         );
     }
 
     private Source mapSourceDtoToEntity(NewsApiSourceDto sourceDto) {
-        // sourceDto가 null일 수 있으므로 null 체크
-        if (sourceDto == null) {
-            return null;
+
+        if (sourceDto == null || sourceDto.getName() == null || sourceDto.getName().isEmpty()) {
+            return null; // null 반환 (저장하지 않음)
         }
 
         return Source.createSource(sourceDto.getId(), sourceDto.getName());
     }
-
 }
