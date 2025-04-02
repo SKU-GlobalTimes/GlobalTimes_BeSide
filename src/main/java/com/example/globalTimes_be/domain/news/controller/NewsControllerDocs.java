@@ -30,6 +30,7 @@ public interface NewsControllerDocs {
                                             "sourceName": "Politico",
                                             "author": "Seb Starcevic",
                                             "title": "Trump floats possibility of compensation for Jan. 6 rioters - POLITICO",
+                                            "viewCount": 1,
                                             "url": "https://www.politico.com/news/2025/03/25/trump-floats-possibility-of-compensation-for-jan-6-rioters-00250063",
                                             "urlToImage": "https://static.politico.com/7a/af/06aa55284352997b83a000983381/trump-63887.jpg",
                                             "publishedAt": "2025-03-26T03:00:31Z"
@@ -48,8 +49,30 @@ public interface NewsControllerDocs {
                             """)
                     )
             ),
-            @ApiResponse(responseCode = "400", description = "해당 기사의 정보가 없습니다."),
-            @ApiResponse(responseCode = "500", description = "서버 에러가 발생하였습니다."),
+            @ApiResponse(responseCode = "400", description = "해당 기사의 정보가 없습니다.",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                                {
+                                  "timestamp": "2024-10-30T15:38:12.43483271",
+                                  "isSuccess": false,
+                                  "message": "해당 기사의 정보가 없습니다.",
+                                  "data": null
+                                }
+                                """)
+                    )
+            ),
+            @ApiResponse(responseCode = "500", description = "서버 에러가 발생하였습니다.",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                                {
+                                  "timestamp": "2024-10-30T15:38:12.43483271",
+                                  "isSuccess": false,
+                                  "message": "서버 에러가 발생하였습니다.",
+                                  "data": null
+                                }
+                                """)
+                    )
+            ),
     })
     public ResponseEntity<?> getNewsDetail(
             @Parameter(description = "뉴스기사 ID", example = "1")

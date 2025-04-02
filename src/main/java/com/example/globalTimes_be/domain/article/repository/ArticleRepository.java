@@ -11,6 +11,8 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Set;
 
+import java.util.List;
+
 @Repository
 public interface ArticleRepository extends JpaRepository<Article, Long> {
 
@@ -24,4 +26,7 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
 
     @Query("SELECT a.url FROM Article a WHERE a.url IN :urls")
     Set<String> findExistingUrls(@Param("urls") List<String> urls);
+
+    // 특정 id를 제외한 최신기사 20개 조회
+    List<Article> findTop20ByIdNotOrderByPublishedAtDesc(Long id);
 }
