@@ -13,8 +13,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,10 +47,10 @@ public class NewsService {
                 .build();
 
         //0번째 페이지, 한 페이지에 20개
-        Pageable pageable = PageRequest.of(0, 20);
+        //Pageable pageable = PageRequest.of(0, 20);
 
         //최신 뉴스 정보를 20개 가져옴
-        List<Article> articleList = articleRepository.findAllByOrderByPublishedAtDesc(pageable).getContent();
+        List<Article> articleList = articleRepository.findTop20ByIdNotOrderByPublishedAtDesc(id);
 
         //최신 뉴스 정보를 DTO에 넣음
         List<RecentNewsDTO> recentNewsDTOList = articleList.stream()
