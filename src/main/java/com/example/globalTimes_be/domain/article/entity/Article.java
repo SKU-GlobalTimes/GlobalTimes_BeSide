@@ -18,7 +18,7 @@ public class Article {
     @Column(name = "article_id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     @JoinColumn(name = "source_id")  // Source 테이블의 id를 참조
     private Source source;  // sourceName과 연결되는 Source 객체
 
@@ -52,10 +52,17 @@ public class Article {
     @Column(name = "view_count")
     private Long viewCount = 0L;
 
+    @Column(name = "country", nullable = false)
+    private String country;
+
+    @Column(name = "category", nullable = false)
+    private String category;
+
     // 정적 팩토리 메소드
     public static Article createArticle(Source source, String author, String title,
                                         String description, String content,
-                                        String url, String urlToImage, String publishedAt) {
+                                        String url, String urlToImage, String publishedAt,
+                                        String country, String category) {
         Article article = new Article();
         article.source = source;
         article.author = author;
@@ -68,6 +75,8 @@ public class Article {
         article.urlToImage = urlToImage;
         // article.viewCount = (viewCount != null) ? viewCount : 0L;
         article.viewCount = 0L;
+        article.country = country;
+        article.category = category;
 
         // ISO 8601 형식 변환
         OffsetDateTime offsetDateTime = OffsetDateTime.parse(publishedAt);
@@ -84,5 +93,10 @@ public class Article {
     // get/{id} 와 같이 특정 뉴스 조회시 viewCount 증가
     public void increaseViewCount() {
         this.viewCount++;
+    }
+
+    public void updateCountryAndCategory(String countryCode, String category) {
+        this.country = countryCode;
+        this.category = category == null ? "general" : category;
     }
 }
