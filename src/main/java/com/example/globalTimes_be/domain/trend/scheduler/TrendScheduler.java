@@ -11,6 +11,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
@@ -68,7 +69,14 @@ public class TrendScheduler {
         String apiUrl = "https://trends.google.co.kr/trending/rss?geo=" + countryCode;
 
         //get요청 보내기
-        String xmlResponse = restTemplate.getForObject(apiUrl, String.class);
+        String xmlResponse = null;
+
+        try {
+            xmlResponse = restTemplate.getForObject(apiUrl, String.class);
+        } catch (RestClientException e) {
+            log.error("url get요청 에러: {}", e.getMessage());
+            return null;
+        }
 
         //파싱 실패
         if (xmlResponse == null) {
