@@ -94,28 +94,25 @@ public interface AiControllerDocs {
                                 schema = @Schema(type = "string", description = "요약된 기사 내용 스트리밍")
                         )
                 ),
-                @ApiResponse(responseCode = "400", description = "해당 기사의 정보가 없습니다.",
+                @ApiResponse(responseCode = "400", description = "비즈니스 에러",
                         content = @Content(mediaType = "application/json",
-                                examples = @ExampleObject(value = """
-                                {
-                                  "timestamp": "2024-10-30T15:38:12.43483271",
-                                  "isSuccess": false,
-                                  "message": "해당 기사의 정보가 없습니다.",
-                                  "data": null
+                                examples = {@ExampleObject(name = "db에 기사정보 없음", value = """
+                                            {
+                                              "timestamp": "2024-10-30T15:38:12.43483271",
+                                              "isSuccess": false,
+                                              "message": "해당 기사의 정보가 없습니다.",
+                                              "data": null
+                                            }
+                                        """),
+                                        @ExampleObject(name= "크롤링에러", value = """
+                                            {
+                                              "timestamp": "2024-10-30T15:38:12.43483271",
+                                              "isSuccess": false,
+                                              "message": "해당 언론사는 요약 정보 제공이 불가능합니다. (크롤링 불가)",
+                                              "data": null
+                                            }
+                                        """)
                                 }
-                                """)
-                        )
-                ),
-                @ApiResponse(responseCode = "400", description = "해당 언론사는 요약 정보 제공이 불가능합니다.",
-                        content = @Content(mediaType = "application/json",
-                                examples = @ExampleObject(value = """
-                                {
-                                  "timestamp": "2024-10-30T15:38:12.43483271",
-                                  "isSuccess": false,
-                                  "message": "해당 언론사는 요약 정보 제공이 불가능합니다.",
-                                  "data": null
-                                }
-                                """)
                         )
                 ),
                 @ApiResponse(responseCode = "500", description = "서버 에러가 발생하였습니다.",
@@ -155,28 +152,25 @@ public interface AiControllerDocs {
                                 schema = @Schema(type = "string", description = "요약된 기사 내용 스트리밍")
                         )
                 ),
-                @ApiResponse(responseCode = "400", description = "해당 기사의 정보가 없습니다.",
+                @ApiResponse(responseCode = "400", description = "비즈니스 에러",
                         content = @Content(mediaType = "application/json",
-                                examples = @ExampleObject(value = """
-                                {
-                                  "timestamp": "2024-10-30T15:38:12.43483271",
-                                  "isSuccess": false,
-                                  "message": "해당 기사의 정보가 없습니다.",
-                                  "data": null
+                                examples = {@ExampleObject(name = "db에 기사정보 없음", value = """
+                                            {
+                                              "timestamp": "2024-10-30T15:38:12.43483271",
+                                              "isSuccess": false,
+                                              "message": "해당 기사의 정보가 없습니다.",
+                                              "data": null
+                                            }
+                                        """),
+                                        @ExampleObject(name= "크롤링에러", value = """
+                                            {
+                                              "timestamp": "2024-10-30T15:38:12.43483271",
+                                              "isSuccess": false,
+                                              "message": "해당 언론사는 요약 정보 제공이 불가능합니다. (크롤링 불가)",
+                                              "data": null
+                                            }
+                                        """)
                                 }
-                                """)
-                        )
-                ),
-                @ApiResponse(responseCode = "400", description = "해당 언론사는 요약 정보 제공이 불가능합니다.",
-                        content = @Content(mediaType = "application/json",
-                                examples = @ExampleObject(value = """
-                                {
-                                  "timestamp": "2024-10-30T15:38:12.43483271",
-                                  "isSuccess": false,
-                                  "message": "해당 언론사는 요약 정보 제공이 불가능합니다.",
-                                  "data": null
-                                }
-                                """)
                         )
                 ),
                 @ApiResponse(responseCode = "500", description = "서버 에러가 발생하였습니다.",
