@@ -3,6 +3,7 @@ package com.example.globalTimes_be.global.exception;
 import com.example.globalTimes_be.global.apiPayload.code.ApiResponse;
 import com.example.globalTimes_be.global.apiPayload.code.status.GlobalErrorStatus;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.nio.file.AccessDeniedException;
@@ -42,6 +44,21 @@ public class GlobalErrorHandler {
         String message = errorMessages.isEmpty() ? "유효성 검사 실패" : String.join(", ", errorMessages);
 
         // ApiResponse로 반환
+        return ApiResponse.fail(message, HttpStatus.BAD_REQUEST);
+    }
+
+    //Request Param 검증 에러
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<ApiResponse> handleConstraintViolationException(HandlerMethodValidationException e) {
+        log.warn("HandlerMethodValidationException 발생!", e);
+
+        // 모든 유효성 검사 오류 메시지를 리스트로 변환
+        List<String> errorMessages = e.getAllErrors()
+                .stream()
+                .map(error -> error.getDefaultMessage())
+                .collect(Collectors.toList());
+
+        String message = String.join(", ", errorMessages);
         return ApiResponse.fail(message, HttpStatus.BAD_REQUEST);
     }
 
@@ -84,6 +101,7 @@ public class GlobalErrorHandler {
     //500 나머지 에러
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse> handleNullPointerException(Exception e, HttpServletRequest request){
+        log.error("발생한 예외 타입: {}", e.getClass().getSimpleName());
         log.error("Exception Error", e);
         return ApiResponse.fail(GlobalErrorStatus._INTERNAL_SERVER_ERROR.getResponse());
     }

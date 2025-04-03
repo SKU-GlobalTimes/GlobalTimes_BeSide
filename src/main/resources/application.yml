@@ -23,5 +23,10 @@ spring:
   openai:
     api-key: ${OPENAI_API_KEY}
 
+  #news
   newsapi:
     api-key: ${NEWS_API_KEY}
+
+  #google translate
+  google:
+    api-key: ${GOOGLE_API_KEY}

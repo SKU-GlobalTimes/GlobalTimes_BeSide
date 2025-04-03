@@ -37,14 +37,23 @@ public interface AiControllerDocs {
             ),
             @ApiResponse(responseCode = "400", description = "크롤링 불가 (본문 서두 제공)",
                     content = @Content(mediaType = "application/json",
-                            examples = @ExampleObject(value = """
-                                {
-                                     "timestamp": "2025-04-01T13:37:56.6982049",
-                                     "isSuccess": false,
-                                     "message": "해당 언론사는 요약 정보 제공이 불가능합니다. (크롤링 불가)",
-                                     "data": "NEWARK With a mastery of collaborative, often pretty basketball that belied both its youth and the volatile state of the college sport, Duke soared to the programs 18th Final Four on Saturday night, … [+5884 chars]"
-                                 }
-                                """)
+                            examples = {@ExampleObject(value = """
+                                    {
+                                         "timestamp": "2025-04-01T13:37:56.6982049",
+                                         "isSuccess": false,
+                                         "message": "해당 언론사는 요약 정보 제공이 불가능합니다. (크롤링 불가)",
+                                         "data": "NEWARK With a mastery of collaborative, often pretty basketball that belied both its youth and the volatile state of the college sport, Duke soared to the programs 18th Final Four on Saturday night, … [+5884 chars]"
+                                     }
+                                    """),
+                                    @ExampleObject(name= "검증에러", value = """
+                                        {
+                                            "timestamp": "2025-04-03T15:54:50.410816",
+                                            "isSuccess": false,
+                                            "message": "뉴스기사 id는 비어있을 수 없습니다., 질문은 최소 1자 이상이어야 합니다.",
+                                            "data": null
+                                        }
+                                    """)
+                            }
                     )
             ),
             @ApiResponse(responseCode = "500", description = "서버 에러가 발생하였습니다.",
@@ -111,6 +120,14 @@ public interface AiControllerDocs {
                                               "message": "해당 언론사는 요약 정보 제공이 불가능합니다. (크롤링 불가)",
                                               "data": null
                                             }
+                                        """),
+                                        @ExampleObject(name= "검증에러", value = """
+                                            {
+                                                "timestamp": "2025-04-03T15:54:50.410816",
+                                                "isSuccess": false,
+                                                "message": "뉴스기사 id는 비어있을 수 없습니다.",
+                                                "data": null
+                                            }
                                         """)
                                 }
                         )
@@ -168,6 +185,14 @@ public interface AiControllerDocs {
                                               "isSuccess": false,
                                               "message": "해당 언론사는 요약 정보 제공이 불가능합니다. (크롤링 불가)",
                                               "data": null
+                                            }
+                                        """),
+                                        @ExampleObject(name= "검증에러", value = """
+                                            {
+                                                "timestamp": "2025-04-03T15:54:50.410816",
+                                                "isSuccess": false,
+                                                "message": "뉴스기사 id는 비어있을 수 없습니다., 질문은 비어있을 수 없습니다., 질문은 최소 1자 이상이어야 합니다.",
+                                                "data": null
                                             }
                                         """)
                                 }
