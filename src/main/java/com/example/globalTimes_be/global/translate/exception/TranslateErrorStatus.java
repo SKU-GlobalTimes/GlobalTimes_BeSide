@@ -1,0 +1,18 @@
+package com.example.globalTimes_be.global.translate.exception;
+
+import com.example.globalTimes_be.global.apiPayload.code.BaseResponse;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import org.springframework.http.HttpStatus;
+
+@Getter
+@AllArgsConstructor
+public enum TranslateErrorStatus implements BaseResponse {
+    _CUSTOM_ERROR(HttpStatus.BAD_REQUEST, "에러테스트 요청입니다."),
+
+    _TRANSLATE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "구글 번역 중 에러가 발생하였습니다."),
+    ;
+
+    private final HttpStatus httpStatus;
+    private final String message;
+}
