@@ -1,6 +1,6 @@
 package com.example.globalTimes_be.domain.test.controller;
 
-import com.example.globalTimes_be.domain.externalApi.service.NewsApiService;
+import com.example.globalTimes_be.externalApi.service.NewsApiService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

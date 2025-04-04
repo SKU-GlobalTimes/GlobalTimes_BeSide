@@ -2,13 +2,13 @@ package com.example.globalTimes_be.externalApi.service;
 
 import com.example.globalTimes_be.domain.article.entity.Article;
 import com.example.globalTimes_be.domain.article.service.ArticleService;
+import com.example.globalTimes_be.domain.externalApi.dto.NewsApiArticleDto;
+import com.example.globalTimes_be.domain.externalApi.dto.NewsApiResponseDto;
+import com.example.globalTimes_be.domain.externalApi.dto.NewsApiSourceDto;
 import com.example.globalTimes_be.domain.source.entity.Source;
 import com.example.globalTimes_be.domain.article.repository.ArticleRepository;
 import com.example.globalTimes_be.domain.source.repository.SourceRepository;
 import com.example.globalTimes_be.domain.source.service.SourceService;
-import com.example.globalTimes_be.externalApi.dto.NewsApiArticleDto;
-import com.example.globalTimes_be.externalApi.dto.NewsApiResponseDto;
-import com.example.globalTimes_be.externalApi.dto.NewsApiSourceDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +26,6 @@ public class NewsApiService {
 
     private final RestTemplate restTemplate;
     private final ArticleRepository articleRepository;
-    private final SourceRepository sourceRepository;
     private final SourceService sourceService;
 
     private static final List<String> COUNTRIES = Arrays.asList("us", "kr", "jp", "gb", "fr", "de", "it", "ca", "au", "in");
@@ -36,7 +35,6 @@ public class NewsApiService {
     public NewsApiService(RestTemplate restTemplate, ArticleRepository articleRepository, SourceRepository sourceRepository, ArticleService articleService, SourceService sourceService) {
         this.restTemplate = restTemplate;
         this.articleRepository = articleRepository;
-        this.sourceRepository = sourceRepository;
         this.sourceService = sourceService;
     }
 
@@ -84,7 +82,7 @@ public class NewsApiService {
 
                 List<Article> articleList = articles.stream()
                         .filter(articleDto -> !isInvalid(articleDto) && !existingUrls.contains(articleDto.getUrl()))
-                        .map(articleDto -> mapDtoToEntity(articleDto, country, safeCategory)) // NULL 방지
+                        .map(articleDto -> mapDtoToEntity(articleDto, country, safeCategory, sourceCache)) // 캐시 사용
                         .collect(Collectors.toList());
 
                 if (!articleList.isEmpty()) {
@@ -110,11 +108,14 @@ public class NewsApiService {
                 dto.getSource().getName().isEmpty();
     }
 
-    private Article mapDtoToEntity(NewsApiArticleDto articleDto, String countryCode, String category) {
+    private Article mapDtoToEntity(NewsApiArticleDto articleDto, String countryCode,
+                                   String category,  Map<String, Source> sourceCache) {
         // Source가 null이 아닐 경우에만 변환
-        Source source = (articleDto.getSource() != null && articleDto.getSource().getName() != null)
-                ? mapSourceDtoToEntity(articleDto.getSource())
-                : Source.createSource("Unknown", null); // 기본값 설정
+        String sourceName = Optional.ofNullable(articleDto.getSource())
+                .map(NewsApiSourceDto::getName)
+                .orElse("Unknown");
+
+        Source source = sourceCache.getOrDefault(sourceName, Source.createSource("Unknown", null));
 
         return Article.createArticle(
                 source,
