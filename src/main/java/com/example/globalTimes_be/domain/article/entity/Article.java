@@ -18,7 +18,7 @@ public class Article {
     @Column(name = "article_id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "source_id")  // Source 테이블의 id를 참조
     private Source source;  // sourceName과 연결되는 Source 객체
 
