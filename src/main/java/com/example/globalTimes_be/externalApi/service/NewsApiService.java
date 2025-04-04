@@ -124,8 +124,12 @@ public class NewsApiService {
                 .map(NewsApiSourceDto::getName)
                 .orElse("Unknown");
 
-        Source source = sourceCache.getOrDefault(sourceName, Source.createSource("Unknown", null));
+        Source source = sourceCache.get(sourceName);
 
+        if (source == null) {
+            source = sourceService.getOrCreateSource(sourceName, null); // 영속 상태의 Source
+            sourceCache.put(sourceName, source);
+        }
         return Article.createArticle(
                 source,
                 articleDto.getAuthor(),
