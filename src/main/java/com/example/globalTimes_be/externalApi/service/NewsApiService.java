@@ -143,13 +143,4 @@ public class NewsApiService {
                 (category == null ? "general" : category)
         );
     }
-
-    private Source mapSourceDtoToEntity(NewsApiSourceDto sourceDto) {
-
-        if (sourceDto == null || sourceDto.getName() == null || sourceDto.getName().isEmpty()) {
-            return null; // null 반환 (저장하지 않음)
-        }
-
-        return Source.createSource(sourceDto.getId(), sourceDto.getName());
-    }
 }
