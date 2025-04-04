@@ -28,8 +28,17 @@ public class NewsApiService {
     private final ArticleRepository articleRepository;
     private final SourceService sourceService;
 
-    private static final List<String> COUNTRIES = Arrays.asList("us", "kr", "jp", "gb", "fr", "de", "it", "ca", "au", "in");
-    private static final List<String> CATEGORY_LIST = Arrays.asList(null, "business", "science", "technology");  // general : default
+    private static final List<String> COUNTRIES = List.of("us");
+
+    private static final List<String> CATEGORY_LIST = Arrays.asList(
+            null, // general
+            "business",
+            "entertainment",
+            "health",
+            "science",
+            "sports",
+            "technology"
+    );
 
     @Autowired
     public NewsApiService(RestTemplate restTemplate, ArticleRepository articleRepository, SourceRepository sourceRepository, ArticleService articleService, SourceService sourceService) {
