@@ -22,16 +22,7 @@ public class ArticleService {
         Pageable pageable = PageRequest.of(page, size);
         Page<Article> articles = articleRepository.findAllByOrderByPublishedAtDesc(pageable);
 
-        // Dto 변환
-        return articles.map(article -> new ArticleResponseDto(
-                article.getId(),
-                article.getSource().getSourceName(),
-                article.getPublishedAt(),
-                article.getTitle(),
-                article.getDescription(),
-                article.getUrlToImage(),
-                article.getViewCount()
-        ));
+       return articles.map(ArticleResponseDto::fromEntity);
     }
 
     // 조회수 기준
@@ -40,14 +31,6 @@ public class ArticleService {
         Page<Article> articles = articleRepository.findAllByOrderByViewCountDesc(pageable);
 
         // Dto 변환
-        return articles.map(article -> new ArticleResponseDto(
-                article.getId(),
-                article.getSource().getSourceName(),  // sourceName이 null이 아니므로 바로 사용
-                article.getPublishedAt(),
-                article.getTitle(),
-                article.getDescription(),
-                article.getUrlToImage(),
-                article.getViewCount()
-        ));
+        return articles.map(ArticleResponseDto::fromEntity);
     }
 }
