@@ -1,4 +1,4 @@
-package com.example.globalTimes_be.domain.externalApi.dto;
+package com.example.globalTimes_be.externalApi.dto;
 
 import lombok.Getter;
 import lombok.Setter;
