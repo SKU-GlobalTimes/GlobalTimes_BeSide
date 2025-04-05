@@ -9,6 +9,7 @@ import com.example.globalTimes_be.domain.source.entity.Source;
 import com.example.globalTimes_be.domain.article.repository.ArticleRepository;
 import com.example.globalTimes_be.domain.source.repository.SourceRepository;
 import com.example.globalTimes_be.domain.source.service.SourceService;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,32 +53,40 @@ public class NewsApiService {
         this.sourceService = sourceService;
     }
 
-    // 3시간마다 헤드라인 뉴스 Scheduling
-    @Scheduled(cron = "0 0 0/3 * * *")
-    public void scheduledFetchTopHeadlines() {
-        totalNewArticles = 0;
-        fetchTopHeadlines();
-        System.out.println("헤드라인 저장된 신규 기사: " + totalNewArticles + "개");
+    @PostConstruct
+    public void init() {
+        fetchTopHeadlines(true);    // 뉴스 초기 적재
+        fetchDomainArticles(true);
     }
 
-    // 매일 자정에 Everything 호출
-    @Scheduled(cron = "0 0 0 * * *") // 매일 자정
-    public void scheduledFetchDomainArticles() {
+    // 3시간마다 헤드라인 뉴스 Scheduling
+    @Scheduled(cron = "0 0 0/3 * * *")
+    public void scheduledTopHeadlines() {
         totalNewArticles = 0;
-        fetchDomainArticles();
-        System.out.println("Everything 저장된 신규 기사: " + totalNewArticles + "개");
+        fetchTopHeadlines(false);
+        log.info("[스케줄링] 헤드라인 저장된 신규 기사: {}개", totalNewArticles);
+    }
+
+
+    @Scheduled(cron = "0 0 0 * * *")
+    public void scheduledFetchFixed() {
+        totalNewArticles = 0;
+        fetchDomainArticles(false);
+        log.info("[스케줄링] Everything 저장된 신규 기사: {}개", totalNewArticles);
     }
 
     // 최상위 실행 메소드 ( 두 방식 동시에 테스트용 -> Scheduling 제외 )
+    /*
     public void fetchAndSave() {
         totalNewArticles = 0; // 매번 초기화
         fetchTopHeadlines();
         fetchDomainArticles();
         System.out.println("총 저장된 신규 기사: " + totalNewArticles + "개");
     }
+    */
 
     // Country + Category ( 기존의 헤드라인 호출 ) : 헤드라인이기에 좀 더 자주 스케줄링하고
-    private void fetchTopHeadlines() {
+    private void fetchTopHeadlines(boolean isInit) {
         for (String country : COUNTRIES) {
             for (String category : CATEGORY_LIST) {
                 String categoryParam = (category == null) ? "" : "&category=" + category;
@@ -90,17 +99,22 @@ public class NewsApiService {
                 processApiRequest(apiUrl, country, (category == null ? "general" : category));
             }
         }
+        if (isInit) {
+            log.info("[초기 적재] 헤드라인 저장된 신규 기사: {}개", totalNewArticles);
+        }
     }
 
-    // 특정 언론사를 고정하여 Fetch : 해당 부분은 Default 응답이 최신순 정렬되서 오기에, 자정마다 스케줄링 하기로.
-    private void fetchDomainArticles() {
+    private void fetchDomainArticles(boolean isInit) {
         for (String domain : DOMAINS) {
             String apiUrl = "https://newsapi.org/v2/everything?"
                     + "domains=" + domain
                     + "&pageSize=" + 100
                     + "&apiKey=" + apiKey;
 
-            processApiRequest(apiUrl, "us", null); // Everything 은 Category 우선 제외
+            processApiRequest(apiUrl, "us", null);
+        }
+        if (isInit) {
+            log.info("[초기 적재] Everything 저장된 신규 기사: {}개", totalNewArticles);
         }
     }
 
@@ -110,7 +124,7 @@ public class NewsApiService {
         NewsApiResponseDto response = responseEntity.getBody();
 
         if (response == null || response.getArticles() == null || response.getArticles().isEmpty()) {
-            System.out.println("가져올 뉴스 없음: " + (country != null ? country : "도메인") + " / " + category);
+            log.info("가져올 뉴스 없음: {} / {}", (country != null ? country : "도메인"), category);
             return;
         }
 
@@ -141,7 +155,7 @@ public class NewsApiService {
 
         if (!articleList.isEmpty()) {
             articleRepository.saveAll(articleList);
-            System.out.println((country != null ? country : "도메인") + " / " + category + " - " + articleList.size() + "개 저장 완료");
+            log.info("{} / {} - {}개 저장 완료", (country != null ? country : "도메인"), category, articleList.size());
             totalNewArticles += articleList.size();
         }
     }
