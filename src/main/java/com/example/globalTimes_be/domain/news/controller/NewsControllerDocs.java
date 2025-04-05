@@ -49,16 +49,25 @@ public interface NewsControllerDocs {
                             """)
                     )
             ),
-            @ApiResponse(responseCode = "400", description = "해당 기사의 정보가 없습니다.",
+            @ApiResponse(responseCode = "400", description = "비즈니스 에러",
                     content = @Content(mediaType = "application/json",
-                            examples = @ExampleObject(value = """
-                                {
-                                  "timestamp": "2024-10-30T15:38:12.43483271",
-                                  "isSuccess": false,
-                                  "message": "해당 기사의 정보가 없습니다.",
-                                  "data": null
-                                }
-                                """)
+                            examples = {@ExampleObject(name="기사 정보 없음", value = """
+                                        {
+                                          "timestamp": "2024-10-30T15:38:12.43483271",
+                                          "isSuccess": false,
+                                          "message": "해당 기사의 정보가 없습니다.",
+                                          "data": null
+                                        }
+                                        """),
+                                        @ExampleObject(name= "검증에러", value = """
+                                            {
+                                                "timestamp": "2025-04-03T15:54:50.410816",
+                                                "isSuccess": false,
+                                                "message": "뉴스기사 id는 비어있을 수 없습니다.",
+                                                "data": null
+                                            }
+                                        """)
+                            }
                     )
             ),
             @ApiResponse(responseCode = "500", description = "서버 에러가 발생하였습니다.",
