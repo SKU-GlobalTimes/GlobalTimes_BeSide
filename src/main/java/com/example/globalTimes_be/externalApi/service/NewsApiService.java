@@ -2,9 +2,9 @@ package com.example.globalTimes_be.externalApi.service;
 
 import com.example.globalTimes_be.domain.article.entity.Article;
 import com.example.globalTimes_be.domain.article.service.ArticleService;
-import com.example.globalTimes_be.domain.externalApi.dto.NewsApiArticleDto;
-import com.example.globalTimes_be.domain.externalApi.dto.NewsApiResponseDto;
-import com.example.globalTimes_be.domain.externalApi.dto.NewsApiSourceDto;
+import com.example.globalTimes_be.externalApi.dto.NewsApiArticleDto;
+import com.example.globalTimes_be.externalApi.dto.NewsApiResponseDto;
+import com.example.globalTimes_be.externalApi.dto.NewsApiSourceDto;
 import com.example.globalTimes_be.domain.source.entity.Source;
 import com.example.globalTimes_be.domain.article.repository.ArticleRepository;
 import com.example.globalTimes_be.domain.source.repository.SourceRepository;
