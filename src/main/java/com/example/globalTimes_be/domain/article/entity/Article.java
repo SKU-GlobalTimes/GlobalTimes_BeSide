@@ -55,7 +55,7 @@ public class Article {
     @Column(name = "country", nullable = false)
     private String country;
 
-    @Column(name = "category", nullable = false)
+    @Column(name = "category", nullable = true)
     private String category;
 
     // 정적 팩토리 메소드

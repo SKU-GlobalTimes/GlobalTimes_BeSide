@@ -23,7 +23,7 @@ public class testForFetch {
     @GetMapping("/test")
     public ResponseEntity<String> fetchAndSaveNews() {
         try {
-            newsApiService.fetchAndSaveNews();  // 단일 요청 : 100개 까지.
+            newsApiService.fetchAndSave();  // 단일 요청 : 100개 까지.
             return ResponseEntity.ok("뉴스 데이터가 성공적으로 저장됨.");
         } catch (Exception e) {
             e.printStackTrace();  // ✅ 콘솔에 상세한 에러 로그 출력

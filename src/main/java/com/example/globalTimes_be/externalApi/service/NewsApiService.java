@@ -11,6 +11,7 @@ import com.example.globalTimes_be.domain.source.repository.SourceRepository;
 import com.example.globalTimes_be.domain.source.service.SourceService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -29,7 +30,6 @@ public class NewsApiService {
     private final SourceService sourceService;
 
     private static final List<String> COUNTRIES = List.of("us");
-
     private static final List<String> CATEGORY_LIST = Arrays.asList(
             null, // general
             "business",
@@ -39,6 +39,11 @@ public class NewsApiService {
             "sports",
             "technology"
     );
+    private static final List<String> DOMAINS = Arrays.asList("wsj.com", "bbc.co.uk", "techcrunch.com");
+
+    @Value("${spring.newsapi.api-key}")
+    private String apiKey;
+    private int totalNewArticles = 0;
 
     @Autowired
     public NewsApiService(RestTemplate restTemplate, ArticleRepository articleRepository, SourceRepository sourceRepository, ArticleService articleService, SourceService sourceService) {
@@ -47,61 +52,98 @@ public class NewsApiService {
         this.sourceService = sourceService;
     }
 
-    @Scheduled(fixedRate = 300000, initialDelay = 10000) // 5분마다 실행 ( 초기 10 초 지연 )
-    public void fetchAndSaveNews() {
-        int pageSize = 100; // 최대 100개 요청
+    // 3시간마다 헤드라인 뉴스 Scheduling
+    @Scheduled(cron = "0 0 0/3 * * *")
+    public void scheduledFetchTopHeadlines() {
+        totalNewArticles = 0;
+        fetchTopHeadlines();
+        System.out.println("헤드라인 저장된 신규 기사: " + totalNewArticles + "개");
+    }
 
-        int totalNewArticles = 0;
+    // 매일 자정에 Everything 호출
+    @Scheduled(cron = "0 0 0 * * *") // 매일 자정
+    public void scheduledFetchDomainArticles() {
+        totalNewArticles = 0;
+        fetchDomainArticles();
+        System.out.println("Everything 저장된 신규 기사: " + totalNewArticles + "개");
+    }
 
+    // 최상위 실행 메소드 ( 두 방식 동시에 테스트용 -> Scheduling 제외 )
+    public void fetchAndSave() {
+        totalNewArticles = 0; // 매번 초기화
+        fetchTopHeadlines();
+        fetchDomainArticles();
+        System.out.println("총 저장된 신규 기사: " + totalNewArticles + "개");
+    }
+
+    // Country + Category ( 기존의 헤드라인 호출 ) : 헤드라인이기에 좀 더 자주 스케줄링하고
+    private void fetchTopHeadlines() {
         for (String country : COUNTRIES) {
             for (String category : CATEGORY_LIST) {
                 String categoryParam = (category == null) ? "" : "&category=" + category;
                 String apiUrl = "https://newsapi.org/v2/top-headlines?"
                         + "country=" + country
                         + categoryParam
-                        + "&pageSize=" + pageSize
-                        + "&apiKey=" + "{API_KEY}";
+                        + "&pageSize=" + 100
+                        + "&apiKey=" + apiKey;
 
-                ResponseEntity<NewsApiResponseDto> responseEntity = restTemplate.getForEntity(apiUrl, NewsApiResponseDto.class);
-                NewsApiResponseDto response = responseEntity.getBody();
-
-                if (response == null || response.getArticles() == null || response.getArticles().isEmpty()) {
-                    System.out.println("가져올 뉴스 없음: " + country + " / " + (category == null ? "general" : category));
-                    continue;
-                }
-
-                List<NewsApiArticleDto> articles = response.getArticles();
-                List<String> urls = articles.stream().map(NewsApiArticleDto::getUrl).collect(Collectors.toList());
-
-                // 기존 저장된 URL 조회 (중복 방지)
-                Set<String> existingUrls = articleRepository.findExistingUrls(urls);
-
-                // Source 캐싱
-                List<String> sourceNames = articles.stream()
-                        .map(NewsApiArticleDto::getSource)
-                        .filter(Objects::nonNull)
-                        .map(NewsApiSourceDto::getName)
-                        .filter(Objects::nonNull)
-                        .distinct()
-                        .collect(Collectors.toList());
-
-                Map<String, Source> sourceCache = sourceService.preloadSources(sourceNames);
-
-                String safeCategory = (category == null) ? "general" : category;
-
-                List<Article> articleList = articles.stream()
-                        .filter(articleDto -> !isInvalid(articleDto) && !existingUrls.contains(articleDto.getUrl()))
-                        .map(articleDto -> mapDtoToEntity(articleDto, country, safeCategory, sourceCache)) // 캐시 사용
-                        .collect(Collectors.toList());
-
-                if (!articleList.isEmpty()) {
-                    articleRepository.saveAll(articleList);
-                    System.out.println(country + " / " + (category == null ? "general" : category) + " - " + articleList.size() + "개 저장 완료");
-                    totalNewArticles += articleList.size();
-                }
+                processApiRequest(apiUrl, country, (category == null ? "general" : category));
             }
         }
-        System.out.println("총 저장된 신규 기사: " + totalNewArticles + "개");
+    }
+
+    // 특정 언론사를 고정하여 Fetch : 해당 부분은 Default 응답이 최신순 정렬되서 오기에, 자정마다 스케줄링 하기로.
+    private void fetchDomainArticles() {
+        for (String domain : DOMAINS) {
+            String apiUrl = "https://newsapi.org/v2/everything?"
+                    + "domains=" + domain
+                    + "&pageSize=" + 100
+                    + "&apiKey=" + apiKey;
+
+            processApiRequest(apiUrl, "us", null); // Everything 은 Category 우선 제외
+        }
+    }
+
+    // 공통 API 호출 + 저장 처리
+    private void processApiRequest(String apiUrl, String country, String category) {
+        ResponseEntity<NewsApiResponseDto> responseEntity = restTemplate.getForEntity(apiUrl, NewsApiResponseDto.class);
+        NewsApiResponseDto response = responseEntity.getBody();
+
+        if (response == null || response.getArticles() == null || response.getArticles().isEmpty()) {
+            System.out.println("가져올 뉴스 없음: " + (country != null ? country : "도메인") + " / " + category);
+            return;
+        }
+
+        List<NewsApiArticleDto> articles = response.getArticles();
+        List<String> urls = articles.stream()
+                .map(NewsApiArticleDto::getUrl)
+                .collect(Collectors.toList());
+
+        // 기존 URL 조회
+        Set<String> existingUrls = articleRepository.findExistingUrls(urls);
+
+        // Source 캐시
+        List<String> sourceNames = articles.stream()
+                .map(NewsApiArticleDto::getSource)
+                .filter(Objects::nonNull)
+                .map(NewsApiSourceDto::getName)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+
+        Map<String, Source> sourceCache = sourceService.preloadSources(sourceNames);
+
+        // 유효성 검증 + 저장
+        List<Article> articleList = articles.stream()
+                .filter(articleDto -> !isInvalid(articleDto) && !existingUrls.contains(articleDto.getUrl()))
+                .map(articleDto -> mapDtoToEntity(articleDto, country, category, sourceCache))
+                .collect(Collectors.toList());
+
+        if (!articleList.isEmpty()) {
+            articleRepository.saveAll(articleList);
+            System.out.println((country != null ? country : "도메인") + " / " + category + " - " + articleList.size() + "개 저장 완료");
+            totalNewArticles += articleList.size();
+        }
     }
 
     private boolean isInvalid(NewsApiArticleDto dto){
