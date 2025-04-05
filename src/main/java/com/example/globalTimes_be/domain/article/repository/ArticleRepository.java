@@ -9,6 +9,9 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Set;
+
+import java.util.List;
 
 @Repository
 public interface ArticleRepository extends JpaRepository<Article, Long> {
@@ -20,6 +23,9 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
 
     // 조회수 순 ( 랜딩페이지 Hot News 기반 )
     Page<Article> findAllByOrderByViewCountDesc(Pageable pageable);
+
+    @Query("SELECT a.url FROM Article a WHERE a.url IN :urls")
+    Set<String> findExistingUrls(@Param("urls") List<String> urls);
 
     // 특정 id를 제외한 최신기사 20개 조회
     List<Article> findTop20ByIdNotOrderByPublishedAtDesc(Long id);

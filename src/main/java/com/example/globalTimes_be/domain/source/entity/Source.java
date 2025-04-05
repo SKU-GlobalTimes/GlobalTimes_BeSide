@@ -1,7 +1,6 @@
 package com.example.globalTimes_be.domain.source.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,29 +15,22 @@ public class Source {
     @Column(name = "source_id")
     private Long id;
 
-    @NotNull
     @Column(name = "source_name", unique = true, nullable = false)
     private String sourceName; // 중복 불가능 
 
     @Column(name = "source_api_id", nullable = true)
     private String sourceApiId; // 가끔 null 값이 온다.
 
-
     // 정적 팩토리 메소드
     public static Source createSource(String sourceName, String sourceId) {
 
-        /*
-        if (sourceName == null) {
-            throw new IllegalArgumentException
+        if (sourceName == null || sourceName.isEmpty()) {
+            return null; // ex 터트리기 대신 null 반환
         }
-        언론사 id 말구 name 이 null 일 수가 있나 ? 만약에 보면 ex 터트리도록 하구
-        ( 응 null 오더라 )
-        */
 
         Source source = new Source();
         source.sourceName = sourceName;
-        source.sourceApiId= sourceId;
+        source.sourceApiId = sourceId;
         return source;
     }
-
 }
