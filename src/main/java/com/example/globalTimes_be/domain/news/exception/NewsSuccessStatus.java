@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor
 public enum NewsSuccessStatus implements BaseResponse {
     _SUCCESS_TEST(HttpStatus.OK, "성공 테스트 확인"),
+
+    _CRAWLER_FAIL(HttpStatus.ACCEPTED, "요약정보 제공 불가 (크롤링 에러, 기사 서두 제공)"),
     ;
 
     private final HttpStatus httpStatus;
