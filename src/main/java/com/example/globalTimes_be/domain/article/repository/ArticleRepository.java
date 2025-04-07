@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
@@ -40,4 +41,8 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
     List<Article> searchByDescriptionOrTitle(@Param("text1") String text,
                                              @Param("text2") String translatedText,
                                              Pageable pageable);
+
+    // 현재 시간 기준 이틀 이내인지 확인 ( 기준의 Hot News 요청을 위한 쿼리 메소드 )
+    // publishedAt 으로 찾고 After -> 이후에 내림차순으로.
+    Page<Article> findByPublishedAtAfterOrderByViewCountDesc(LocalDateTime from, Pageable pageable);
 }

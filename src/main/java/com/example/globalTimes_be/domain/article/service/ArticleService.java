@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import java.time.LocalDateTime;
 
 @Service
 public class ArticleService {
@@ -25,12 +26,16 @@ public class ArticleService {
        return articles.map(ArticleResponseDto::fromEntity);
     }
 
-    // 조회수 기준
+    // Hot News : 발행일 기준 이틀 내 기사만 출력되도록 수정 ( 랜딩 페이지네이션 토탈 : 42개 )
     public Page<ArticleResponseDto> getArticlesByViewCount(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<Article> articles = articleRepository.findAllByOrderByViewCountDesc(pageable);
 
-        // Dto 변환
+        // 현재 시간에서 -2일 한 데이터들만 따로 출력 ( -1로 설정하면 출력되는 데이터 없음 )
+        // Free : 하루 이전 기사들까지가 최신. 당일 기사 제공 X
+        LocalDateTime twoDaysAgo = LocalDateTime.now().minusDays(2);
+
+        Page<Article> articles = articleRepository.findByPublishedAtAfterOrderByViewCountDesc(twoDaysAgo, pageable);
+
         return articles.map(ArticleResponseDto::fromEntity);
     }
 }
