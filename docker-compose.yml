@@ -17,6 +17,19 @@ services:
       redis:
         condition: service_healthy
 
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d        # 우리가 만든 default.conf 위치
+      - /etc/letsencrypt:/etc/letsencrypt:ro    # 인증서 마운트 (호스트 -> 컨테이너)
+    depends_on:
+      - my-server
+
   mysql:
     image: mysql:latest
     environment:

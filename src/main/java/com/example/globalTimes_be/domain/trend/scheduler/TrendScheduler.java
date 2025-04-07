@@ -92,8 +92,8 @@ public class TrendScheduler {
 
         //반복문으로 items안에 있는 데이터 가져오기
         for (Element item : items) {
-            // item을 6개 저장했으면 끝냄
-            if(count > 5){
+            // item을 6개 저장하거나 item이 비어있으면 종료
+            if(count > 5 ){
                 break;
             }
             
