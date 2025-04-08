@@ -27,6 +27,10 @@ public class TrendAiService {
 
     // OpenAI 요청 본문 생성 (기사 요약)
     private Map<String, Object> createRequestBody(String content, String language) {
+        if (content == null || language == null) {
+            throw new IllegalArgumentException("content나 language는 null일 수 없습니다.");
+        }
+
         return Map.of(
                 "model", "gpt-4o-mini",
                 "messages", List.of(
