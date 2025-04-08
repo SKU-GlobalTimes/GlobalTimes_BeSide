@@ -13,7 +13,8 @@ public class CorsMvcConfig implements WebMvcConfigurer {
                 .allowedOrigins(
                         "https://global-times.netlify.app",
                         "https://globaltimes.store",
-                        "https://www.globaltimes.store"
+                        "https://www.globaltimes.store",
+                        "http://localhost:5173"
                 )
                 .allowCredentials(true);
     }
