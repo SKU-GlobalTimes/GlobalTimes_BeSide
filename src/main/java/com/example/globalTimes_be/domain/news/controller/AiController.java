@@ -1,6 +1,7 @@
 package com.example.globalTimes_be.domain.news.controller;
 
 import com.example.globalTimes_be.domain.news.exception.NewsErrorStatus;
+import com.example.globalTimes_be.domain.news.exception.NewsSuccessStatus;
 import com.example.globalTimes_be.domain.news.service.AiService;
 import com.example.globalTimes_be.domain.news.service.AiSseService;
 import com.example.globalTimes_be.domain.news.service.NewsService;
@@ -35,7 +36,7 @@ public class AiController implements AiControllerDocs {
             //기사 id에 맞는 content 가져옴
             String content = newsService.getArticleContent(id);
 
-            return ApiResponse.fail(NewsErrorStatus._CRAWLER_ERROR.getResponse(), content);
+            return ApiResponse.fail(NewsSuccessStatus._CRAWLER_FAIL.getResponse(), content);
         }
 
         //해당 기사를 요약함
