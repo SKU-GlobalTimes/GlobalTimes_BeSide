@@ -40,7 +40,7 @@ public class Article {
     @Column( name = "summary", columnDefinition = "TEXT")
     private String summary; // 크롤링 이후 요약된 데이터 ( Gpt Response )
 
-    @Column(name = "url", nullable = false)
+    @Column(name = "url", nullable = false, columnDefinition = "TEXT")
     private String url;
 
     @Column(name = "url_to_image", nullable = false, columnDefinition = "TEXT")
