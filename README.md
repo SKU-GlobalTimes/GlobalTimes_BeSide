@@ -1,41 +1,33 @@
 # 2025 Asia Impact Hackathon - GlobalTimes 
 
-<img width="1257" height="400" alt="Image" src="https://github.com/user-attachments/assets/9c05e9eb-def0-4a6e-8d2d-77d58ed240e7" />
-`2025 Asia Impact Hackathon` :  디지털 기술과 AI 기술을 활용하여 공공 과제를 해결한다. 
+<img width="1257" height="400" alt="Image" src="https://github.com/user-attachments/assets/9c05e9eb-def0-4a6e-8d2d-77d58ed240e7" />  
+
+
+[dchallenge_개요](https://www.dchallenge.org/hackathons/hackathons-2025) 
+
+`2025 Asia Impact Hackathon` :  디지털 기술과 AI 기술을 활용하여 공공 과제를 해결한다.   
+
+
+### 주요 발제
 
 > "동일한 사건이더라도, 각국의 이해관계에 따라 기사들은 다르게 작성된다."  
+(1) 정보 격차, (2) 정보 접근성, (3) 관점의 다양성 해결을 위한 아이디어를 제시하였습니다. 
 
-(1) 정보 격차, (2) 정보 접근성, (3) 관점의 다양성
-해결을 위한 아이디어를 제시하였습니다. 
+[서비스 소개 및 시연 보러가기](https://www.youtube.com/watch?v=nT2tRXkR7pI)  
+[백엔드 회고록 (velog.io)](https://velog.io/@oyisbe/2025-%EC%95%84%EC%8B%9C%EC%95%84-%EC%9E%84%ED%8C%A9%ED%8A%B8-%ED%95%B4%EC%BB%A4%ED%86%A4-%ED%9A%8C%EA%B3%A0)  
 
-[dchallenge_개요](https://www.dchallenge.org/hackathons/hackathons-2025)  
-[서비스 소개 및 시연 영상](https://www.youtube.com/watch?v=nT2tRXkR7pI)
-
-## 팀원 소개
-### Backend
-|컴퓨터공학과 김온유 [@Oyisbe](https://github.com/Oyisbe)|소프트웨어학과 김주영 [@kimjy0117](https://github.com/kimjy0117) | 
+### 팀원 소개 
+| <img src="https://github.com/Oyisbe.png" width="100"/><br>[김온유](https://github.com/Oyisbe) | <img src="https://github.com/kimjy0117.png" width="100"/><br>[김주영](https://github.com/kimjy0117) |
 |:-:|:-:|
 
----
+
 ## 🧱 프로젝트 개요
 개발 기간 : 2025 3/17 ~ 4/13 
 
 전 세계 다양한 국가의 뉴스 데이터를 자동으로 수집하고,  
 이를 기반으로 AI가 요약 및 질의응답 기능을 제공하는 글로벌 뉴스 플랫폼입니다.
 
-
-
-
 <img width="1375" height="840" alt="Image" src="https://github.com/user-attachments/assets/8f0e9f71-b623-4b0c-9c60-23be0744b33b" />  
-
-[백엔드 회고록 (velog.io)](https://velog.io/@oyisbe/2025-%EC%95%84%EC%8B%9C%EC%95%84-%EC%9E%84%ED%8C%A9%ED%8A%B8-%ED%95%B4%EC%BB%A4%ED%86%A4-%ED%9A%8C%EA%B3%A0)  
-
-
-**핵심 목표**
-- 국가별 최신 뉴스 실시간 수집
-- AI 기반 뉴스 요약 및 질의응답
-- 사용자 맞춤형 언어 지원
-- 지속적 배포(CI/CD) 자동화 및 컨테이너 운영
 
 ---
 
