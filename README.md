@@ -5,7 +5,7 @@
 
 [dchallenge_개요](https://www.dchallenge.org/hackathons/hackathons-2025) 
 
-`2025 Asia Impact Hackathon` :  디지털 기술과 AI 기술을 활용하여 공공 과제를 해결한다.   
+`2025 Asia Impact Hackathon` :  디지털 기술과 AI 기술을 활용하여 공공 과제를 해결하는 것에 주 목적을 둔다.
 
 
 ### 주요 발제
@@ -13,11 +13,11 @@
 > "동일한 사건이더라도, 각국의 이해관계에 따라 기사들은 다르게 작성된다."  
 (1) 정보 격차, (2) 정보 접근성, (3) 관점의 다양성 해결을 위한 아이디어를 제시하였습니다. 
 
-[서비스 소개 및 시연 보러가기](https://www.youtube.com/watch?v=nT2tRXkR7pI)  
+[서비스 소개 및 시연 보러가기](https://www.dchallenge.org/hackathon-2025/globaltimes)  
 [백엔드 회고록 (velog.io)](https://velog.io/@oyisbe/2025-%EC%95%84%EC%8B%9C%EC%95%84-%EC%9E%84%ED%8C%A9%ED%8A%B8-%ED%95%B4%EC%BB%A4%ED%86%A4-%ED%9A%8C%EA%B3%A0)  
 
-### 팀원 소개 
-| <img src="https://github.com/Oyisbe.png" width="100"/><br>[김온유](https://github.com/Oyisbe) | <img src="https://github.com/kimjy0117.png" width="100"/><br>[김주영](https://github.com/kimjy0117) |
+### Backend 팀원 소개 
+| <img src="https://github.com/Oyisbe.png" width="100"/><br>컴퓨터공학과<br>[김온유](https://github.com/Oyisbe) | <img src="https://github.com/kimjy0117.png" width="100"/><br>소프트웨어학과<br>[김주영](https://github.com/kimjy0117) |
 |:-:|:-:|
 
 
