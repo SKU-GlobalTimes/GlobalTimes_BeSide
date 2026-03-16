@@ -2,6 +2,7 @@ package com.example.globalTimes_be.externalApi.service;
 
 import com.example.globalTimes_be.domain.article.entity.Article;
 import com.example.globalTimes_be.domain.article.service.ArticleService;
+import com.example.globalTimes_be.externalApi.config.NewsFetchConfig;
 import com.example.globalTimes_be.externalApi.dto.NewsApiArticleDto;
 import com.example.globalTimes_be.externalApi.dto.NewsApiResponseDto;
 import com.example.globalTimes_be.externalApi.dto.NewsApiSourceDto;
@@ -21,6 +22,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.*;
 import java.util.stream.Collectors;
 
+
 // 전적인 API 호출 ( 외부 ) 처리 및 관리하는 서비스 레이어
 @Slf4j
 @Service
@@ -29,28 +31,18 @@ public class NewsApiService {
     private final RestTemplate restTemplate;
     private final ArticleRepository articleRepository;
     private final SourceService sourceService;
-
-    private static final List<String> COUNTRIES = List.of("us");
-    private static final List<String> CATEGORY_LIST = Arrays.asList(
-            null, // general
-            "business",
-            "entertainment",
-            "health",
-            "science",
-            "sports",
-            "technology"
-    );
-    private static final List<String> DOMAINS = Arrays.asList("wsj.com", "bbc.co.uk", "techcrunch.com");
+    private final NewsFetchConfig newsFetchConfig;
 
     @Value("${spring.newsapi.api-key}")
     private String apiKey;
     private int totalNewArticles = 0;
 
     @Autowired
-    public NewsApiService(RestTemplate restTemplate, ArticleRepository articleRepository, SourceRepository sourceRepository, ArticleService articleService, SourceService sourceService) {
+    public NewsApiService(RestTemplate restTemplate, ArticleRepository articleRepository, SourceRepository sourceRepository, ArticleService articleService, SourceService sourceService, NewsFetchConfig newsFetchConfig) {
         this.restTemplate = restTemplate;
         this.articleRepository = articleRepository;
         this.sourceService = sourceService;
+        this.newsFetchConfig = newsFetchConfig;
     }
 
     @PostConstruct
@@ -98,19 +90,18 @@ public class NewsApiService {
     }
     */
 
-    // Country + Category ( 기존의 헤드라인 호출 ) : 헤드라인이기에 좀 더 자주 스케줄링하고
+    // Country + Category 조합으로 헤드라인 수집 (국가/카테고리는 NewsFetchConfig에서 관리)
     private void fetchTopHeadlines(boolean isInit) {
-        for (String country : COUNTRIES) {
-            for (String category : CATEGORY_LIST) {
+        for (String country : newsFetchConfig.getCountries()) {
+            for (String category : newsFetchConfig.getCategories()) {
                 try {
-                    String categoryParam = (category == null) ? "" : "&category=" + category;
                     String apiUrl = "https://newsapi.org/v2/top-headlines?"
                             + "country=" + country
-                            + categoryParam
-                            + "&pageSize=" + 100
+                            + "&category=" + category
+                            + "&pageSize=" + newsFetchConfig.getPageSize()
                             + "&apiKey=" + apiKey;
 
-                    processApiRequest(apiUrl, country, (category == null ? "general" : category));
+                    processApiRequest(apiUrl, country, category);
                 } catch (Exception e) {
                     log.error("[헤드라인] {} / {} 처리 중 오류 발생", country, category, e);
                 }
@@ -122,14 +113,14 @@ public class NewsApiService {
     }
 
     private void fetchDomainArticles(boolean isInit) {
-        for (String domain : DOMAINS) {
+        for (String domain : newsFetchConfig.getDomains()) {
             try {
                 String apiUrl = "https://newsapi.org/v2/everything?"
                         + "domains=" + domain
-                        + "&pageSize=" + 100
+                        + "&pageSize=" + newsFetchConfig.getPageSize()
                         + "&apiKey=" + apiKey;
 
-                processApiRequest(apiUrl, "us", null);
+                processApiRequest(apiUrl, null, null);
             } catch (Exception e) {
                 log.error("[Everything] {} 도메인 처리 중 오류 발생", domain, e);
             }
