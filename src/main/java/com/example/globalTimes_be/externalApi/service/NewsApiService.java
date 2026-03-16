@@ -120,7 +120,8 @@ public class NewsApiService {
                         + "&pageSize=" + newsFetchConfig.getPageSize()
                         + "&apiKey=" + apiKey;
 
-                processApiRequest(apiUrl, null, null);
+                // 도메인 기사는 특정 국가에 종속되지 않으므로 "global"로 처리
+                processApiRequest(apiUrl, "global", "general");
             } catch (Exception e) {
                 log.error("[Everything] {} 도메인 처리 중 오류 발생", domain, e);
             }
