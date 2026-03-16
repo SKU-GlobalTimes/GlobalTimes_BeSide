@@ -12,8 +12,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
-import java.util.List;
-
 @Repository
 public interface ArticleRepository extends JpaRepository<Article, Long> {
 
@@ -45,4 +43,19 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
     // 현재 시간 기준 이틀 이내인지 확인 ( 기준의 Hot News 요청을 위한 쿼리 메소드 )
     // publishedAt 으로 찾고 After -> 이후에 내림차순으로.
     Page<Article> findByPublishedAtAfterOrderByViewCountDesc(LocalDateTime from, Pageable pageable);
+
+    // 관리자용: country/category/publishedAt 범위 필터 + 페이징
+    @Query("SELECT a FROM Article a " +
+            "WHERE (:country IS NULL OR a.country = :country) " +
+            "AND (:category IS NULL OR a.category = :category) " +
+            "AND (:from IS NULL OR a.publishedAt >= :from) " +
+            "AND (:to IS NULL OR a.publishedAt <= :to) " +
+            "ORDER BY a.publishedAt DESC")
+    Page<Article> findByFilters(
+            @Param("country") String country,
+            @Param("category") String category,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to,
+            Pageable pageable
+    );
 }
