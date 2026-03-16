@@ -133,21 +133,23 @@ public class NewsApiService {
 
     // 공통 API 호출 + 저장 처리
     private void processApiRequest(String apiUrl, String country, String category) {
+        String label = country + "/" + category;
         try {
             ResponseEntity<NewsApiResponseDto> responseEntity = restTemplate.getForEntity(apiUrl, NewsApiResponseDto.class);
             NewsApiResponseDto response = responseEntity.getBody();
 
             if (response == null || response.getArticles() == null || response.getArticles().isEmpty()) {
-                log.info("가져올 뉴스 없음: {} / {}", (country != null ? country : "도메인"), category);
+                log.info("[수집 통계] {} | 응답 없음(0건)", label);
                 return;
             }
 
             List<NewsApiArticleDto> articles = response.getArticles();
+            int total = articles.size();
+
+            // 기존 URL 조회
             List<String> urls = articles.stream()
                     .map(NewsApiArticleDto::getUrl)
                     .collect(Collectors.toList());
-
-            // 기존 URL 조회
             Set<String> existingUrls = articleRepository.findExistingUrls(urls);
 
             // Source 캐시
@@ -158,22 +160,32 @@ public class NewsApiService {
                     .filter(Objects::nonNull)
                     .distinct()
                     .collect(Collectors.toList());
-
             Map<String, Source> sourceCache = sourceService.preloadSources(sourceNames);
+
+            // 단계별 카운트 계산
+            long invalidCount = articles.stream()
+                    .filter(this::isInvalid)
+                    .count();
+            long duplicateCount = articles.stream()
+                    .filter(dto -> !isInvalid(dto) && existingUrls.contains(dto.getUrl()))
+                    .count();
 
             // 유효성 검증 + 저장
             List<Article> articleList = articles.stream()
-                    .filter(articleDto -> !isInvalid(articleDto) && !existingUrls.contains(articleDto.getUrl()))
-                    .map(articleDto -> mapDtoToEntity(articleDto, country, category, sourceCache))
+                    .filter(dto -> !isInvalid(dto) && !existingUrls.contains(dto.getUrl()))
+                    .map(dto -> mapDtoToEntity(dto, country, category, sourceCache))
                     .collect(Collectors.toList());
 
             if (!articleList.isEmpty()) {
                 articleRepository.saveAll(articleList);
-                log.info("{} / {} - {}개 저장 완료", (country != null ? country : "도메인"), category, articleList.size());
                 totalNewArticles += articleList.size();
             }
+
+            log.info("[수집 통계] {} | 응답:{}, invalid:{}, 중복:{}, 저장:{}",
+                    label, total, invalidCount, duplicateCount, articleList.size());
+
         } catch (Exception e) {
-            log.error("[API 호출] {} / {} 처리 중 오류 발생", (country != null ? country : "도메인"), category, e);
+            log.error("[수집 오류] {} 처리 중 오류 발생", label, e);
         }
     }
 
