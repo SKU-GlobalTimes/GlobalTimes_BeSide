@@ -47,7 +47,8 @@ public class NewsApiService {
         this.newsFetchConfig = newsFetchConfig;
     }
 
-    @PostConstruct
+    // @PostConstruct 비활성화 (개발 중 API 할당량 절약 목적, 수집 테스트 시 활성화)
+    // @PostConstruct
     public void init() {
         try {
             resetCounters();
