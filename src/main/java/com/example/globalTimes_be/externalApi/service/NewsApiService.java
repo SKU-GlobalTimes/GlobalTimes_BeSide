@@ -19,6 +19,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -191,15 +192,27 @@ public class NewsApiService {
 
     private boolean isInvalid(NewsApiArticleDto dto){
         // 하나라도 null 인 케이스들을 방지
-        return dto.getAuthor() == null ||
+        if (dto.getAuthor() == null ||
                 dto.getTitle() == null ||
                 dto.getDescription() == null ||
                 dto.getContent() == null ||
                 dto.getUrl() == null ||
                 dto.getUrlToImage() == null ||
+                dto.getPublishedAt() == null ||
                 dto.getSource() == null ||
                 dto.getSource().getName() == null ||
-                dto.getSource().getName().isEmpty();
+                dto.getSource().getName().isEmpty()) {
+            return true;
+        }
+        // publishedAt ISO 8601 형식 검증 (파싱 실패 시 invalid 처리)
+        try {
+            OffsetDateTime.parse(dto.getPublishedAt());
+        } catch (Exception e) {
+            log.warn("[유효성 검사] publishedAt 형식 오류 - url: {}, publishedAt: {}",
+                    dto.getUrl(), dto.getPublishedAt());
+            return true;
+        }
+        return false;
     }
 
     private Article mapDtoToEntity(NewsApiArticleDto articleDto, String countryCode,
