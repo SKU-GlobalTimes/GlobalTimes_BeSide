@@ -148,14 +148,13 @@ public class TrendScheduler {
                     .urlToImage(urlToImage)
                     .build();
 
-            //실검 dto 생성 확인
-            log.info("실검 키워드 생성 확인: {}", trendDTO.getKeyword());
-
             //리스트에 추가
             trendDTOS.add(trendDTO);
             
             count++;
         }
+
+        log.info("[트렌드 수집] {} | 키워드 {}개 저장", countryCode, trendDTOS.size());
         return trendDTOS;
     }
 }
