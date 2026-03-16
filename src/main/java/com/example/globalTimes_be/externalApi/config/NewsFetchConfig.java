@@ -61,4 +61,20 @@ public class NewsFetchConfig {
     public int getPageSize() {
         return 100;
     }
+
+    /**
+     * 수집 실행 1회당 최대 API 요청 수 제한
+     * 무료 플랜: 100 req/24h → 초기 적재(1회) + 스케줄링(2~3회) 고려해 여유 있게 설정
+     */
+    public int getMaxRequestsPerRun() {
+        return 30;
+    }
+
+    /**
+     * API 요청 간 딜레이 (ms)
+     * rate limit 방지를 위해 요청 사이에 짧은 대기 시간 추가
+     */
+    public long getRequestDelayMs() {
+        return 200;
+    }
 }

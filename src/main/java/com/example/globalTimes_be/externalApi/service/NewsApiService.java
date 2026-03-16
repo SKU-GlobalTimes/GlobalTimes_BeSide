@@ -37,6 +37,7 @@ public class NewsApiService {
     @Value("${spring.newsapi.api-key}")
     private String apiKey;
     private int totalNewArticles = 0;
+    private int requestCount = 0;
 
     @Autowired
     public NewsApiService(RestTemplate restTemplate, ArticleRepository articleRepository, SourceRepository sourceRepository, ArticleService articleService, SourceService sourceService, NewsFetchConfig newsFetchConfig) {
@@ -49,19 +50,19 @@ public class NewsApiService {
     @PostConstruct
     public void init() {
         try {
-            fetchTopHeadlines(true);    // 뉴스 초기 적재
+            resetCounters();
+            fetchTopHeadlines(true);
             fetchDomainArticles(true);
         } catch (Exception e) {
             log.error("[초기화] 데이터 초기 적재 중 오류 발생", e);
         }
-
     }
 
     // 4시간마다 헤드라인 뉴스 Scheduling
     @Scheduled(cron = "0 0 0/4 * * *")
     public void scheduledTopHeadlines() {
         try {
-            totalNewArticles = 0;
+            resetCounters();
             fetchTopHeadlines(false);
             log.info("[스케줄링] 헤드라인 저장된 신규 기사: {}개", totalNewArticles);
         } catch (Exception e) {
@@ -69,16 +70,20 @@ public class NewsApiService {
         }
     }
 
-
     @Scheduled(cron = "0 0 0 * * *")
     public void scheduledFetchFixed() {
         try {
-            totalNewArticles = 0;
+            resetCounters();
             fetchDomainArticles(false);
             log.info("[스케줄링] Everything 저장된 신규 기사: {}개", totalNewArticles);
         } catch (Exception e) {
             log.error("[스케줄링] Everything 뉴스 수집 중 오류 발생", e);
         }
+    }
+
+    private void resetCounters() {
+        totalNewArticles = 0;
+        requestCount = 0;
     }
 
     // 최상위 실행 메소드 ( 두 방식 동시에 테스트용 -> Scheduling 제외 )
@@ -93,8 +98,14 @@ public class NewsApiService {
 
     // Country + Category 조합으로 헤드라인 수집 (국가/카테고리는 NewsFetchConfig에서 관리)
     private void fetchTopHeadlines(boolean isInit) {
+        outer:
         for (String country : newsFetchConfig.getCountries()) {
             for (String category : newsFetchConfig.getCategories()) {
+                if (requestCount >= newsFetchConfig.getMaxRequestsPerRun()) {
+                    log.warn("[요청 제한] 최대 요청 수({})에 도달해 헤드라인 수집을 중단합니다.",
+                            newsFetchConfig.getMaxRequestsPerRun());
+                    break outer;
+                }
                 try {
                     String apiUrl = "https://newsapi.org/v2/top-headlines?"
                             + "country=" + country
@@ -102,33 +113,50 @@ public class NewsApiService {
                             + "&pageSize=" + newsFetchConfig.getPageSize()
                             + "&apiKey=" + apiKey;
 
+                    requestCount++;
                     processApiRequest(apiUrl, country, category);
+                    Thread.sleep(newsFetchConfig.getRequestDelayMs());
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    log.warn("[헤드라인] 딜레이 중 인터럽트 발생");
+                    break outer;
                 } catch (Exception e) {
                     log.error("[헤드라인] {} / {} 처리 중 오류 발생", country, category, e);
                 }
             }
         }
         if (isInit) {
-            log.info("[초기 적재] 헤드라인 저장된 신규 기사: {}개", totalNewArticles);
+            log.info("[초기 적재] 헤드라인 저장된 신규 기사: {}개 (총 요청: {}회)", totalNewArticles, requestCount);
         }
     }
 
     private void fetchDomainArticles(boolean isInit) {
         for (String domain : newsFetchConfig.getDomains()) {
+            if (requestCount >= newsFetchConfig.getMaxRequestsPerRun()) {
+                log.warn("[요청 제한] 최대 요청 수({})에 도달해 도메인 수집을 중단합니다.",
+                        newsFetchConfig.getMaxRequestsPerRun());
+                break;
+            }
             try {
                 String apiUrl = "https://newsapi.org/v2/everything?"
                         + "domains=" + domain
                         + "&pageSize=" + newsFetchConfig.getPageSize()
                         + "&apiKey=" + apiKey;
 
+                requestCount++;
                 // 도메인 기사는 특정 국가에 종속되지 않으므로 "global"로 처리
                 processApiRequest(apiUrl, "global", "general");
+                Thread.sleep(newsFetchConfig.getRequestDelayMs());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.warn("[Everything] 딜레이 중 인터럽트 발생");
+                break;
             } catch (Exception e) {
                 log.error("[Everything] {} 도메인 처리 중 오류 발생", domain, e);
             }
         }
         if (isInit) {
-            log.info("[초기 적재] Everything 저장된 신규 기사: {}개", totalNewArticles);
+            log.info("[초기 적재] Everything 저장된 신규 기사: {}개 (총 요청: {}회)", totalNewArticles, requestCount);
         }
     }
 
