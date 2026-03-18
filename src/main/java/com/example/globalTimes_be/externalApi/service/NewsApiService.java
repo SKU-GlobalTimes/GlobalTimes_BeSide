@@ -35,6 +35,12 @@ public class NewsApiService {
 
     @Value("${spring.newsapi.api-key}")
     private String apiKey;
+
+    // false = 로컬 개발 중 스케줄러/초기 적재 비활성화 (API 할당량 절약)
+    // 수집 테스트 시 application.yml 에서 news-fetch.enabled: true 로 변경
+    @Value("${news-fetch.enabled:false}")
+    private boolean fetchEnabled;
+
     private int totalNewArticles = 0;
 
     @Autowired
@@ -45,20 +51,26 @@ public class NewsApiService {
         this.newsFetchConfig = newsFetchConfig;
     }
 
+    // 수집 테스트 시 news-fetch.enabled: true 로 변경 후 재실행
     @PostConstruct
     public void init() {
+        if (!fetchEnabled) {
+            log.info("[초기화] news-fetch.enabled=false → 초기 적재 건너뜀 (API 할당량 절약)");
+            return;
+        }
         try {
-            fetchTopHeadlines(true);    // 뉴스 초기 적재
+            totalNewArticles = 0;
+            fetchTopHeadlines(true);
             fetchDomainArticles(true);
         } catch (Exception e) {
             log.error("[초기화] 데이터 초기 적재 중 오류 발생", e);
         }
-
     }
 
     // 4시간마다 헤드라인 뉴스 Scheduling
     @Scheduled(cron = "0 0 0/4 * * *")
     public void scheduledTopHeadlines() {
+        if (!fetchEnabled) return;
         try {
             totalNewArticles = 0;
             fetchTopHeadlines(false);
@@ -68,9 +80,9 @@ public class NewsApiService {
         }
     }
 
-
     @Scheduled(cron = "0 0 0 * * *")
     public void scheduledFetchFixed() {
+        if (!fetchEnabled) return;
         try {
             totalNewArticles = 0;
             fetchDomainArticles(false);
