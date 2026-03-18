@@ -2,8 +2,8 @@ package com.example.globalTimes_be.domain.article.service;
 
 import com.example.globalTimes_be.domain.article.dto.AdminArticleSearchDto;
 import com.example.globalTimes_be.domain.article.repository.ArticleRepository;
-import com.example.globalTimes_be.global.apiPayload.code.PagedResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -18,7 +18,7 @@ public class AdminArticleService {
     private final ArticleRepository articleRepository;
 
     @Transactional(readOnly = true)
-    public PagedResponse<AdminArticleSearchDto> searchArticles(
+    public Page<AdminArticleSearchDto> searchArticles(
             String country,
             String category,
             LocalDateTime from,
@@ -27,9 +27,7 @@ public class AdminArticleService {
             int size
     ) {
         Pageable pageable = PageRequest.of(page, size);
-        return PagedResponse.from(
-                articleRepository.findByFilters(country, category, from, to, pageable)
-                        .map(AdminArticleSearchDto::fromEntity)
-        );
+        return articleRepository.findByFilters(country, category, from, to, pageable)
+                .map(AdminArticleSearchDto::fromEntity);
     }
 }

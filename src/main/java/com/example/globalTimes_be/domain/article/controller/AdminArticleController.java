@@ -3,12 +3,12 @@ package com.example.globalTimes_be.domain.article.controller;
 import com.example.globalTimes_be.domain.article.dto.AdminArticleSearchDto;
 import com.example.globalTimes_be.domain.article.service.AdminArticleService;
 import com.example.globalTimes_be.global.apiPayload.code.ApiResponse;
-import com.example.globalTimes_be.global.apiPayload.code.PagedResponse;
 import com.example.globalTimes_be.global.apiPayload.code.status.GlobalSuccessStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -48,7 +48,7 @@ public class AdminArticleController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        PagedResponse<AdminArticleSearchDto> result =
+        Page<AdminArticleSearchDto> result =
                 adminArticleService.searchArticles(country, category, from, to, page, size);
 
         return ApiResponse.success(GlobalSuccessStatus._OK.getResponse(), result);
