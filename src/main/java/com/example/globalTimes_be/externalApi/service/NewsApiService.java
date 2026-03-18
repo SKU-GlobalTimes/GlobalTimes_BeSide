@@ -19,6 +19,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -42,6 +43,7 @@ public class NewsApiService {
     private boolean fetchEnabled;
 
     private int totalNewArticles = 0;
+    private int requestCount = 0;
 
     @Autowired
     public NewsApiService(RestTemplate restTemplate, ArticleRepository articleRepository, SourceRepository sourceRepository, ArticleService articleService, SourceService sourceService, NewsFetchConfig newsFetchConfig) {
@@ -60,6 +62,7 @@ public class NewsApiService {
         }
         try {
             totalNewArticles = 0;
+            requestCount = 0;
             fetchTopHeadlines(true);
             fetchDomainArticles(true);
         } catch (Exception e) {
@@ -73,6 +76,7 @@ public class NewsApiService {
         if (!fetchEnabled) return;
         try {
             totalNewArticles = 0;
+            requestCount = 0;
             fetchTopHeadlines(false);
             log.info("[스케줄링] 헤드라인 저장된 신규 기사: {}개", totalNewArticles);
         } catch (Exception e) {
@@ -85,6 +89,7 @@ public class NewsApiService {
         if (!fetchEnabled) return;
         try {
             totalNewArticles = 0;
+            requestCount = 0;
             fetchDomainArticles(false);
             log.info("[스케줄링] Everything 저장된 신규 기사: {}개", totalNewArticles);
         } catch (Exception e) {
@@ -104,8 +109,13 @@ public class NewsApiService {
 
     // Country + Category 조합으로 헤드라인 수집 (국가/카테고리는 NewsFetchConfig에서 관리)
     private void fetchTopHeadlines(boolean isInit) {
+        outer:
         for (String country : newsFetchConfig.getCountries()) {
             for (String category : newsFetchConfig.getCategories()) {
+                if (requestCount >= newsFetchConfig.getMaxRequestsPerRun()) {
+                    log.warn("[요청 제한] 최대 요청 수({})에 도달해 헤드라인 수집을 중단합니다.", newsFetchConfig.getMaxRequestsPerRun());
+                    break outer;
+                }
                 try {
                     String apiUrl = "https://newsapi.org/v2/top-headlines?"
                             + "country=" + country
@@ -113,53 +123,71 @@ public class NewsApiService {
                             + "&pageSize=" + newsFetchConfig.getPageSize()
                             + "&apiKey=" + apiKey;
 
+                    requestCount++;
                     processApiRequest(apiUrl, country, category);
+                    Thread.sleep(newsFetchConfig.getRequestDelayMs());
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    log.warn("[헤드라인] 딜레이 중 인터럽트 발생");
+                    break outer;
                 } catch (Exception e) {
                     log.error("[헤드라인] {} / {} 처리 중 오류 발생", country, category, e);
                 }
             }
         }
         if (isInit) {
-            log.info("[초기 적재] 헤드라인 저장된 신규 기사: {}개", totalNewArticles);
+            log.info("[초기 적재] 헤드라인 저장된 신규 기사: {}개 (총 요청: {}회)", totalNewArticles, requestCount);
         }
     }
 
     private void fetchDomainArticles(boolean isInit) {
         for (String domain : newsFetchConfig.getDomains()) {
+            if (requestCount >= newsFetchConfig.getMaxRequestsPerRun()) {
+                log.warn("[요청 제한] 최대 요청 수({})에 도달해 도메인 수집을 중단합니다.", newsFetchConfig.getMaxRequestsPerRun());
+                break;
+            }
             try {
                 String apiUrl = "https://newsapi.org/v2/everything?"
                         + "domains=" + domain
                         + "&pageSize=" + newsFetchConfig.getPageSize()
                         + "&apiKey=" + apiKey;
 
+                requestCount++;
                 // 도메인 기사는 특정 국가에 종속되지 않으므로 "global"로 처리
                 processApiRequest(apiUrl, "global", "general");
+                Thread.sleep(newsFetchConfig.getRequestDelayMs());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.warn("[Everything] 딜레이 중 인터럽트 발생");
+                break;
             } catch (Exception e) {
                 log.error("[Everything] {} 도메인 처리 중 오류 발생", domain, e);
             }
         }
         if (isInit) {
-            log.info("[초기 적재] Everything 저장된 신규 기사: {}개", totalNewArticles);
+            log.info("[초기 적재] Everything 저장된 신규 기사: {}개 (총 요청: {}회)", totalNewArticles, requestCount);
         }
     }
 
     // 공통 API 호출 + 저장 처리
     private void processApiRequest(String apiUrl, String country, String category) {
+        String label = country + "/" + category;
         try {
             ResponseEntity<NewsApiResponseDto> responseEntity = restTemplate.getForEntity(apiUrl, NewsApiResponseDto.class);
             NewsApiResponseDto response = responseEntity.getBody();
 
             if (response == null || response.getArticles() == null || response.getArticles().isEmpty()) {
-                log.info("가져올 뉴스 없음: {} / {}", (country != null ? country : "도메인"), category);
+                log.info("[수집 통계] {} | 응답 없음", label);
                 return;
             }
 
             List<NewsApiArticleDto> articles = response.getArticles();
+            int total = articles.size();
+
+            // 기존 URL 조회
             List<String> urls = articles.stream()
                     .map(NewsApiArticleDto::getUrl)
                     .collect(Collectors.toList());
-
-            // 기존 URL 조회
             Set<String> existingUrls = articleRepository.findExistingUrls(urls);
 
             // Source 캐시
@@ -170,36 +198,54 @@ public class NewsApiService {
                     .filter(Objects::nonNull)
                     .distinct()
                     .collect(Collectors.toList());
-
             Map<String, Source> sourceCache = sourceService.preloadSources(sourceNames);
 
-            // 유효성 검증 + 저장
+            // 단계별 카운트 집계
+            long invalidCount = articles.stream().filter(this::isInvalid).count();
+            long duplicateCount = articles.stream()
+                    .filter(dto -> !isInvalid(dto) && existingUrls.contains(dto.getUrl()))
+                    .count();
+
+            // 유효성 검증 + 중복 제거 + 저장
             List<Article> articleList = articles.stream()
-                    .filter(articleDto -> !isInvalid(articleDto) && !existingUrls.contains(articleDto.getUrl()))
-                    .map(articleDto -> mapDtoToEntity(articleDto, country, category, sourceCache))
+                    .filter(dto -> !isInvalid(dto) && !existingUrls.contains(dto.getUrl()))
+                    .map(dto -> mapDtoToEntity(dto, country, category, sourceCache))
                     .collect(Collectors.toList());
 
             if (!articleList.isEmpty()) {
                 articleRepository.saveAll(articleList);
-                log.info("{} / {} - {}개 저장 완료", (country != null ? country : "도메인"), category, articleList.size());
                 totalNewArticles += articleList.size();
             }
+
+            log.info("[수집 통계] {} | 응답:{}, invalid:{}, 중복:{}, 저장:{}",
+                    label, total, invalidCount, duplicateCount, articleList.size());
+
         } catch (Exception e) {
-            log.error("[API 호출] {} / {} 처리 중 오류 발생", (country != null ? country : "도메인"), category, e);
+            log.error("[수집 오류] {} 처리 중 오류 발생", label, e);
         }
     }
 
-    private boolean isInvalid(NewsApiArticleDto dto){
-        // 하나라도 null 인 케이스들을 방지
-        return dto.getAuthor() == null ||
+    private boolean isInvalid(NewsApiArticleDto dto) {
+        if (dto.getAuthor() == null ||
                 dto.getTitle() == null ||
                 dto.getDescription() == null ||
                 dto.getContent() == null ||
                 dto.getUrl() == null ||
                 dto.getUrlToImage() == null ||
+                dto.getPublishedAt() == null ||
                 dto.getSource() == null ||
                 dto.getSource().getName() == null ||
-                dto.getSource().getName().isEmpty();
+                dto.getSource().getName().isEmpty()) {
+            return true;
+        }
+        try {
+            OffsetDateTime.parse(dto.getPublishedAt());
+        } catch (Exception e) {
+            log.warn("[유효성 검사] publishedAt 형식 오류 - url: {}, publishedAt: {}",
+                    dto.getUrl(), dto.getPublishedAt());
+            return true;
+        }
+        return false;
     }
 
     private Article mapDtoToEntity(NewsApiArticleDto articleDto, String countryCode,
