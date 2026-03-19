@@ -39,22 +39,24 @@ public class TrendScheduler {
                 (Arrays.asList("KR", "AU", "AT", "BR", "CA", "CO", "DK", "EG", "FR", "DE", "GR", "HK", "IN",
                         "ID", "IT", "JP", "MY", "MX", "NL", "RU", "SG", "TW", "TR", "GB", "US", "ES"));
 
-        //나라 코드에 따른 실검 리스트 생성 후 저장
+        int totalKeywords = 0;
+        int successCount = 0;
+
         for (String countryCode : countries){
-            //나라 코드에 따른 실검 리스트 생성
             List<TrendDTO> trendDTOS = createTrendDTOS(countryCode);
 
-            //실검 리스트가 비어있으면 패스
             if(trendDTOS == null || trendDTOS.isEmpty()){
                 continue;
             }
 
-            //나라 코드를 키로 redis에 저장된 값 파기
             trendService.deleteTrendKeywords(countryCode);
-
-            //나라 코드를 키로 redis에 저장
             trendService.saveTrendKeywords(countryCode, trendDTOS);
+
+            totalKeywords += trendDTOS.size();
+            successCount++;
         }
+
+        log.info("[트렌드 수집] 완료 | {}개국, 총 {}개 키워드 저장", successCount, totalKeywords);
     }
 
     // 나라별 실검 리스트 생성
@@ -154,7 +156,6 @@ public class TrendScheduler {
             count++;
         }
 
-        log.info("[트렌드 수집] {} | 키워드 {}개 저장", countryCode, trendDTOS.size());
         return trendDTOS;
     }
 }

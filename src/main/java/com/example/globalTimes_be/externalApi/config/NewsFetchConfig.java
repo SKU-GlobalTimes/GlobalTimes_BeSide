@@ -16,13 +16,9 @@ public class NewsFetchConfig {
      * 지원 코드: https://newsapi.org/docs/endpoints/top-headlines
      */
     public List<String> getCountries() {
-        return List.of(
-                "us",   // 미국
-                "gb",   // 영국
-                "fr",   // 프랑스
-                "de",   // 독일
-                "kr"    // 한국
-        );
+        // 무료 플랜에서는 us만 실질적인 데이터를 반환함
+        // 다국어 수집은 RssNewsService(RSS 파이프라인)에서 담당
+        return List.of("us");
     }
 
     /**
