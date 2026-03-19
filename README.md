@@ -78,6 +78,19 @@ PowerShell 기준 실행 예시는 아래와 같습니다.
 .\gradlew.bat bootRun
 ```
 
+git branch flow 
+
+git switch develop
+git pull
+git switch -c "chore/#새번호-news-fetch-metrics"
+
+이후 생성된 branch 에서 처음 push 하는 경우 upstream 이 없기에, 
+git push -u origin HEAD 
+
+-> git push 로 작업 이어가기. 
+
+
+
 ### 3) 초기 적재(@PostConstruct) 데이터 확인
 - 애플리케이션 실행 로그에서 `NewsApiService` 관련 `[초기 적재]`, `[스케줄링]`, `[초기화]` 로그를 확인합니다.
 - MySQL 컨테이너 접속 후 `article` 등 주요 테이블 row 수를 조회하면 실제 적재 건수를 확인할 수 있습니다.
