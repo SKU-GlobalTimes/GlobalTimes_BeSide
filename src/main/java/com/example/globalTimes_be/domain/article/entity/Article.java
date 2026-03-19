@@ -58,7 +58,11 @@ public class Article {
     @Column(name = "category", nullable = true)
     private String category;
 
-    // 정적 팩토리 메소드
+    // 원문 언어 코드 (ex. en, ko, fr, de, ja, ar, zh) - RSS 수집 기사에 사용
+    @Column(name = "language", nullable = true)
+    private String language;
+
+    // News API용 정적 팩토리 메소드 (publishedAt: ISO 8601 String)
     public static Article createArticle(Source source, String author, String title,
                                         String description, String content,
                                         String url, String urlToImage, String publishedAt,
@@ -73,14 +77,39 @@ public class Article {
         article.summary = null;
         article.url = url;
         article.urlToImage = urlToImage;
-        // article.viewCount = (viewCount != null) ? viewCount : 0L;
         article.viewCount = 0L;
         article.country = country;
         article.category = category;
+        article.language = "en";
 
         // ISO 8601 형식 변환
         OffsetDateTime offsetDateTime = OffsetDateTime.parse(publishedAt);
-        article.publishedAt = offsetDateTime.toLocalDateTime();  // UTC → LocalDateTime 변환
+        article.publishedAt = offsetDateTime.toLocalDateTime();
+
+        return article;
+    }
+
+    // RSS 수집용 정적 팩토리 메소드 (publishedAt: 이미 파싱된 LocalDateTime)
+    public static Article createRssArticle(Source source, String author, String title,
+                                           String description, String content,
+                                           String url, String urlToImage,
+                                           LocalDateTime publishedAt,
+                                           String country, String category, String language) {
+        Article article = new Article();
+        article.source = source;
+        article.author = (author != null && !author.isBlank()) ? author : "Unknown";
+        article.title = title;
+        article.description = (description != null) ? description : "";
+        article.content = (content != null && !content.isBlank()) ? content : article.description;
+        article.crawledContent = null;
+        article.summary = null;
+        article.url = url;
+        article.urlToImage = (urlToImage != null) ? urlToImage : "";
+        article.viewCount = 0L;
+        article.country = country;
+        article.category = category;
+        article.language = language;
+        article.publishedAt = publishedAt;
 
         return article;
     }
