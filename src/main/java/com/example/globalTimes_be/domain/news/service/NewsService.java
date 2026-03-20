@@ -14,7 +14,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.util.List;
@@ -81,30 +80,30 @@ public class NewsService {
         return article.getContent();
     }
 
-    //DB에 뉴스 기사가 없으면 원본 뉴스 사이트에서 크롤링해옴
-    @Transactional
+    // @Transactional 제거: 크롤링(네트워크 I/O)을 트랜잭션 밖에서 실행해 DB 커넥션 점유 시간 최소화
     public String getArticleCrawledContent(Long id) {
-        //뉴스 정보 가져옴
+        // 1. DB 조회 (Spring Data JPA save/find는 자체 @Transactional 보유)
         Article article = articleRepository.findById(id)
                 .orElseThrow(() -> new BaseException(NewsErrorStatus._EMPTY_NEWS_DATA.getResponse()));
 
         String crawledContent = article.getCrawledContent();
 
-        //content가 null이면 크롤링 해오고 db에 저장
-        if (crawledContent == null) {
-
-            // 크롤러로 기사 원문 가져옴
-            crawledContent = getCrawlerUrl(article.getUrl());
-
-            // 크롤링 실패시 return;
-            if (crawledContent == null) {
-                return null;
-            }
-
-            //DB에 저장
-            article.updateCrawledContent(crawledContent);
-            articleRepository.save(article);
+        // 이미 크롤링된 내용이 있으면 바로 반환
+        if (crawledContent != null) {
+            return crawledContent;
         }
+
+        // 2. 크롤링 - 트랜잭션 밖에서 실행 (네트워크 I/O)
+        crawledContent = getCrawlerUrl(article.getUrl());
+
+        // 크롤링 실패 시 null 대신 명시적 예외 반환
+        if (crawledContent == null) {
+            throw new BaseException(NewsErrorStatus._CRAWLER_ERROR.getResponse());
+        }
+
+        // 3. DB 저장 - 크롤링 완료 후 짧게만 트랜잭션 열림 (save() 자체 @Transactional)
+        article.updateCrawledContent(crawledContent);
+        articleRepository.save(article);
 
         return crawledContent;
     }
