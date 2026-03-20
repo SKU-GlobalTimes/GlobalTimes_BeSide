@@ -9,6 +9,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
@@ -22,18 +23,24 @@ import java.util.List;
 @RequiredArgsConstructor
 @Component
 public class TrendScheduler {
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;  // timeout 설정된 빈 주입
     private final TrendService trendService;
 
-    //서버 시작 시 한 번 실행되도록 함
+    @Value("${news-fetch.enabled:false}")
+    private boolean fetchEnabled;
+
     @PostConstruct
     public void init() {
+        if (!fetchEnabled) {
+            log.info("[트렌드 초기화] news-fetch.enabled=false → 트렌드 수집 건너뜀");
+            return;
+        }
         saveTrendApi();
     }
 
-    //1시간 마다 갱신
     @Scheduled(cron = "0 0 */1 * * *")
     public void saveTrendApi(){
+        if (!fetchEnabled) return;
         //나라 코드 리스트 생성
         List<String> countries = new ArrayList<>
                 (Arrays.asList("KR", "AU", "AT", "BR", "CA", "CO", "DK", "EG", "FR", "DE", "GR", "HK", "IN",
