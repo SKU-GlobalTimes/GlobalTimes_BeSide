@@ -5,7 +5,9 @@ import com.example.globalTimes_be.global.exception.BaseException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -17,10 +19,19 @@ public class AiService {
     public String summarizeArticle(String crawledContent, String language){
         String summary = openAiWebClient.post()
                 .uri("/chat/completions")
-                .bodyValue(createRequestBody(crawledContent, language))  // 요청 본문
+                .bodyValue(createRequestBody(crawledContent, language))
                 .retrieve()
-                .bodyToMono(Map.class)  // 전체 응답을 한 번에 받음
-                .map(response -> extractContent(response))  // 응답 본문에서 요약 내용 추출
+                .onStatus(
+                        status -> !status.is2xxSuccessful(),
+                        response -> Mono.error(new BaseException(NewsErrorStatus._GPT_ERROR.getResponse()))
+                )
+                .bodyToMono(Map.class)
+                .timeout(Duration.ofSeconds(10))  // 10초 내 응답 없으면 타임아웃
+                .onErrorMap(
+                        ex -> !(ex instanceof BaseException),
+                        ex -> new BaseException(NewsErrorStatus._GPT_ERROR.getResponse())
+                )
+                .map(response -> extractContent(response))
                 .block();
 
         return summary;

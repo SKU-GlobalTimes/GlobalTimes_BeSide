@@ -24,7 +24,7 @@ public class TranslateUtil {
 
     //자동으로 언어 감지 후 영어로 번역
     public String translateToEnglish(String text){
-        System.out.println("번역기에 들어온 텍스트: " + text);
+        log.debug("[번역 요청] text: {}", text);
         try {
             Translation translation = translate.translate(
                     text,
