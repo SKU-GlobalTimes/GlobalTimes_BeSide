@@ -1,4 +1,4 @@
-package com.example.globalTimes_be.domain.news.service;
+package com.example.globalTimes_be.domain.ai.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -18,33 +18,30 @@ import java.util.Map;
 public class AiSseService {
     private final WebClient openAiWebClient;
 
-    // GPT 응답을 스트리밍(SSE)으로 처리
     public SseEmitter summarizeContent(String crawledContent, String language) {
-        SseEmitter emitter = new SseEmitter(10 * 60 * 1000L); // 10분 타임아웃 설정
+        SseEmitter emitter = new SseEmitter(10 * 60 * 1000L);
         processStreamingRequest(emitter, createRequestBody(crawledContent, language));
         return emitter;
     }
 
-    // 사용자 질문에 대해 GPT 답변을 SSE로 전송
-    public SseEmitter askGPT(String crawledContent, String question){
-        SseEmitter emitter = new SseEmitter(10 * 60 * 1000L); // 10분 타임아웃 설정
+    public SseEmitter askGPT(String crawledContent, String question) {
+        SseEmitter emitter = new SseEmitter(10 * 60 * 1000L);
         processStreamingRequest(emitter, createQuestionRequestBody(crawledContent, question));
         return emitter;
     }
 
     private void processStreamingRequest(SseEmitter emitter, Map<String, Object> requestBody) {
-        StringBuilder resultBuilder = new StringBuilder(); // 🔹 누적용 StringBuilder
+        StringBuilder resultBuilder = new StringBuilder();
 
         openAiWebClient.post()
                 .uri("/chat/completions")
-                .accept(MediaType.TEXT_EVENT_STREAM) // 🔹 SSE 형식 요청
+                .accept(MediaType.TEXT_EVENT_STREAM)
                 .bodyValue(requestBody)
                 .retrieve()
-                .bodyToFlux(String.class) // 🔹 OpenAI 응답 JSON 처리
+                .bodyToFlux(String.class)
                 .doOnNext(data -> {
                     String jsonPart = data.trim();
 
-                    // DONE 처리
                     if ("[DONE]".equals(jsonPart)) {
                         emitter.complete();
                         return;
@@ -53,7 +50,6 @@ public class AiSseService {
                     try {
                         Map response = new ObjectMapper().readValue(jsonPart, Map.class);
 
-                        // delta -> content 가져오기
                         List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
                         if (choices != null && !choices.isEmpty()) {
                             Map<String, Object> delta = (Map<String, Object>) choices.get(0).get("delta");
@@ -66,7 +62,7 @@ public class AiSseService {
                             }
                         }
                     } catch (IOException e) {
-                        log.warn("JSON 파싱 오류 발생!", e); //
+                        log.warn("JSON 파싱 오류 발생!", e);
                         emitter.completeWithError(e);
                     }
                 })
@@ -84,7 +80,7 @@ public class AiSseService {
                         Map.of("role", "system", "content", "이 기사를 " + language + "로 요약해줘."),
                         Map.of("role", "user", "content", crawledContent)
                 ),
-                "stream", true // 스트리밍 활성화
+                "stream", true
         );
     }
 

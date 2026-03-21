@@ -1,4 +1,4 @@
-package com.example.globalTimes_be.domain.news.controller;
+package com.example.globalTimes_be.domain.ai.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-@Tag(name = "뉴스 상세 페이지", description = "뉴스 요약 및 질의 관련 API입니다.")
+@Tag(name = "AI 기사 분석", description = "기사 요약 및 질의 관련 API입니다.")
 public interface AiControllerDocs {
     @Operation(summary = "기사 요약",
             description = "해당 기사에 대한 요약을 한번에 반환합니다.")
@@ -30,7 +30,7 @@ public interface AiControllerDocs {
                                  "timestamp": "2025-03-28T17:13:13.7470472",
                                  "isSuccess": true,
                                  "message": "응답에 성공했습니다.",
-                                 "data": "Richard Pitino, the men's basketball coach at the University of New Mexico, is leaving to become the head coach at Xavier University in the Big East Conference. In a statement, Pitino expressed his excitement about the opportunity, emphasizing Xavier's strong reputation in college basketball and his long-standing dream to coach in the Big East."
+                                 "data": "Richard Pitino, the men's basketball coach at the University of New Mexico, is leaving to become the head coach at Xavier University in the Big East Conference."
                              }
                             """)
                     )
@@ -42,14 +42,14 @@ public interface AiControllerDocs {
                                          "timestamp": "2025-04-01T13:37:56.6982049",
                                          "isSuccess": false,
                                          "message": "해당 언론사는 요약 정보 제공이 불가능합니다. (크롤링 불가)",
-                                         "data": "NEWARK With a mastery of collaborative, often pretty basketball that belied both its youth and the volatile state of the college sport, Duke soared to the programs 18th Final Four on Saturday night, … [+5884 chars]"
+                                         "data": "NEWARK With a mastery of collaborative..."
                                      }
                                     """),
                                     @ExampleObject(name= "검증에러", value = """
                                         {
                                             "timestamp": "2025-04-03T15:54:50.410816",
                                             "isSuccess": false,
-                                            "message": "뉴스기사 id는 비어있을 수 없습니다., 질문은 최소 1자 이상이어야 합니다.",
+                                            "message": "뉴스기사 id는 비어있을 수 없습니다.",
                                             "data": null
                                         }
                                     """)
@@ -90,18 +90,13 @@ public interface AiControllerDocs {
                     @ExampleObject(name = "중국어", value = "중국어")})
             @RequestParam String language);
 
-
     @Operation(
         summary = "기사 요약 스트리밍",
         description = "해당 기사에 대한 요약을 SSE 방식으로 실시간으로 스트리밍합니다.",
         responses = {
-                @ApiResponse(
-                        responseCode = "200",
-                        description = "SSE 스트리밍 성공",
-                        content = @Content(
-                                mediaType = MediaType.TEXT_EVENT_STREAM_VALUE,
-                                schema = @Schema(type = "string", description = "요약된 기사 내용 스트리밍")
-                        )
+                @ApiResponse(responseCode = "200", description = "SSE 스트리밍 성공",
+                        content = @Content(mediaType = MediaType.TEXT_EVENT_STREAM_VALUE,
+                                schema = @Schema(type = "string", description = "요약된 기사 내용 스트리밍"))
                 ),
                 @ApiResponse(responseCode = "400", description = "비즈니스 에러",
                         content = @Content(mediaType = "application/json",
@@ -119,14 +114,6 @@ public interface AiControllerDocs {
                                               "isSuccess": false,
                                               "message": "해당 언론사는 요약 정보 제공이 불가능합니다. (크롤링 불가)",
                                               "data": null
-                                            }
-                                        """),
-                                        @ExampleObject(name= "검증에러", value = """
-                                            {
-                                                "timestamp": "2025-04-03T15:54:50.410816",
-                                                "isSuccess": false,
-                                                "message": "뉴스기사 id는 비어있을 수 없습니다.",
-                                                "data": null
                                             }
                                         """)
                                 }
@@ -161,13 +148,9 @@ public interface AiControllerDocs {
         summary = "기사에 대한 사용자 질문 답변 스트리밍",
         description = "해당 기사에 대한 정보를 바탕으로 사용자 질문에 대한 답변을 SSE 방식으로 실시간으로 스트리밍합니다.",
         responses = {
-                @ApiResponse(
-                        responseCode = "200",
-                        description = "SSE 스트리밍 성공",
-                        content = @Content(
-                                mediaType = MediaType.TEXT_EVENT_STREAM_VALUE,
-                                schema = @Schema(type = "string", description = "요약된 기사 내용 스트리밍")
-                        )
+                @ApiResponse(responseCode = "200", description = "SSE 스트리밍 성공",
+                        content = @Content(mediaType = MediaType.TEXT_EVENT_STREAM_VALUE,
+                                schema = @Schema(type = "string", description = "기사 기반 질의응답 스트리밍"))
                 ),
                 @ApiResponse(responseCode = "400", description = "비즈니스 에러",
                         content = @Content(mediaType = "application/json",
@@ -220,5 +203,4 @@ public interface AiControllerDocs {
             @NotBlank(message = "질문은 비어있을 수 없습니다.")
             @Size(min = 1, message = "질문은 최소 1자 이상이어야 합니다.")
             @RequestParam String question);
-
 }

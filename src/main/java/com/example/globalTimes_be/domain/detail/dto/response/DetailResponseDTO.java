@@ -1,4 +1,4 @@
-package com.example.globalTimes_be.domain.news.dto.response;
+package com.example.globalTimes_be.domain.detail.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -8,16 +8,22 @@ import java.time.LocalDateTime;
 
 @Getter
 @Builder
-@Schema(description = "최신 뉴스 데이터 DTO")
-public class RecentNewsDTO {
-    @Schema(description = "뉴스기사 식별 아이디", example = "1")
-    private Long id;
-
+@Schema(description = "상세 기사 페이지 응답 DTO")
+public class DetailResponseDTO {
     @Schema(description = "언론사명", example = "BBC News")
     private String sourceName;
 
+    @Schema(description = "작성자", example = "Gordon Gottsegen")
+    private String author;
+
     @Schema(description = "제목", example = "Trump Auto Tariffs: Car Import...")
     private String title;
+
+    @Schema(description = "조회수", example = "1")
+    private Long viewCount;
+
+    @Schema(description = "원본기사 url", example = "https://www.bbc.com/news...")
+    private String url;
 
     @Schema(description = "기사관련 이미지", example = "https://ichef.bbci~~.jpg")
     private String urlToImage;
