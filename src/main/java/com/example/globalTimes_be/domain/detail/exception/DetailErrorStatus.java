@@ -1,4 +1,4 @@
-package com.example.globalTimes_be.domain.news.exception;
+package com.example.globalTimes_be.domain.detail.exception;
 
 import com.example.globalTimes_be.global.apiPayload.code.BaseResponse;
 import lombok.AllArgsConstructor;
@@ -7,7 +7,7 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 @AllArgsConstructor
-public enum NewsErrorStatus implements BaseResponse {
+public enum DetailErrorStatus implements BaseResponse {
     _CUSTOM_ERROR(HttpStatus.BAD_REQUEST, "에러테스트 요청입니다."),
 
     _EMPTY_NEWS_DATA(HttpStatus.BAD_REQUEST, "해당 기사의 정보가 없습니다,"),

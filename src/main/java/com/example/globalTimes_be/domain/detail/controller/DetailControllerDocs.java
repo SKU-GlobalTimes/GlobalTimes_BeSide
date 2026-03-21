@@ -1,4 +1,4 @@
-package com.example.globalTimes_be.domain.news.controller;
+package com.example.globalTimes_be.domain.detail.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Tag(name = "뉴스 상세 페이지", description = "뉴스 상세페이지 관련 API입니다.")
-public interface NewsControllerDocs {
+public interface DetailControllerDocs {
     @Operation(summary = "뉴스 상세정보 및 최신 뉴스 기사 응답",
             description = "해당 뉴스에 대한 상세 정보와 최신 뉴스 기사 리스트(최대 20개) 응답 API")
     @ApiResponses(value = {
