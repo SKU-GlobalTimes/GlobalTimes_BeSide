@@ -11,6 +11,12 @@ import java.time.OffsetDateTime;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(name = "article", indexes = {
+        @Index(name = "idx_article_country",              columnList = "country"),
+        @Index(name = "idx_article_category",             columnList = "category"),
+        @Index(name = "idx_article_published_at",         columnList = "published_at"),
+        @Index(name = "idx_article_country_category_date",columnList = "country, category, published_at")
+})
 public class Article {
 
     @Id
