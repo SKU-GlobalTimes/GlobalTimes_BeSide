@@ -3,6 +3,7 @@ package com.example.globalTimes_be.domain.article.controller;
 import com.example.globalTimes_be.domain.article.ApiDoc.ArticleApiDocumentation;
 import com.example.globalTimes_be.domain.article.service.ArticleService;
 import com.example.globalTimes_be.domain.article.dto.ArticleResponseDto;
+import com.example.globalTimes_be.domain.article.dto.CursorArticleResponseDto;
 import com.example.globalTimes_be.global.apiPayload.code.ApiResponse;
 import com.example.globalTimes_be.global.apiPayload.code.status.GlobalSuccessStatus;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,17 @@ public class ArticleController implements ArticleApiDocumentation {
         Page<ArticleResponseDto> articles = articleService.getArticlesByPublishedAt(page, size);
 
         return ApiResponse.success(GlobalSuccessStatus._OK.getResponse(), articles);
+    }
+
+    // Cursor 기반 최신순 (기존 Offset API와 병행 제공, FE 연동 후 Offset 제거 예정)
+    @GetMapping("/cursor")
+    public ResponseEntity<?> getArticlesByCursor(
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "20") int size) {
+
+        CursorArticleResponseDto response = articleService.getArticlesByCursor(cursor, size);
+
+        return ApiResponse.success(GlobalSuccessStatus._OK.getResponse(), response);
     }
 
     // 조회수 높은 순

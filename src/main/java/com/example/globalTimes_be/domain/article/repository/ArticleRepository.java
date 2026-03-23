@@ -42,6 +42,14 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
     List<Article> searchByDescriptionOrTitle(@Param("text1") String text,
                                              @Param("text2") String translatedText);
 
+    // Cursor 기반 페이징: publishedAt < cursor 조건으로 인덱스 탐색 (최신순)
+    @Query("SELECT a FROM Article a WHERE a.publishedAt < :cursor ORDER BY a.publishedAt DESC")
+    List<Article> findByCursor(@Param("cursor") LocalDateTime cursor, Pageable pageable);
+
+    // Cursor 기반 첫 페이지 (cursor 없을 때)
+    @Query("SELECT a FROM Article a ORDER BY a.publishedAt DESC")
+    List<Article> findFirstPage(Pageable pageable);
+
     // 현재 시간 기준 이틀 이내인지 확인 ( 기준의 Hot News 요청을 위한 쿼리 메소드 )
     // publishedAt 으로 찾고 After -> 이후에 내림차순으로.
     Page<Article> findByPublishedAtAfterOrderByViewCountDesc(LocalDateTime from, Pageable pageable);
