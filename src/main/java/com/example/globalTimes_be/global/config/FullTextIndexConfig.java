@@ -20,11 +20,23 @@ public class FullTextIndexConfig {
     @PostConstruct
     public void createFullTextIndex() {
         try {
-            jdbcTemplate.execute(
-                "CREATE FULLTEXT INDEX IF NOT EXISTS ft_article_title_description " +
-                "ON article(title, description)"
+            Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS " +
+                "WHERE TABLE_SCHEMA = DATABASE() " +
+                "  AND TABLE_NAME = 'article' " +
+                "  AND INDEX_NAME = 'ft_article_title_description'",
+                Integer.class
             );
-            log.info("[FULLTEXT 인덱스] ft_article_title_description 생성 완료 (또는 이미 존재)");
+
+            if (count == null || count == 0) {
+                jdbcTemplate.execute(
+                    "CREATE FULLTEXT INDEX ft_article_title_description " +
+                    "ON article(title, description)"
+                );
+                log.info("[FULLTEXT 인덱스] ft_article_title_description 생성 완료");
+            } else {
+                log.info("[FULLTEXT 인덱스] ft_article_title_description 이미 존재, 생성 생략");
+            }
         } catch (Exception e) {
             log.warn("[FULLTEXT 인덱스] 생성 중 오류 발생 (무시): {}", e.getMessage());
         }
