@@ -29,16 +29,18 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
     // 특정 id를 제외한 최신기사 20개 조회
     List<Article> findTop20ByIdNotOrderByPublishedAtDesc(Long id);
 
-    // 번역 전 단어와 번역 후 단어를 통해 title과 description에서 조회후 최신순으로 정렬
-    @Query("SELECT a FROM Article AS a " +
-            "WHERE LOWER(a.title) LIKE LOWER(CONCAT('%', :text1, '%')) "+
-            "   OR LOWER(a.title) LIKE LOWER(CONCAT('%', :text2, '%')) "+
-            "   OR LOWER(a.description) LIKE LOWER(CONCAT('%', :text1, '%')) "+
-            "   OR LOWER(a.description) LIKE LOWER(CONCAT('%', :text2, '%')) "+
-            "ORDER BY a.publishedAt DESC")
+    // Full-Text Search: 원문 검색어 + 영어 번역 검색어를 MATCH AGAINST로 탐색 (최신순, 최대 100개)
+    // LIKE 대비 FULLTEXT 인덱스를 활용해 Full Table Scan 없이 빠른 탐색 가능
+    // 한계: 검색어가 영어로 번역되어 탐색하므로 영어 기사 위주 탐색 (비영어 기사는 해당 언어 검색 시만 탐색)
+    @Query(value =
+            "SELECT * FROM article " +
+            "WHERE MATCH(title, description) AGAINST(:text1 IN BOOLEAN MODE) " +
+            "   OR MATCH(title, description) AGAINST(:text2 IN BOOLEAN MODE) " +
+            "ORDER BY published_at DESC " +
+            "LIMIT 100",
+            nativeQuery = true)
     List<Article> searchByDescriptionOrTitle(@Param("text1") String text,
-                                             @Param("text2") String translatedText,
-                                             Pageable pageable);
+                                             @Param("text2") String translatedText);
 
     // 현재 시간 기준 이틀 이내인지 확인 ( 기준의 Hot News 요청을 위한 쿼리 메소드 )
     // publishedAt 으로 찾고 After -> 이후에 내림차순으로.

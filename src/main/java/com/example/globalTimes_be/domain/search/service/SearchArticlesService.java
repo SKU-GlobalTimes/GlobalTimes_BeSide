@@ -5,8 +5,6 @@ import com.example.globalTimes_be.domain.article.repository.ArticleRepository;
 import com.example.globalTimes_be.domain.search.dto.response.SearchArticleDTO;
 import com.example.globalTimes_be.domain.search.dto.response.SearchResDTO;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -18,9 +16,7 @@ public class SearchArticlesService {
     private final ArticleRepository articleRepository;
 
     public SearchResDTO getSearchArticles(String text, String translatedText){
-        //레포지토리에서 번역 전 단어와 번역 후 단어를 기준으로 조회 (최대 100개)
-        Pageable pageable = PageRequest.of(0, 100);
-        List<Article> articles = articleRepository.searchByDescriptionOrTitle(text, translatedText, pageable);
+        List<Article> articles = articleRepository.searchByDescriptionOrTitle(text, translatedText);
         
         // 검색결과에 대한 기사 DTO 리스트 생성
         List<SearchArticleDTO> searchArticleDTOs = new ArrayList<>();
