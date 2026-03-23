@@ -36,4 +36,4 @@ spring:
 # false(기본): 로컬 개발 중 API 할당량 절약 목적으로 @PostConstruct/스케줄러 비활성화
 # true: 수집 테스트 시에만 변경 (주의: 무료 플랜 100 req/24h 제한)
 news-fetch:
-  enabled: true
+  enabled: false

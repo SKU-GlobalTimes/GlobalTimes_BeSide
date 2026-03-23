@@ -44,10 +44,9 @@ public class RssFeedConfig {
                 new FeedSource("https://www3.nhk.or.jp/rss/news/cat6.xml", "jp", "ja", "NHK", "sports"),
 
                 // ── 프랑스 / France24 ─────────────────────────────────────────
-                new FeedSource("https://www.france24.com/fr/rss",              "fr", "fr", "France24", "general"),
-                new FeedSource("https://www.france24.com/fr/economie/rss",     "fr", "fr", "France24", "business"),
-                new FeedSource("https://www.france24.com/fr/sports/rss",       "fr", "fr", "France24", "sports"),
-                new FeedSource("https://www.france24.com/fr/technologies/rss", "fr", "fr", "France24", "technology"),
+                new FeedSource("https://www.france24.com/fr/rss",          "fr", "fr", "France24", "general"),
+                new FeedSource("https://www.france24.com/fr/economie/rss", "fr", "fr", "France24", "business"),
+                new FeedSource("https://www.france24.com/fr/sports/rss",   "fr", "fr", "France24", "sports"),
 
                 // ── 독일 / Deutsche Welle ─────────────────────────────────────
                 new FeedSource("https://rss.dw.com/rdf/rss-de-all", "de", "de", "Deutsche Welle", "general"),
