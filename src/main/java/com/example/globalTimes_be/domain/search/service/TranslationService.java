@@ -24,15 +24,16 @@ public class TranslationService {
             return cachedTranslation;
         }
 
-        // 구글번역
-        String translatedText = translateUtil.translateToEnglish(text);
-
-        log.info("Redis에 저장될 번역 전: {}, 번역 후: {}", text, translatedText);
-
-        // 번역 결과 Redis에 캐싱 (24시간 유지)
-        redisUtil.setData("translation:" + text, translatedText, 86400);
-
-        return translatedText;
+        // 구글번역 (API 키 미설정 또는 호출 실패 시 원문 그대로 사용)
+        try {
+            String translatedText = translateUtil.translateToEnglish(text);
+            log.info("Redis에 저장될 번역 전: {}, 번역 후: {}", text, translatedText);
+            redisUtil.setData("translation:" + text, translatedText, 86400);
+            return translatedText;
+        } catch (Exception e) {
+            log.warn("[번역 실패] 원문으로 검색 진행: {} / 원인: {}", text, e.getMessage());
+            return text;
+        }
     }
 
 }
