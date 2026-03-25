@@ -1,13 +1,17 @@
 package com.example.globalTimes_be.domain.detail.dto.response;
 
 import com.example.globalTimes_be.domain.article.entity.Article;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class PerspectiveArticleDTO {
 
     private Long id;

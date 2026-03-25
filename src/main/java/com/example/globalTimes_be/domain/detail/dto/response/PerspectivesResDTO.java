@@ -1,13 +1,17 @@
 package com.example.globalTimes_be.domain.detail.dto.response;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 import java.util.Map;
 
 @Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class PerspectivesResDTO {
 
     // 탐색에 사용된 키워드 (로깅/FE 표시용)

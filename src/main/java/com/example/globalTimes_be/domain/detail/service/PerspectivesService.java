@@ -8,8 +8,11 @@ import com.example.globalTimes_be.domain.detail.exception.DetailErrorStatus;
 import com.example.globalTimes_be.domain.detail.util.KeywordExtractor;
 import com.example.globalTimes_be.domain.search.service.TranslationService;
 import com.example.globalTimes_be.global.exception.BaseException;
+import com.example.globalTimes_be.global.redis.RedisUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,13 +25,35 @@ import java.util.stream.Collectors;
 @Service
 public class PerspectivesService {
 
+    private static final String CACHE_KEY_PREFIX = "perspectives:article:";
+    private static final int MAX_ARTICLES_PER_COUNTRY = 3;
+
     private final ArticleRepository articleRepository;
     private final TranslationService translationService;
+    private final RedisUtil redisUtil;
+    private final ObjectMapper objectMapper;
 
-    private static final int MAX_ARTICLES_PER_COUNTRY = 3;
+    @Value("${perspectives.cache-ttl-seconds:3600}")
+    private long cacheTtlSeconds;
 
     @Transactional(readOnly = true)
     public PerspectivesResDTO getPerspectives(Long articleId) {
+        if (cacheTtlSeconds > 0) {
+            try {
+                String cached = redisUtil.getData(CACHE_KEY_PREFIX + articleId);
+                if (cached != null) {
+                    try {
+                        log.debug("[Perspectives] 캐시 히트 articleId={}", articleId);
+                        return objectMapper.readValue(cached, PerspectivesResDTO.class);
+                    } catch (Exception e) {
+                        log.warn("[Perspectives] 캐시 역직렬화 실패, 재계산: {}", e.getMessage());
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("[Perspectives] 캐시 조회 실패, 재계산: {}", e.getMessage());
+            }
+        }
+
         Article base = articleRepository.findById(articleId)
                 .orElseThrow(() -> new BaseException(DetailErrorStatus._EMPTY_NEWS_DATA.getResponse()));
 
@@ -81,11 +106,24 @@ public class PerspectivesService {
         log.info("[Perspectives] 기사 id={} | 키워드='{}' | {}개 국가, {}개 기사 반환",
                 articleId, plainKeyword, perspectives.size(), totalArticles);
 
-        return PerspectivesResDTO.builder()
+        PerspectivesResDTO response = PerspectivesResDTO.builder()
                 .keyword(plainKeyword)
                 .perspectives(perspectives)
                 .countriesFound(perspectives.size())
                 .totalArticles(totalArticles)
                 .build();
+
+        if (cacheTtlSeconds > 0) {
+            try {
+                redisUtil.setData(
+                        CACHE_KEY_PREFIX + articleId,
+                        objectMapper.writeValueAsString(response),
+                        cacheTtlSeconds);
+            } catch (Exception e) {
+                log.warn("[Perspectives] 캐시 저장 실패 (무시): {}", e.getMessage());
+            }
+        }
+
+        return response;
     }
 }
