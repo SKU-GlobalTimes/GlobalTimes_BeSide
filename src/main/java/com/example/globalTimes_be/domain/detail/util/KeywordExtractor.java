@@ -16,7 +16,7 @@ public class KeywordExtractor {
             "not", "no", "so", "yet", "both", "either", "up", "out", "over",
             "says", "said", "new", "after", "before", "more", "than", "also",
             "what", "how", "when", "where", "who", "which", "can", "do", "did",
-            "he", "she", "we", "you", "his", "her", "our", "your", "its"
+            "he", "she", "we", "you", "his", "her", "our", "your"
     );
 
     private static final int MAX_KEYWORDS = 4;
