@@ -45,7 +45,7 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
     // 국가별 시각 비교: 특정 기사 제외 후 키워드 FULLTEXT 탐색, 최신순 최대 50개
     @Query(value =
             "SELECT * FROM article " +
-            "WHERE id != :excludeId " +
+            "WHERE article_id != :excludeId " +
             "AND MATCH(title, description) AGAINST(:keywords IN BOOLEAN MODE) " +
             "ORDER BY published_at DESC " +
             "LIMIT 50",
