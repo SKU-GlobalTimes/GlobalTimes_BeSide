@@ -24,7 +24,7 @@ public class DetailController implements DetailControllerDocs {
         return ApiResponse.success(GlobalSuccessStatus._OK.getResponse(), detailResDTO);
     }
 
-    // 기사 상세에서 타 국가 관련 기사 비교 (국가별 시각 비교)
+    @Override
     @GetMapping("/{id}/perspectives")
     public ResponseEntity<ApiResponse> getPerspectives(@PathVariable Long id) {
         PerspectivesResDTO response = perspectivesService.getPerspectives(id);
