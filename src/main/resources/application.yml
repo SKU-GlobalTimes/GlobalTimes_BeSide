@@ -41,3 +41,7 @@ news-fetch:
 # 국가별 시각 비교 API: Redis 캐시 (0이면 미사용, 동일 articleId 반복 요청 시 FULLTEXT 부하 감소)
 perspectives:
   cache-ttl-seconds: 3600
+
+# 트렌드 기사 요약 캐시 (0이면 미사용, 동일 URL 반복 요청 시 GPT 호출 절감)
+trend:
+  summary-cache-ttl-seconds: 21600
