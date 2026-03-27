@@ -27,7 +27,7 @@ public class TrendAiController implements TrendAiControllerDocs{
         //본문 크롤링
         String content = trendCrawledService.getArticleCrawledContent(url);
         //크롤링한 본문 요약
-        String summary = trendAiService.summarizeTrendArticle(content, language);
+        String summary = trendAiService.summarizeTrendArticle(content, language, url);
         return ApiResponse.success(GlobalSuccessStatus._OK.getResponse(), summary);
     }
 }
