@@ -42,6 +42,17 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
     List<Article> searchByDescriptionOrTitle(@Param("text1") String text,
                                              @Param("text2") String translatedText);
 
+    // 국가별 시각 비교: 특정 기사 제외 후 키워드 FULLTEXT 탐색, 최신순 최대 50개
+    @Query(value =
+            "SELECT * FROM article " +
+            "WHERE article_id != :excludeId " +
+            "AND MATCH(title, description) AGAINST(:keywords IN BOOLEAN MODE) " +
+            "ORDER BY published_at DESC " +
+            "LIMIT 50",
+            nativeQuery = true)
+    List<Article> findPerspectives(@Param("excludeId") Long excludeId,
+                                   @Param("keywords") String keywords);
+
     // Cursor 기반 페이징: publishedAt < cursor 조건으로 인덱스 탐색 (최신순)
     @Query("SELECT a FROM Article a WHERE a.publishedAt < :cursor ORDER BY a.publishedAt DESC")
     List<Article> findByCursor(@Param("cursor") LocalDateTime cursor, Pageable pageable);
