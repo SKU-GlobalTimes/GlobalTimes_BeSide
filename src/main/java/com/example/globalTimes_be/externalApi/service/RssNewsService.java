@@ -105,7 +105,7 @@ public class RssNewsService {
 
             // feed.sourceName()은 하드코딩된 RSS 피드 설정값이므로 null/empty 가능성 없음
             Source source = sourceService.getOrCreateSource(feed.sourceName(), null);
-            if (source == null) continue;
+            if (source == null) return 0;
 
             List<Article> toSave = new ArrayList<>();
             int invalidCount = 0;
