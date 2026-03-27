@@ -33,9 +33,13 @@ public class RssFeedConfig {
 
                 // ── 한국 / 연합뉴스 ───────────────────────────────────────────
                 new FeedSource("https://www.yna.co.kr/rss/news.xml",          "kr", "ko", "연합뉴스", "general"),
+                new FeedSource("https://www.yna.co.kr/rss/politics.xml",      "kr", "ko", "연합뉴스", "politics"),
                 new FeedSource("https://www.yna.co.kr/rss/economy.xml",       "kr", "ko", "연합뉴스", "business"),
-                new FeedSource("https://www.yna.co.kr/rss/sports.xml",        "kr", "ko", "연합뉴스", "sports"),
+                new FeedSource("https://www.yna.co.kr/rss/industry.xml",      "kr", "ko", "연합뉴스", "technology"),
+                new FeedSource("https://www.yna.co.kr/rss/health.xml",        "kr", "ko", "연합뉴스", "health"),
                 new FeedSource("https://www.yna.co.kr/rss/culture.xml",       "kr", "ko", "연합뉴스", "entertainment"),
+                new FeedSource("https://www.yna.co.kr/rss/entertainment.xml", "kr", "ko", "연합뉴스", "entertainment"),
+                new FeedSource("https://www.yna.co.kr/rss/sports.xml",        "kr", "ko", "연합뉴스", "sports"),
 
                 // ── 일본 / NHK ────────────────────────────────────────────────
                 new FeedSource("https://www3.nhk.or.jp/rss/news/cat0.xml", "jp", "ja", "NHK", "general"),
@@ -49,11 +53,17 @@ public class RssFeedConfig {
                 new FeedSource("https://www.france24.com/fr/sports/rss",   "fr", "fr", "France24", "sports"),
 
                 // ── 독일 / Deutsche Welle ─────────────────────────────────────
-                new FeedSource("https://rss.dw.com/rdf/rss-de-all", "de", "de", "Deutsche Welle", "general"),
+                new FeedSource("https://rss.dw.com/rdf/rss-de-all",         "de", "de", "Deutsche Welle", "general"),
+                new FeedSource("https://rss.dw.com/rdf/rss-en-bus",         "de", "en", "Deutsche Welle", "business"),
+                new FeedSource("https://rss.dw.com/xml/rss_en_science",     "de", "en", "Deutsche Welle", "science"),
+                new FeedSource("https://rss.dw.com/rdf/rss-en-sports",      "de", "en", "Deutsche Welle", "sports"),
+                new FeedSource("https://rss.dw.com/rdf/rss-en-cul",         "de", "en", "Deutsche Welle", "entertainment"),
 
                 // ── 아랍어 / BBC Arabic ───────────────────────────────────────
-                new FeedSource("https://feeds.bbci.co.uk/arabic/rss.xml",              "sa", "ar", "BBC Arabic", "general"),
-                new FeedSource("https://feeds.bbci.co.uk/arabic/middleeast/rss.xml",   "sa", "ar", "BBC Arabic", "business"),
+                new FeedSource("https://feeds.bbci.co.uk/arabic/rss.xml",                   "sa", "ar", "BBC Arabic", "general"),
+                new FeedSource("https://feeds.bbci.co.uk/arabic/middleeast/rss.xml",         "sa", "ar", "BBC Arabic", "business"),
+                new FeedSource("https://feeds.bbci.co.uk/arabic/sport/rss.xml",              "sa", "ar", "BBC Arabic", "sports"),
+                new FeedSource("https://feeds.bbci.co.uk/arabic/scienceandtech/rss.xml",     "sa", "ar", "BBC Arabic", "technology"),
 
                 // ── 중국 / South China Morning Post ───────────────────────────
                 new FeedSource("https://www.scmp.com/rss/91/feed",  "cn", "zh", "South China Morning Post", "general"),
@@ -62,7 +72,10 @@ public class RssFeedConfig {
                 new FeedSource("https://www.scmp.com/rss/95/feed",  "cn", "zh", "South China Morning Post", "sports"),
 
                 // ── 스페인어 / BBC Mundo ──────────────────────────────────────
-                new FeedSource("https://feeds.bbci.co.uk/mundo/rss.xml", "es", "es", "BBC Mundo", "general")
+                new FeedSource("https://feeds.bbci.co.uk/mundo/rss.xml",           "es", "es", "BBC Mundo", "general"),
+                new FeedSource("https://feeds.bbci.co.uk/mundo/economia/rss.xml",  "es", "es", "BBC Mundo", "business"),
+                new FeedSource("https://feeds.bbci.co.uk/mundo/deportes/rss.xml",  "es", "es", "BBC Mundo", "sports"),
+                new FeedSource("https://feeds.bbci.co.uk/mundo/ciencia/rss.xml",   "es", "es", "BBC Mundo", "science")
         );
     }
 }
