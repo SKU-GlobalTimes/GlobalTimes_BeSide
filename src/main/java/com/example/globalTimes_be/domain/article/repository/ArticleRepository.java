@@ -61,6 +61,24 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
     @Query("SELECT a FROM Article a ORDER BY a.publishedAt DESC")
     List<Article> findFirstPage(Pageable pageable);
 
+    // 탐색 필터(country/category/date) + 커서 기반 페이징 (최신순)
+    // cursor가 null이면 첫 페이지, 있으면 해당 시간 이전 기사 탐색
+    @Query("SELECT a FROM Article a WHERE " +
+            "(:country IS NULL OR a.country = :country) " +
+            "AND (:category IS NULL OR a.category = :category) " +
+            "AND (:dateFrom IS NULL OR a.publishedAt >= :dateFrom) " +
+            "AND (:dateTo IS NULL OR a.publishedAt <= :dateTo) " +
+            "AND (:cursor IS NULL OR a.publishedAt < :cursor) " +
+            "ORDER BY a.publishedAt DESC")
+    List<Article> findByExploreFilters(
+            @Param("country") String country,
+            @Param("category") String category,
+            @Param("dateFrom") LocalDateTime dateFrom,
+            @Param("dateTo") LocalDateTime dateTo,
+            @Param("cursor") LocalDateTime cursor,
+            Pageable pageable
+    );
+
     // 현재 시간 기준 이틀 이내인지 확인 ( 기준의 Hot News 요청을 위한 쿼리 메소드 )
     // publishedAt 으로 찾고 After -> 이후에 내림차순으로.
     Page<Article> findByPublishedAtAfterOrderByViewCountDesc(LocalDateTime from, Pageable pageable);
