@@ -37,3 +37,7 @@ spring:
 # true: 수집 테스트 시에만 변경 (주의: 무료 플랜 100 req/24h 제한)
 news-fetch:
   enabled: false
+
+# 국가별 시각 비교 API: Redis 캐시 (0이면 미사용, 동일 articleId 반복 요청 시 FULLTEXT 부하 감소)
+perspectives:
+  cache-ttl-seconds: 3600
