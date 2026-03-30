@@ -7,7 +7,10 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 @Configuration
 public class OpenAiConfig {
-    @Value("${spring.openai.api-key}")
+
+    // GPT 비활성 상태 - OPENAI_API_KEY 미설정 시에도 기동 가능하도록 기본값 처리
+    // 복구 시: ${spring.openai.api-key} 로 변경하고 .env에 OPENAI_API_KEY 추가
+    @Value("${spring.openai.api-key:disabled}")
     private String apiKey;
 
     @Bean
