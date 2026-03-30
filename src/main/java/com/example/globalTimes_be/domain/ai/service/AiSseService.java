@@ -1,5 +1,6 @@
 package com.example.globalTimes_be.domain.ai.service;
 
+import com.example.globalTimes_be.domain.chat.service.ChatHistoryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,20 +18,24 @@ import java.util.Map;
 @Service
 public class AiSseService {
     private final WebClient openAiWebClient;
+    private final ChatHistoryService chatHistoryService;
 
     public SseEmitter summarizeContent(String crawledContent, String language) {
         SseEmitter emitter = new SseEmitter(10 * 60 * 1000L);
-        processStreamingRequest(emitter, createRequestBody(crawledContent, language));
+        processStreamingRequest(emitter, createRequestBody(crawledContent, language), null, null, null);
         return emitter;
     }
 
-    public SseEmitter askGPT(String crawledContent, String question) {
+    // 인증된 사용자: userId, articleId 전달 → 스트리밍 완료 후 히스토리 저장
+    // 비인증 사용자: userId = null → 저장 생략
+    public SseEmitter askGPT(String crawledContent, String question, Long userId, Long articleId) {
         SseEmitter emitter = new SseEmitter(10 * 60 * 1000L);
-        processStreamingRequest(emitter, createQuestionRequestBody(crawledContent, question));
+        processStreamingRequest(emitter, createQuestionRequestBody(crawledContent, question), question, userId, articleId);
         return emitter;
     }
 
-    private void processStreamingRequest(SseEmitter emitter, Map<String, Object> requestBody) {
+    private void processStreamingRequest(SseEmitter emitter, Map<String, Object> requestBody,
+                                         String question, Long userId, Long articleId) {
         StringBuilder resultBuilder = new StringBuilder();
 
         openAiWebClient.post()
@@ -43,6 +48,10 @@ public class AiSseService {
                     String jsonPart = data.trim();
 
                     if ("[DONE]".equals(jsonPart)) {
+                        // 스트리밍 완료 → 로그인 사용자면 히스토리 저장
+                        if (userId != null && articleId != null && question != null) {
+                            chatHistoryService.save(userId, articleId, question, resultBuilder.toString());
+                        }
                         emitter.complete();
                         return;
                     }
