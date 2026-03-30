@@ -20,6 +20,16 @@ spring:
     hibernate:
       ddl-auto: update
 
+  # OAuth2 소셜 로그인 (Google)
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_OAUTH_CLIENT_ID}
+            client-secret: ${GOOGLE_OAUTH_CLIENT_SECRET}
+            scope: profile, email
+
   #gpt
   openai:
     api-key: ${OPENAI_API_KEY}
@@ -31,6 +41,15 @@ spring:
   #google translate
   google:
     api-key: ${GOOGLE_API_KEY}
+
+# JWT 설정
+jwt:
+  secret: ${JWT_SECRET}
+  expiration-ms: 604800000  # 7일 (ms)
+
+# OAuth2 로그인 후 FE 리다이렉트 URI
+oauth2:
+  redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:5173/oauth2/redirect}
 
 # 뉴스 수집 활성화 여부
 # false(기본): 로컬 개발 중 API 할당량 절약 목적으로 @PostConstruct/스케줄러 비활성화
