@@ -66,6 +66,24 @@ public class DetailService {
         return article.getContent();
     }
 
+    // DB에 저장된 요약 조회 (없으면 null 반환)
+    public String getArticleSummary(Long id, String language) {
+        Article article = articleRepository.findById(id)
+                .orElseThrow(() -> new BaseException(DetailErrorStatus._EMPTY_NEWS_DATA.getResponse()));
+
+        return article.getSummary();
+    }
+
+    // GPT 요약 결과를 DB에 저장
+    @org.springframework.transaction.annotation.Transactional
+    public void saveArticleSummary(Long id, String summary) {
+        Article article = articleRepository.findById(id)
+                .orElseThrow(() -> new BaseException(DetailErrorStatus._EMPTY_NEWS_DATA.getResponse()));
+
+        article.updateSummary(summary);
+        articleRepository.save(article);
+    }
+
     // @Transactional 제거: 크롤링(네트워크 I/O)을 트랜잭션 밖에서 실행해 DB 커넥션 점유 시간 최소화
     public String getArticleCrawledContent(Long id) {
         Article article = articleRepository.findById(id)
