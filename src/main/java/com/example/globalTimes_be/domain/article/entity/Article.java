@@ -130,6 +130,11 @@ public class Article {
         this.crawledContent = crawledContent;
     }
 
+    // GPT 요약 결과 저장
+    public void updateSummary(String summary) {
+        this.summary = summary;
+    }
+
     // get/{id} 와 같이 특정 뉴스 조회시 viewCount 증가
     public void increaseViewCount() {
         this.viewCount++;

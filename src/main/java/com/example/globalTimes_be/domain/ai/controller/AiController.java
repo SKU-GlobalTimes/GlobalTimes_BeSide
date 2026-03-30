@@ -26,6 +26,12 @@ public class AiController implements AiControllerDocs {
     @GetMapping(value = "/{id}/summary")
     public ResponseEntity<ApiResponse> summarizeArticle(@PathVariable Long id,
                                                         @RequestParam(defaultValue = "영어") String language) {
+        // DB에 저장된 요약이 있으면 GPT 스킵
+        String saved = detailService.getArticleSummary(id, language);
+        if (saved != null && !saved.isBlank()) {
+            return ApiResponse.success(GlobalSuccessStatus._OK.getResponse(), saved);
+        }
+
         String crawledContent = detailService.getArticleCrawledContent(id);
 
         if (crawledContent == null) {
@@ -34,6 +40,10 @@ public class AiController implements AiControllerDocs {
         }
 
         String summary = aiService.summarizeArticle(crawledContent, language);
+
+        // 요약 결과 DB 저장 (이후 재요청 시 GPT 스킵)
+        detailService.saveArticleSummary(id, summary);
+
         return ApiResponse.success(GlobalSuccessStatus._OK.getResponse(), summary);
     }
 
