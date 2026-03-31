@@ -68,3 +68,7 @@ perspectives:
 # 트렌드 기사 요약 캐시 (0이면 미사용, 동일 URL 반복 요청 시 GPT 호출 절감)
 trend:
   summary-cache-ttl-seconds: 21600
+
+# AI 컨텍스트 대화 슬라이딩 윈도우 크기 (최근 N턴만 Gemini에 전달, 토큰 비용 제어)
+ai:
+  context-window-size: 10

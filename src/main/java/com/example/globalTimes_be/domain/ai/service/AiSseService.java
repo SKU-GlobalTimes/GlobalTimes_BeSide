@@ -1,5 +1,6 @@
 package com.example.globalTimes_be.domain.ai.service;
 
+import com.example.globalTimes_be.domain.chat.entity.ChatHistory;
 import com.example.globalTimes_be.domain.chat.service.ChatHistoryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -25,6 +27,9 @@ public class AiSseService {
 
     @Value("${gemini.api-key}")
     private String geminiApiKey;
+
+    @Value("${ai.context-window-size:10}")
+    private int contextWindowSize;
 
     private static final String GEMINI_MODEL = "gemini-2.5-flash";
 
@@ -42,14 +47,26 @@ public class AiSseService {
 
     public SseEmitter askGPT(String crawledContent, String question, Long userId, Long articleId) {
         SseEmitter emitter = new SseEmitter(10 * 60 * 1000L);
-        Map<String, Object> body = createGeminiRequestBody(
-                "?? ?? ??? ???? ??? ??? ???? ????.",
-                "?? ??:\n" + crawledContent + "\n\n??? ??:\n" + question
-        );
+
+        Map<String, Object> body;
+        if (userId != null && articleId != null) {
+            // ??? ??: ?? ?? ??? ???? ???? ??? ???? ??
+            List<ChatHistory> history = chatHistoryService.getRecentContext(userId, articleId, contextWindowSize);
+            body = createContextualRequestBody(crawledContent, question, history);
+            log.debug("[Gemini SSE] ???? {}? ???? ?? - userId: {}, articleId: {}", history.size(), userId, articleId);
+        } else {
+            // ????: ?? ?? (?? ?? ??)
+            body = createGeminiRequestBody(
+                    "?? ?? ??? ???? ??? ??? ???? ????.",
+                    "?? ??:\n" + crawledContent + "\n\n??? ??:\n" + question
+            );
+        }
+
         processGeminiStreaming(emitter, body, question, userId, articleId);
         return emitter;
     }
 
+    // ?? ??? (summarizeContent, ???? askGPT)
     private Map<String, Object> createGeminiRequestBody(String systemPrompt, String userMessage) {
         return Map.of(
                 "system_instruction", Map.of(
@@ -58,6 +75,40 @@ public class AiSseService {
                 "contents", List.of(
                         Map.of("parts", List.of(Map.of("text", userMessage)))
                 )
+        );
+    }
+
+    // ???? ?? ??? (??? ?? askGPT) - ???? ??? ?? ?? ??
+    private Map<String, Object> createContextualRequestBody(String crawledContent, String question,
+                                                             List<ChatHistory> history) {
+        // ?? ??? system_instruction? ?? (? turn ?? ??)
+        String systemPrompt = "?? ?? ??? ???? ??? ??? ???? ????.\n\n?? ??:\n" + crawledContent;
+
+        List<Map<String, Object>> contents = new ArrayList<>();
+
+        // ?? ?? ?? (user ? model ??)
+        for (ChatHistory chat : history) {
+            contents.add(Map.of(
+                    "role", "user",
+                    "parts", List.of(Map.of("text", chat.getQuestion()))
+            ));
+            contents.add(Map.of(
+                    "role", "model",
+                    "parts", List.of(Map.of("text", chat.getAnswer()))
+            ));
+        }
+
+        // ?? ??
+        contents.add(Map.of(
+                "role", "user",
+                "parts", List.of(Map.of("text", question))
+        ));
+
+        return Map.of(
+                "system_instruction", Map.of(
+                        "parts", List.of(Map.of("text", systemPrompt))
+                ),
+                "contents", contents
         );
     }
 
