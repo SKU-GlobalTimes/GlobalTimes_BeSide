@@ -13,6 +13,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,5 +72,16 @@ public class ChatHistoryService {
                 .stream()
                 .map(ChatHistoryResDTO::from)
                 .collect(Collectors.toList());
+    }
+
+    // 컨텍스트 창용: 최근 N턴을 오래된 순으로 반환 (AiSseService에서 Gemini payload 구성에 사용)
+    @Transactional(readOnly = true)
+    public List<ChatHistory> getRecentContext(Long userId, Long articleId, int windowSize) {
+        PageRequest pageable = PageRequest.of(0, windowSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+        List<ChatHistory> recent = new ArrayList<>(
+                chatHistoryRepository.findByUserIdAndArticleIdOrderByCreatedAtDesc(userId, articleId, pageable)
+        );
+        Collections.reverse(recent); // 최신순 → 오래된 순으로 뒤집어 대화 흐름 유지
+        return recent;
     }
 }
