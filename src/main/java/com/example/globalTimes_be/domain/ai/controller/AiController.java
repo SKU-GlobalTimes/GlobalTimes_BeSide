@@ -11,6 +11,7 @@ import com.example.globalTimes_be.global.exception.BaseException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -63,13 +64,17 @@ public class AiController implements AiControllerDocs {
     @Override
     @GetMapping(value = "/{id}/ask", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter askArticle(@PathVariable Long id,
-                                 @RequestParam String question) {
+                                 @RequestParam String question,
+                                 Authentication authentication) {
         String crawledContent = detailService.getArticleCrawledContent(id);
 
         if (crawledContent == null) {
             throw new BaseException(DetailErrorStatus._CRAWLER_ERROR.getResponse());
         }
 
-        return aiSseService.askGPT(crawledContent, question);
+        // 로그인 사용자면 userId 전달 → 스트리밍 완료 후 히스토리 저장
+        // 비로그인이면 null 전달 → 저장 생략 (기존 동작 유지)
+        Long userId = (authentication != null) ? (Long) authentication.getPrincipal() : null;
+        return aiSseService.askGPT(crawledContent, question, userId, id);
     }
 }

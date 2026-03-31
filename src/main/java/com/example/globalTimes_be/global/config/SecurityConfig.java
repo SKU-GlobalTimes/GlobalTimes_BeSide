@@ -46,8 +46,9 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/error"
                         ).permitAll()
-                        // 사용자 정보 조회/히스토리 관련은 인증 필요
+                        // 사용자 정보 및 채팅 히스토리 조회는 인증 필요
                         .requestMatchers("/api/user/**").authenticated()
+                        .requestMatchers("/api/articles/*/chat-history").authenticated()
                         .anyRequest().permitAll()
                 )
                 .oauth2Login(oauth2 -> oauth2

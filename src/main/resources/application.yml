@@ -30,9 +30,9 @@ spring:
             client-secret: ${GOOGLE_OAUTH_CLIENT_SECRET}
             scope: profile, email
 
-  #gpt
-  openai:
-    api-key: ${OPENAI_API_KEY}
+  # GPT (비활성 / 주석 보존)
+  # openai:
+  #   api-key: ${OPENAI_API_KEY}
 
   #news
   newsapi:
@@ -41,6 +41,10 @@ spring:
   #google translate
   google:
     api-key: ${GOOGLE_API_KEY}
+
+# Gemini API (GPT 대체, 무료 티어: 일 1,500회 / 분 15회)
+gemini:
+  api-key: ${GEMINI_API_KEY}
 
 # JWT 설정
 jwt:

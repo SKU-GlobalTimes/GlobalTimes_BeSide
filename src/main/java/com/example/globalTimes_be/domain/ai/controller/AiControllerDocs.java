@@ -13,6 +13,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -202,5 +203,7 @@ public interface AiControllerDocs {
             @Parameter(description = "사용자 질문", example = "기사에서 키워드를 뽑아줘.")
             @NotBlank(message = "질문은 비어있을 수 없습니다.")
             @Size(min = 1, message = "질문은 최소 1자 이상이어야 합니다.")
-            @RequestParam String question);
+            @RequestParam String question,
+
+            @Parameter(hidden = true) Authentication authentication);
 }
