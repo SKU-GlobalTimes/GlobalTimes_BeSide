@@ -3,7 +3,6 @@ package com.example.globalTimes_be.domain.trend.service;
 import com.example.globalTimes_be.domain.trend.exception.TrendErrorStatus;
 import com.example.globalTimes_be.global.exception.BaseException;
 import com.example.globalTimes_be.global.redis.RedisUtil;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -23,9 +22,9 @@ import java.util.Map;
 public class TrendAiService {
 
     private static final String CACHE_KEY_PREFIX = "trend:summary:";
-    private static final String GEMINI_MODEL = "gemini-2.0-flash";
+    private static final String GEMINI_MODEL = "gemini-2.5-flash";
 
-    // ── Gemini (현재 활성) ──────────────────────────────────────────────────
+    // Gemini (?? ??)
     @Qualifier("geminiWebClient")
     private final WebClient geminiWebClient;
 
@@ -43,11 +42,11 @@ public class TrendAiService {
             try {
                 String cached = redisUtil.getData(cacheKey);
                 if (cached != null) {
-                    log.debug("[트렌드 요약] 캐시 히트 url={}", url);
+                    log.debug("[??? ??] ?? ?? url={}", url);
                     return cached;
                 }
             } catch (Exception e) {
-                log.warn("[트렌드 요약] 캐시 조회 실패, Gemini 호출: {}", e.getMessage());
+                log.warn("[??? ??] ?? ?? ??, Gemini ??: {}", e.getMessage());
             }
 
             String summary = callGemini(content, language);
@@ -55,7 +54,7 @@ public class TrendAiService {
             try {
                 redisUtil.setData(cacheKey, summary, cacheTtlSeconds);
             } catch (Exception e) {
-                log.warn("[트렌드 요약] 캐시 저장 실패 (무시): {}", e.getMessage());
+                log.warn("[??? ??] ?? ?? ?? (??): {}", e.getMessage());
             }
             return summary;
         }
@@ -66,7 +65,7 @@ public class TrendAiService {
     private String callGemini(String content, String language) {
         Map<String, Object> requestBody = Map.of(
                 "system_instruction", Map.of(
-                        "parts", List.of(Map.of("text", "이 기사를 " + language + "로 2줄 요약해줘."))
+                        "parts", List.of(Map.of("text", "? ??? " + language + "? 2?? ????."))
                 ),
                 "contents", List.of(
                         Map.of("parts", List.of(Map.of("text", content)))
@@ -108,7 +107,7 @@ public class TrendAiService {
     }
 
 
-    // ── GPT (비활성 / 주석 보존) ────────────────────────────────────────────
+    // GPT (??? / ?? ??)
     // private final WebClient openAiWebClient;
     //
     // private String callGpt(String content, String language) {
@@ -125,7 +124,7 @@ public class TrendAiService {
     //     return Map.of(
     //             "model", "gpt-4o-mini",
     //             "messages", List.of(
-    //                     Map.of("role", "system", "content", "이 기사를 " + language + "로 2줄 요약해줘."),
+    //                     Map.of("role", "system", "content", "? ??? " + language + "? 2?? ????."),
     //                     Map.of("role", "user", "content", content)
     //             ),
     //             "stream", false

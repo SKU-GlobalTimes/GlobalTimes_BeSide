@@ -3,6 +3,7 @@ package com.example.globalTimes_be.domain.ai.service;
 import com.example.globalTimes_be.domain.detail.exception.DetailErrorStatus;
 import com.example.globalTimes_be.global.exception.BaseException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -13,18 +14,19 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @RequiredArgsConstructor
 @Service
 public class AiService {
 
-    // ── Gemini (현재 활성) ──────────────────────────────────────────────────
+    // Gemini (?? ??)
     @Qualifier("geminiWebClient")
     private final WebClient geminiWebClient;
 
     @Value("${gemini.api-key}")
     private String geminiApiKey;
 
-    private static final String GEMINI_MODEL = "gemini-2.0-flash";
+    private static final String GEMINI_MODEL = "gemini-2.5-flash";
 
     public String summarizeArticle(String crawledContent, String language) {
         return geminiWebClient.post()
@@ -33,13 +35,18 @@ public class AiService {
                 .retrieve()
                 .onStatus(
                         status -> !status.is2xxSuccessful(),
-                        response -> Mono.error(new BaseException(DetailErrorStatus._GPT_ERROR.getResponse()))
+                        response -> response.bodyToMono(String.class)
+                                .doOnNext(body -> log.error("[Gemini] API ?? ??: {}", body))
+                                .then(Mono.error(new BaseException(DetailErrorStatus._GPT_ERROR.getResponse())))
                 )
                 .bodyToMono(Map.class)
                 .timeout(Duration.ofSeconds(30))
                 .onErrorMap(
                         ex -> !(ex instanceof BaseException),
-                        ex -> new BaseException(DetailErrorStatus._GPT_ERROR.getResponse())
+                        ex -> {
+                            log.error("[Gemini] ?? ??: {}", ex.getMessage());
+                            return new BaseException(DetailErrorStatus._GPT_ERROR.getResponse());
+                        }
                 )
                 .map(this::extractGeminiContent)
                 .block();
@@ -48,7 +55,7 @@ public class AiService {
     private Map<String, Object> createGeminiRequestBody(String crawledContent, String language) {
         return Map.of(
                 "system_instruction", Map.of(
-                        "parts", List.of(Map.of("text", "이 기사를 " + language + "로 요약해줘."))
+                        "parts", List.of(Map.of("text", "? ??? " + language + "? ????."))
                 ),
                 "contents", List.of(
                         Map.of("parts", List.of(Map.of("text", crawledContent)))
@@ -72,7 +79,7 @@ public class AiService {
     }
 
 
-    // ── GPT (비활성 / 주석 보존) ────────────────────────────────────────────
+    // GPT (??? / ?? ??)
     // private final WebClient openAiWebClient;
     //
     // public String summarizeArticle(String crawledContent, String language) {
@@ -98,7 +105,7 @@ public class AiService {
     //     return Map.of(
     //             "model", "gpt-4o-mini",
     //             "messages", List.of(
-    //                     Map.of("role", "system", "content", "이 기사를 " + language + "로 요약해줘."),
+    //                     Map.of("role", "system", "content", "? ??? " + language + "? ????."),
     //                     Map.of("role", "user", "content", crawledContent)
     //             ),
     //             "stream", false

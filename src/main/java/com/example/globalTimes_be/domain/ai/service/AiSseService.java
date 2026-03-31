@@ -19,21 +19,21 @@ import java.util.Map;
 @Service
 public class AiSseService {
 
-    // ── Gemini (현재 활성) ──────────────────────────────────────────────────
+    // Gemini (?? ??)
     @Qualifier("geminiWebClient")
     private final WebClient geminiWebClient;
 
     @Value("${gemini.api-key}")
     private String geminiApiKey;
 
-    private static final String GEMINI_MODEL = "gemini-2.0-flash";
+    private static final String GEMINI_MODEL = "gemini-2.5-flash";
 
     private final ChatHistoryService chatHistoryService;
 
     public SseEmitter summarizeContent(String crawledContent, String language) {
         SseEmitter emitter = new SseEmitter(10 * 60 * 1000L);
         Map<String, Object> body = createGeminiRequestBody(
-                "이 기사를 " + language + "로 요약해줘.",
+                "? ??? " + language + "? ????.",
                 crawledContent
         );
         processGeminiStreaming(emitter, body, null, null, null);
@@ -43,8 +43,8 @@ public class AiSseService {
     public SseEmitter askGPT(String crawledContent, String question, Long userId, Long articleId) {
         SseEmitter emitter = new SseEmitter(10 * 60 * 1000L);
         Map<String, Object> body = createGeminiRequestBody(
-                "다음 기사 내용을 참고하여 사용자 질문에 자세하게 답변해줘.",
-                "기사 내용:\n" + crawledContent + "\n\n사용자 질문:\n" + question
+                "?? ?? ??? ???? ??? ??? ???? ????.",
+                "?? ??:\n" + crawledContent + "\n\n??? ??:\n" + question
         );
         processGeminiStreaming(emitter, body, question, userId, articleId);
         return emitter;
@@ -93,29 +93,29 @@ public class AiSseService {
                             emitter.send(resultBuilder.toString());
                         }
                     } catch (Exception e) {
-                        log.warn("[Gemini SSE] JSON 파싱 오류: {}", e.getMessage());
+                        log.warn("[Gemini SSE] JSON ?? ??: {}", e.getMessage());
                     }
                 })
                 .doOnComplete(() -> {
-                    // 스트리밍 완료 → 로그인 사용자면 히스토리 저장
+                    // ???? ?? ? ???? ??
                     if (userId != null && articleId != null && question != null) {
                         chatHistoryService.save(userId, articleId, question, resultBuilder.toString());
                     }
                     try {
                         emitter.complete();
                     } catch (Exception e) {
-                        log.warn("[Gemini SSE] emitter complete 오류: {}", e.getMessage());
+                        log.warn("[Gemini SSE] emitter complete ??: {}", e.getMessage());
                     }
                 })
                 .doOnError(error -> {
-                    log.error("[Gemini SSE] 처리 중 오류 발생", error);
+                    log.error("[Gemini SSE] ?? ? ?? ??", error);
                     emitter.completeWithError(error);
                 })
                 .subscribe();
     }
 
 
-    // ── GPT (비활성 / 주석 보존) ────────────────────────────────────────────
+    // GPT (??? / ?? ??)
     // private final WebClient openAiWebClient;
     //
     // public SseEmitter summarizeContent(String crawledContent, String language) {
@@ -159,13 +159,13 @@ public class AiSseService {
     //                             emitter.send(resultBuilder.toString());
     //                         }
     //                     }
-    //                 } catch (IOException e) {
-    //                     log.warn("JSON 파싱 오류 발생!", e);
+    //                 } catch (Exception e) {
+    //                     log.warn("JSON ?? ?? ??!", e);
     //                     emitter.completeWithError(e);
     //                 }
     //             })
     //             .doOnError(error -> {
-    //                 log.error("OpenAI SSE 처리 중 오류 발생", error);
+    //                 log.error("OpenAI SSE ?? ? ?? ??", error);
     //                 emitter.completeWithError(error);
     //             })
     //             .subscribe();
@@ -175,7 +175,7 @@ public class AiSseService {
     //     return Map.of(
     //             "model", "gpt-4o-mini",
     //             "messages", List.of(
-    //                     Map.of("role", "system", "content", "이 기사를 " + language + "로 요약해줘."),
+    //                     Map.of("role", "system", "content", "? ??? " + language + "? ????."),
     //                     Map.of("role", "user", "content", crawledContent)
     //             ),
     //             "stream", true
@@ -186,9 +186,9 @@ public class AiSseService {
     //     return Map.of(
     //             "model", "gpt-4o-mini",
     //             "messages", List.of(
-    //                     Map.of("role", "system", "content", "다음 기사 내용을 참고하여 사용자 질문에 자세하게 답변해줘."),
-    //                     Map.of("role", "user", "content", "기사 내용:\n" + crawledContent),
-    //                     Map.of("role", "user", "content", "사용자 질문:\n" + question)
+    //                     Map.of("role", "system", "content", "?? ?? ??? ???? ??? ??? ???? ????."),
+    //                     Map.of("role", "user", "content", "?? ??:\n" + crawledContent),
+    //                     Map.of("role", "user", "content", "??? ??:\n" + question)
     //             ),
     //             "stream", true
     //     );
