@@ -46,9 +46,12 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/error"
                         ).permitAll()
-                        // 사용자 정보 및 채팅 히스토리 조회는 인증 필요
+                        // 사용자 정보 및 채팅 히스토리는 인증 필요
                         .requestMatchers("/api/user/**").authenticated()
                         .requestMatchers("/api/articles/*/chat-history").authenticated()
+                        // 스크랩 토글 및 상태 조회는 인증 필요
+                        .requestMatchers("/api/articles/*/scrap").authenticated()
+                        .requestMatchers("/api/articles/*/scrap/status").authenticated()
                         .anyRequest().permitAll()
                 )
                 .oauth2Login(oauth2 -> oauth2

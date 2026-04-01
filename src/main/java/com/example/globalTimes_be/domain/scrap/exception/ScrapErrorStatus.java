@@ -11,6 +11,8 @@ public enum ScrapErrorStatus implements BaseResponse {
     _CUSTOM_ERROR(HttpStatus.BAD_REQUEST, "에러테스트 요청입니다."),
 
     _EMPTY_SCRAP_ARTICLE(HttpStatus.INTERNAL_SERVER_ERROR, "요청한 기사에 대한 정보가 없습니다."),
+    _SCRAP_ARTICLE_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 기사입니다."),
+    _SCRAP_USER_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 사용자입니다."),
     ;
 
     private final HttpStatus httpStatus;
