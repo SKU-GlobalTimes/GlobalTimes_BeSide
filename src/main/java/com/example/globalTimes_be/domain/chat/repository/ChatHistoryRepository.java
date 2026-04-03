@@ -1,6 +1,7 @@
 package com.example.globalTimes_be.domain.chat.repository;
 
 import com.example.globalTimes_be.domain.chat.entity.ChatHistory;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -14,4 +15,7 @@ public interface ChatHistoryRepository extends JpaRepository<ChatHistory, Long> 
 
     // 특정 기사의 사용자 히스토리 (오래된순) - 상세 페이지 대화 흐름용
     List<ChatHistory> findByUserIdAndArticleIdOrderByCreatedAtAsc(Long userId, Long articleId);
+
+    // 슬라이딩 윈도우 컨텍스트용: 최근 N건만 최신순으로 조회
+    List<ChatHistory> findByUserIdAndArticleIdOrderByCreatedAtDesc(Long userId, Long articleId, Pageable pageable);
 }
