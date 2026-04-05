@@ -23,6 +23,7 @@ public class ArticleService {
     }
 
     // 최신순 기사
+    @Transactional(readOnly = true)
     public Page<ArticleResponseDto> getArticlesByPublishedAt(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Article> articles = articleRepository.findAllByOrderByPublishedAtDesc(pageable);
@@ -55,15 +56,16 @@ public class ArticleService {
         return new CursorArticleResponseDto(dtos, nextCursor, hasNext);
     }
 
-    // Hot News : 발행일 기준 이틀 내 기사만 출력되도록 수정 ( 랜딩 페이지네이션 토탈 : 42개 )
+    // Hot News : 조회수 높은 순 (최근 30일 이내 기사 대상)
+    @Transactional(readOnly = true)
     public Page<ArticleResponseDto> getArticlesByViewCount(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
 
-        // 현재 시간에서 -2일 한 데이터들만 따로 출력 ( -1로 설정하면 출력되는 데이터 없음 )
-        // Free : 하루 이전 기사들까지가 최신. 당일 기사 제공 X
-        LocalDateTime twoDaysAgo = LocalDateTime.now().minusDays(2);
+        // 최근 30일 이내 기사 중 조회수 높은 순으로 정렬
+        // (기존 2일 필터는 실시간 수집 환경에서만 유효 → 로컬/테스트 환경에서 데이터 없음 이슈 방지)
+        LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
 
-        Page<Article> articles = articleRepository.findByPublishedAtAfterOrderByViewCountDesc(twoDaysAgo, pageable);
+        Page<Article> articles = articleRepository.findByPublishedAtAfterOrderByViewCountDesc(thirtyDaysAgo, pageable);
 
         return articles.map(ArticleResponseDto::fromEntity);
     }
