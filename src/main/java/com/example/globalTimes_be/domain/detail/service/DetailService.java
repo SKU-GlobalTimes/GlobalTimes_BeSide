@@ -14,6 +14,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.util.List;
@@ -24,6 +25,7 @@ import java.util.List;
 public class DetailService {
     private final ArticleRepository articleRepository;
 
+    @Transactional
     public DetailResDTO getNewsDetail(Long id) {
         Article article = articleRepository.findById(id)
                 .orElseThrow(() -> new BaseException(DetailErrorStatus._EMPTY_NEWS_DATA.getResponse()));
@@ -59,6 +61,7 @@ public class DetailService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
     public String getArticleContent(Long id) {
         Article article = articleRepository.findById(id)
                 .orElseThrow(() -> new BaseException(DetailErrorStatus._EMPTY_NEWS_DATA.getResponse()));
@@ -67,6 +70,7 @@ public class DetailService {
     }
 
     // DB에 저장된 요약 조회 (없으면 null 반환)
+    @Transactional(readOnly = true)
     public String getArticleSummary(Long id, String language) {
         Article article = articleRepository.findById(id)
                 .orElseThrow(() -> new BaseException(DetailErrorStatus._EMPTY_NEWS_DATA.getResponse()));
@@ -84,7 +88,8 @@ public class DetailService {
         articleRepository.save(article);
     }
 
-    // @Transactional 제거: 크롤링(네트워크 I/O)을 트랜잭션 밖에서 실행해 DB 커넥션 점유 시간 최소화
+    // 크롤링(네트워크 I/O)은 트랜잭션 밖에서 실행하되, DB 조회 부분만 readOnly 트랜잭션으로 처리
+    @Transactional(readOnly = true)
     public String getArticleCrawledContent(Long id) {
         Article article = articleRepository.findById(id)
                 .orElseThrow(() -> new BaseException(DetailErrorStatus._EMPTY_NEWS_DATA.getResponse()));
