@@ -40,7 +40,7 @@ public class AiService {
                                 .then(Mono.error(new BaseException(DetailErrorStatus._GPT_ERROR.getResponse())))
                 )
                 .bodyToMono(Map.class)
-                .timeout(Duration.ofSeconds(30))
+                .timeout(Duration.ofSeconds(90))
                 .onErrorMap(
                         ex -> !(ex instanceof BaseException),
                         ex -> {
@@ -53,9 +53,12 @@ public class AiService {
     }
 
     private Map<String, Object> createGeminiRequestBody(String crawledContent, String language) {
+        String systemPrompt = "You are a news summarization assistant. Summarize the following article content in " + language + ". "
+                + "The summary should be concise (3-5 sentences), written in " + language + ", and capture the key points of the article.";
+
         return Map.of(
                 "system_instruction", Map.of(
-                        "parts", List.of(Map.of("text", "? ??? " + language + "? ????."))
+                        "parts", List.of(Map.of("text", systemPrompt))
                 ),
                 "contents", List.of(
                         Map.of("parts", List.of(Map.of("text", crawledContent)))
