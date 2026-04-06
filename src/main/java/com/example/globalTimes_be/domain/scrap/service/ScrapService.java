@@ -30,6 +30,7 @@ public class ScrapService {
     private final UserRepository userRepository;
 
     // 기존 API 유지 (localStorage 기반 비로그인 호환)
+    @Transactional(readOnly = true)
     public List<ScrapResDTO> getScrap(List<Long> articleIds) {
         List<ScrapResDTO> scrapResDTOs = new ArrayList<>();
 
@@ -45,10 +46,6 @@ public class ScrapService {
                     .urlToImage(article.getUrlToImage())
                     .publishedAt(article.getPublishedAt())
                     .build());
-        }
-
-        if (scrapResDTOs.isEmpty()) {
-            throw new BaseException(ScrapErrorStatus._EMPTY_SCRAP_ARTICLE.getResponse());
         }
 
         return scrapResDTOs;
