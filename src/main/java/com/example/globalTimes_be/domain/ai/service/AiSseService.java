@@ -55,9 +55,13 @@ public class AiSseService {
             body = createContextualRequestBody(crawledContent, question, history);
             log.debug("[Gemini SSE] 컨텍스트 {}턴 포함 요청 - userId={}, articleId={}", history.size(), userId, articleId);
         } else {
-            // 비로그인: 단일 질의 (기존 동작 유지)
+            // 비로그인: 단일 질의
+            // 기사 내용을 참고하되, 인사·감사 등 일상 대화에는 간결하게 응답
             body = createGeminiRequestBody(
-                    "다음 기사 내용을 주요 참고 자료로 활용하되, 기사에 없는 정보는 일반 지식을 활용해 자세하게 답변해줘.",
+                    "당신은 기사 내용을 기반으로 질문에 답하는 AI 어시스턴트입니다.\n" +
+                    "- 기사 내용과 관련된 질문이면 기사를 주요 참고 자료로 활용하되, 기사에 없는 정보는 일반 지식을 활용해 자세하게 답변하세요.\n" +
+                    "- 기사와 무관한 질문(인사, 감사 표현 등)에는 2~3문장 이내로 간결하게 응답하세요.\n" +
+                    "- 불필요하게 기사 전체를 요약하거나 반복하지 마세요.",
                     "기사 내용:\n" + crawledContent + "\n\n사용자 질문:\n" + question
             );
         }
