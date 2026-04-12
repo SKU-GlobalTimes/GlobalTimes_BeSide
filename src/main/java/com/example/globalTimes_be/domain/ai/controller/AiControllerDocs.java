@@ -15,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -205,5 +206,24 @@ public interface AiControllerDocs {
             @Size(min = 1, message = "질문은 최소 1자 이상이어야 합니다.")
             @RequestParam String question,
 
+            @Parameter(description = "비로그인 시 대화 맥락·Redis 저장용 UUID (헤더). EventSource는 헤더 불가 시 쿼리 anonymousSession 사용.", example = "550e8400-e29b-41d4-a716-446655440000")
+            @RequestHeader(value = "X-Anonymous-Session", required = false) String anonymousSessionHeader,
+
+            @Parameter(description = "비로그인 세션 UUID (쿼리). 헤더와 동일 우선순위: 헤더가 있으면 헤더 사용.")
+            @RequestParam(value = "anonymousSession", required = false) String anonymousSessionQuery,
+
             @Parameter(hidden = true) Authentication authentication);
+
+    @Operation(
+            summary = "비로그인 기사 채팅 히스토리 조회",
+            description = "X-Anonymous-Session(UUID)과 기사 ID로 Redis에 저장된 질문·답변 목록을 반환합니다. 세션이 없거나 형식이 잘못되면 빈 배열입니다."
+    )
+    @ApiResponse(responseCode = "200", description = "성공",
+            content = @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = com.example.globalTimes_be.global.apiPayload.code.ApiResponse.class)))
+    ResponseEntity<?> getAnonymousArticleChatHistory(
+            @Parameter(description = "뉴스기사 ID", example = "1") @PathVariable Long id,
+            @Parameter(description = "비로그인 세션 UUID (헤더)") @RequestHeader(value = "X-Anonymous-Session", required = false) String anonymousSessionHeader,
+            @Parameter(description = "비로그인 세션 UUID (쿼리)") @RequestParam(value = "anonymousSession", required = false) String anonymousSessionQuery
+    );
 }

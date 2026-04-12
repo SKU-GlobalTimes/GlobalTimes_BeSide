@@ -1,6 +1,8 @@
 package com.example.globalTimes_be.domain.ai.service;
 
+import com.example.globalTimes_be.domain.chat.dto.ChatMessagePair;
 import com.example.globalTimes_be.domain.chat.entity.ChatHistory;
+import com.example.globalTimes_be.domain.chat.service.AnonymousChatSessionService;
 import com.example.globalTimes_be.domain.chat.service.ChatHistoryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +36,7 @@ public class AiSseService {
     private static final String GEMINI_MODEL = "gemini-2.5-flash";
 
     private final ChatHistoryService chatHistoryService;
+    private final AnonymousChatSessionService anonymousChatSessionService;
 
     public SseEmitter summarizeContent(String crawledContent, String language) {
         SseEmitter emitter = new SseEmitter(10 * 60 * 1000L);
@@ -41,22 +44,32 @@ public class AiSseService {
                 "이 기사를 " + language + "로 요약해줘.",
                 crawledContent
         );
-        processGeminiStreaming(emitter, body, null, null, null);
+        processGeminiStreaming(emitter, body, null, null, null, null);
         return emitter;
     }
 
-    public SseEmitter askGPT(String crawledContent, String question, Long userId, Long articleId) {
+    public SseEmitter askGPT(String crawledContent, String question, Long userId, Long articleId,
+                             String anonymousSessionId) {
         SseEmitter emitter = new SseEmitter(10 * 60 * 1000L);
 
         Map<String, Object> body;
+        String effectiveAnonId = (userId == null && AnonymousChatSessionService.isValidSessionId(anonymousSessionId))
+                ? anonymousSessionId.trim()
+                : null;
+
         if (userId != null && articleId != null) {
             // 로그인 유저: 슬라이딩 윈도우로 이전 대화 내역 가져와 컨텍스트 구성
             List<ChatHistory> history = chatHistoryService.getRecentContext(userId, articleId, contextWindowSize);
-            body = createContextualRequestBody(crawledContent, question, history);
+            List<ChatMessagePair> pairs = ChatMessagePair.fromChatHistories(history);
+            body = createContextualRequestBody(crawledContent, question, pairs);
             log.debug("[Gemini SSE] 컨텍스트 {}턴 포함 요청 - userId={}, articleId={}", history.size(), userId, articleId);
+        } else if (effectiveAnonId != null && articleId != null) {
+            List<ChatMessagePair> prior = anonymousChatSessionService.getRecentContext(
+                    effectiveAnonId, articleId, contextWindowSize);
+            body = createContextualRequestBody(crawledContent, question, prior);
+            log.debug("[Gemini SSE] 익명 컨텍스트 {}턴 포함 요청 - articleId={}", prior.size(), articleId);
         } else {
-            // 비로그인: 단일 질의
-            // 기사 내용을 참고하되, 인사·감사 등 일상 대화에는 간결하게 응답
+            // 비로그인·세션 없음: 단일 질의
             body = createGeminiRequestBody(
                     "당신은 기사 내용을 기반으로 질문에 답하는 AI 어시스턴트입니다.\n" +
                     "- 기사 내용과 관련된 질문이면 기사를 주요 참고 자료로 활용하되, 기사에 없는 정보는 일반 지식을 활용해 자세하게 답변하세요.\n" +
@@ -66,7 +79,7 @@ public class AiSseService {
             );
         }
 
-        processGeminiStreaming(emitter, body, question, userId, articleId);
+        processGeminiStreaming(emitter, body, question, userId, articleId, effectiveAnonId);
         return emitter;
     }
 
@@ -82,27 +95,25 @@ public class AiSseService {
         );
     }
 
-    // 컨텍스트 기반 질의용 (로그인 유저 askGPT) - 슬라이딩 윈도우 이전 대화 포함
+    // 컨텍스트 기반 질의용 (로그인 DB / 익명 Redis) - 슬라이딩 윈도우 이전 대화 포함
     private Map<String, Object> createContextualRequestBody(String crawledContent, String question,
-                                                             List<ChatHistory> history) {
+                                                             List<ChatMessagePair> priorTurns) {
         // 기사 내용은 system_instruction에 포함 (매 turn 반복 전달 방지)
         String systemPrompt = "다음 기사 내용을 주요 참고 자료로 활용하되, 기사에 없는 정보는 일반 지식을 활용해 자세하게 답변해줘.\n\n기사 내용:\n" + crawledContent;
 
         List<Map<String, Object>> contents = new ArrayList<>();
 
-        // 이전 대화 내역 (user -> model 교대)
-        for (ChatHistory chat : history) {
+        for (ChatMessagePair chat : priorTurns) {
             contents.add(Map.of(
                     "role", "user",
-                    "parts", List.of(Map.of("text", chat.getQuestion()))
+                    "parts", List.of(Map.of("text", chat.question()))
             ));
             contents.add(Map.of(
                     "role", "model",
-                    "parts", List.of(Map.of("text", chat.getAnswer()))
+                    "parts", List.of(Map.of("text", chat.answer()))
             ));
         }
 
-        // 현재 질문
         contents.add(Map.of(
                 "role", "user",
                 "parts", List.of(Map.of("text", question))
@@ -118,7 +129,7 @@ public class AiSseService {
 
     @SuppressWarnings("unchecked")
     private void processGeminiStreaming(SseEmitter emitter, Map<String, Object> requestBody,
-                                        String question, Long userId, Long articleId) {
+                                        String question, Long userId, Long articleId, String anonymousSessionId) {
         StringBuilder resultBuilder = new StringBuilder();
 
         geminiWebClient.post()
@@ -155,6 +166,9 @@ public class AiSseService {
                     // 스트리밍 완료 후 히스토리 저장
                     if (userId != null && articleId != null && question != null) {
                         chatHistoryService.save(userId, articleId, question, resultBuilder.toString());
+                    } else if (anonymousSessionId != null && articleId != null && question != null) {
+                        anonymousChatSessionService.appendTurn(
+                                anonymousSessionId, articleId, question, resultBuilder.toString(), contextWindowSize);
                     }
                     try {
                         emitter.complete();
