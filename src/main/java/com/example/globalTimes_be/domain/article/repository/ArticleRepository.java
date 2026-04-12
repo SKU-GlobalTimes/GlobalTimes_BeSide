@@ -42,6 +42,30 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
     List<Article> searchByDescriptionOrTitle(@Param("text1") String text,
                                              @Param("text2") String translatedText);
 
+    /**
+     * FULLTEXT 검색 + 탐색(Explore)과 동일 필터(country / category / 하루 date).
+     * 필터 파라미터가 null이면 해당 조건은 적용하지 않음(기존 검색-only와 동일).
+     */
+    @Query(value =
+            "SELECT * FROM article " +
+            "WHERE (MATCH(title, description) AGAINST(:text1 IN BOOLEAN MODE) " +
+            "   OR MATCH(title, description) AGAINST(:text2 IN BOOLEAN MODE)) " +
+            "AND (:country IS NULL OR country = :country) " +
+            "AND (:category IS NULL OR category = :category) " +
+            "AND (:dateFrom IS NULL OR published_at >= :dateFrom) " +
+            "AND (:dateTo IS NULL OR published_at <= :dateTo) " +
+            "ORDER BY published_at DESC " +
+            "LIMIT 100",
+            nativeQuery = true)
+    List<Article> searchByDescriptionOrTitleWithExploreFilters(
+            @Param("text1") String text1,
+            @Param("text2") String text2,
+            @Param("country") String country,
+            @Param("category") String category,
+            @Param("dateFrom") LocalDateTime dateFrom,
+            @Param("dateTo") LocalDateTime dateTo
+    );
+
     // 국가별 시각 비교: 특정 기사 제외 후 키워드 FULLTEXT 탐색, 최신순 최대 50개
     @Query(value =
             "SELECT * FROM article " +

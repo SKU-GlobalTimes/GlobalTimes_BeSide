@@ -7,6 +7,10 @@ import com.example.globalTimes_be.domain.search.dto.response.SearchResDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,8 +19,38 @@ import java.util.List;
 public class SearchArticlesService {
     private final ArticleRepository articleRepository;
 
-    public SearchResDTO getSearchArticles(String text, String translatedText){
-        List<Article> articles = articleRepository.searchByDescriptionOrTitle(text, translatedText);
+    /**
+     * @param date 탐색과 동일: 하루 단위(yyyy-MM-dd). null/공백이면 날짜 필터 없음.
+     */
+    public SearchResDTO getSearchArticles(
+            String text,
+            String translatedText,
+            String country,
+            String category,
+            String date
+    ) {
+        LocalDateTime dateFrom = null;
+        LocalDateTime dateTo = null;
+        if (date != null && !date.isBlank()) {
+            try {
+                LocalDate localDate = LocalDate.parse(date);
+                dateFrom = localDate.atStartOfDay();
+                dateTo = localDate.atTime(LocalTime.MAX);
+            } catch (DateTimeParseException ignored) {
+            }
+        }
+
+        String countryParam = (country != null && !country.isBlank()) ? country : null;
+        String categoryParam = (category != null && !category.isBlank()) ? category : null;
+
+        List<Article> articles = articleRepository.searchByDescriptionOrTitleWithExploreFilters(
+                text,
+                translatedText,
+                countryParam,
+                categoryParam,
+                dateFrom,
+                dateTo
+        );
         
         // 검색결과에 대한 기사 DTO 리스트 생성
         List<SearchArticleDTO> searchArticleDTOs = new ArrayList<>();

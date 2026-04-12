@@ -90,5 +90,12 @@ public interface SearchControllerDocs {
             @Parameter(description = "검색 문자열", example = "트럼프")
             @NotBlank(message = "검색어는 비어있을 수 없습니다.")
             @Size(min = 1, message = "검색어는 최소 1자 이상이어야 합니다.")
-            @RequestParam String text);
+            @RequestParam String text,
+            @Parameter(description = "탐색과 동일: 국가 코드(미지정 시 필터 없음)", required = false)
+            @RequestParam(required = false) String country,
+            @Parameter(description = "탐색과 동일: 카테고리(미지정 시 필터 없음)", required = false)
+            @RequestParam(required = false) String category,
+            @Parameter(description = "탐색과 동일: 하루 단위 날짜 yyyy-MM-dd(미지정 시 필터 없음)", required = false)
+            @RequestParam(required = false) String date
+    );
 }

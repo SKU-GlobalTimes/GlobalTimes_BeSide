@@ -12,8 +12,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.Serializable;
-
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/search")
@@ -23,12 +21,21 @@ public class SearchController implements SearchControllerDocs {
 
     @Override
     @GetMapping
-    public ResponseEntity<ApiResponse> getSearchArticles(@RequestParam String text){
-        //검색어를 영어로 번역
+    public ResponseEntity<ApiResponse> getSearchArticles(
+            @RequestParam String text,
+            @RequestParam(required = false) String country,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String date
+    ) {
         String translatedText = translationService.translateToEnglish(text);
 
-        //원본 검색어 + 번역된 검색어로 기사 검색
-        SearchResDTO searchResDTO = searchArticlesService.getSearchArticles(text, translatedText);
+        SearchResDTO searchResDTO = searchArticlesService.getSearchArticles(
+                text,
+                translatedText,
+                country,
+                category,
+                date
+        );
 
         return ApiResponse.success(GlobalSuccessStatus._OK.getResponse(), searchResDTO);
     }
