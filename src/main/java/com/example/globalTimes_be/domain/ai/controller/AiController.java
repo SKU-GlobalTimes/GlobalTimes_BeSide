@@ -2,6 +2,7 @@ package com.example.globalTimes_be.domain.ai.controller;
 
 import com.example.globalTimes_be.domain.ai.service.AiService;
 import com.example.globalTimes_be.domain.ai.service.AiSseService;
+import com.example.globalTimes_be.domain.chat.service.AnonymousChatSessionService;
 import com.example.globalTimes_be.domain.detail.exception.DetailErrorStatus;
 import com.example.globalTimes_be.domain.detail.exception.DetailSuccessStatus;
 import com.example.globalTimes_be.domain.detail.service.DetailService;
@@ -15,6 +16,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.util.Collections;
+
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/ai")
@@ -22,6 +25,7 @@ public class AiController implements AiControllerDocs {
     public final AiService aiService;
     public final AiSseService aiSseService;
     public final DetailService detailService;
+    public final AnonymousChatSessionService anonymousChatSessionService;
 
     @Override
     @GetMapping(value = "/{id}/summary")
@@ -65,6 +69,8 @@ public class AiController implements AiControllerDocs {
     @GetMapping(value = "/{id}/ask", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter askArticle(@PathVariable Long id,
                                  @RequestParam String question,
+                                 @RequestHeader(value = "X-Anonymous-Session", required = false) String anonymousSessionHeader,
+                                 @RequestParam(value = "anonymousSession", required = false) String anonymousSessionQuery,
                                  Authentication authentication) {
         String crawledContent = detailService.getArticleCrawledContent(id);
 
@@ -72,9 +78,33 @@ public class AiController implements AiControllerDocs {
             throw new BaseException(DetailErrorStatus._CRAWLER_ERROR.getResponse());
         }
 
-        // 로그인 사용자면 userId 전달 → 스트리밍 완료 후 히스토리 저장
-        // 비로그인이면 null 전달 → 저장 생략 (기존 동작 유지)
         Long userId = (authentication != null) ? (Long) authentication.getPrincipal() : null;
-        return aiSseService.askGPT(crawledContent, question, userId, id);
+        // 로그인 시 DB 히스토리만 사용 (익명 식별자 무시)
+        String anonymousSessionId = (userId != null) ? null
+                : (anonymousSessionHeader != null && !anonymousSessionHeader.isBlank()
+                ? anonymousSessionHeader
+                : anonymousSessionQuery);
+        return aiSseService.askGPT(crawledContent, question, userId, id, anonymousSessionId);
+    }
+
+    /**
+     * 비로그인 전용: Redis에 저장된 해당 기사 대화 목록 (오래된 순). 유효한 X-Anonymous-Session 필요.
+     */
+    @Override
+    @GetMapping("/{id}/ask/history")
+    public ResponseEntity<ApiResponse> getAnonymousArticleChatHistory(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-Anonymous-Session", required = false) String anonymousSessionHeader,
+            @RequestParam(value = "anonymousSession", required = false) String anonymousSessionQuery) {
+        String anonymousSessionId = (anonymousSessionHeader != null && !anonymousSessionHeader.isBlank())
+                ? anonymousSessionHeader
+                : anonymousSessionQuery;
+        if (!AnonymousChatSessionService.isValidSessionId(anonymousSessionId)) {
+            return ApiResponse.success(GlobalSuccessStatus._OK.getResponse(), Collections.emptyList());
+        }
+        return ApiResponse.success(
+                GlobalSuccessStatus._OK.getResponse(),
+                anonymousChatSessionService.getFullHistory(anonymousSessionId.trim(), id)
+        );
     }
 }
