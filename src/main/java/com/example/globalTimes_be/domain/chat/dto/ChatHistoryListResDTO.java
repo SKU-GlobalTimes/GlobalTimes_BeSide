@@ -1,5 +1,6 @@
 package com.example.globalTimes_be.domain.chat.dto;
 
+import com.example.globalTimes_be.domain.article.entity.Article;
 import com.example.globalTimes_be.domain.chat.entity.ChatHistory;
 import lombok.Builder;
 import lombok.Getter;
@@ -33,6 +34,28 @@ public class ChatHistoryListResDTO {
                 .lastQuestion(latestChat.getQuestion())
                 .lastAnswerPreview(preview)
                 .lastChatAt(latestChat.getCreatedAt())
+                .build();
+    }
+
+    /** 비로그인 Redis 기사별 마지막 턴 → 플로팅 목록용 */
+    public static ChatHistoryListResDTO fromAnonymous(
+            Article article,
+            String lastQuestion,
+            String lastAnswer,
+            LocalDateTime lastChatAt
+    ) {
+        String answer = lastAnswer != null ? lastAnswer : "";
+        String preview = answer.length() > PREVIEW_MAX_LENGTH
+                ? answer.substring(0, PREVIEW_MAX_LENGTH) + "..."
+                : answer;
+
+        return ChatHistoryListResDTO.builder()
+                .articleId(article.getId())
+                .articleTitle(article.getTitle())
+                .thumbnailUrl(article.getUrlToImage())
+                .lastQuestion(lastQuestion != null ? lastQuestion : "")
+                .lastAnswerPreview(preview)
+                .lastChatAt(lastChatAt)
                 .build();
     }
 }
