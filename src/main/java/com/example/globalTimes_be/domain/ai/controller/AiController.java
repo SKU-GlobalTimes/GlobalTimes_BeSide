@@ -107,4 +107,24 @@ public class AiController implements AiControllerDocs {
                 anonymousChatSessionService.getFullHistory(anonymousSessionId.trim(), id)
         );
     }
+
+    /**
+     * 비로그인: 세션별 대화한 기사 목록 (플로팅 히스토리). 유효한 세션 ID 없으면 빈 배열.
+     */
+    @Override
+    @GetMapping("/anonymous/chat-history")
+    public ResponseEntity<ApiResponse> getAnonymousChatHistoryList(
+            @RequestHeader(value = "X-Anonymous-Session", required = false) String anonymousSessionHeader,
+            @RequestParam(value = "anonymousSession", required = false) String anonymousSessionQuery) {
+        String anonymousSessionId = (anonymousSessionHeader != null && !anonymousSessionHeader.isBlank())
+                ? anonymousSessionHeader
+                : anonymousSessionQuery;
+        if (!AnonymousChatSessionService.isValidSessionId(anonymousSessionId)) {
+            return ApiResponse.success(GlobalSuccessStatus._OK.getResponse(), Collections.emptyList());
+        }
+        return ApiResponse.success(
+                GlobalSuccessStatus._OK.getResponse(),
+                anonymousChatSessionService.getAnonymousChatHistoryList(anonymousSessionId.trim())
+        );
+    }
 }

@@ -226,4 +226,16 @@ public interface AiControllerDocs {
             @Parameter(description = "비로그인 세션 UUID (헤더)") @RequestHeader(value = "X-Anonymous-Session", required = false) String anonymousSessionHeader,
             @Parameter(description = "비로그인 세션 UUID (쿼리)") @RequestParam(value = "anonymousSession", required = false) String anonymousSessionQuery
     );
+
+    @Operation(
+            summary = "비로그인 채팅 기사 목록",
+            description = "X-Anonymous-Session(UUID)으로 대화한 기사를 최근 활동순으로 반환합니다. 로그인 사용자의 chat-history와 동일한 필드 스키마입니다. 세션이 없거나 형식이 잘못되면 빈 배열입니다."
+    )
+    @ApiResponse(responseCode = "200", description = "성공",
+            content = @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = com.example.globalTimes_be.global.apiPayload.code.ApiResponse.class)))
+    ResponseEntity<?> getAnonymousChatHistoryList(
+            @Parameter(description = "비로그인 세션 UUID (헤더)") @RequestHeader(value = "X-Anonymous-Session", required = false) String anonymousSessionHeader,
+            @Parameter(description = "비로그인 세션 UUID (쿼리)") @RequestParam(value = "anonymousSession", required = false) String anonymousSessionQuery
+    );
 }
