@@ -44,3 +44,5 @@ out/
 
 ### application file ###
 application*.yml
+
+frontend/
