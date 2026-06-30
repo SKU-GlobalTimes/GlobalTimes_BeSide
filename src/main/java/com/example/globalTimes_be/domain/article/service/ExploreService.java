@@ -5,6 +5,7 @@ import com.example.globalTimes_be.domain.article.dto.CursorArticleResponseDto;
 import com.example.globalTimes_be.domain.article.entity.Article;
 import com.example.globalTimes_be.domain.article.repository.ArticleRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +17,7 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 
 @RequiredArgsConstructor
+@Slf4j
 @Service
 public class ExploreService {
 
@@ -29,6 +31,7 @@ public class ExploreService {
             String cursorStr,
             int size
     ) {
+        long startedAt = System.nanoTime();
         LocalDateTime dateFrom = null;
         LocalDateTime dateTo = null;
         if (date != null && !date.isBlank()) {
@@ -51,10 +54,12 @@ public class ExploreService {
         String countryParam = (country != null && !country.isBlank()) ? country : null;
         String categoryParam = (category != null && !category.isBlank()) ? category : null;
 
+        long queryStartedAt = System.nanoTime();
         List<Article> fetched = articleRepository.findByExploreFilters(
                 countryParam, categoryParam, dateFrom, dateTo, cursor,
                 PageRequest.of(0, size + 1)
         );
+        long queryMs = elapsedMs(queryStartedAt);
 
         boolean hasNext = fetched.size() > size;
         List<Article> articles = hasNext ? fetched.subList(0, size) : fetched;
@@ -68,6 +73,21 @@ public class ExploreService {
                 .map(ArticleResponseDto::fromEntity)
                 .toList();
 
+        log.info("[Explore] country={} category={} date={} cursorProvided={} size={} resultCount={} hasNext={} dbQueryMs={} totalMs={}",
+                countryParam,
+                categoryParam,
+                date,
+                cursor != null,
+                size,
+                dtos.size(),
+                hasNext,
+                queryMs,
+                elapsedMs(startedAt));
+
         return new CursorArticleResponseDto(dtos, nextCursor, hasNext);
+    }
+
+    private long elapsedMs(long startedAt) {
+        return (System.nanoTime() - startedAt) / 1_000_000;
     }
 }
