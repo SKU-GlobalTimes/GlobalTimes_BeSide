@@ -145,3 +145,6 @@ PR #<PR_NUMBER>의 AI Reviewer comment를 읽고 수정 계획을 세워줘.
 - 위험 파일 변경 감지
 - 승인 상태와 tool 실행 내역을 저장하는 audit log
 - 반복 패턴이 충분히 쌓인 뒤 MCP 서버로 도구화
+
+PR comment에서 Blocking 여부를 확인하는 보조 스크립트는
+[AI Reviewer Blocking 확인 스크립트](./review-blocking-check-script.md)를 참고한다.
