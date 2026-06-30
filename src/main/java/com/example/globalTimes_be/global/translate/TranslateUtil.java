@@ -24,7 +24,7 @@ public class TranslateUtil {
 
     //자동으로 언어 감지 후 영어로 번역
     public String translateToEnglish(String text){
-        log.debug("[번역 요청] text: {}", text);
+        log.debug("[TranslateUtil] request textLength={}", text.length());
         try {
             Translation translation = translate.translate(
                     text,
@@ -32,7 +32,9 @@ public class TranslateUtil {
                     Translate.TranslateOption.model("base") // 기본 모델 사용
             );
 
-            log.info("번역 전: {}, 번역 후: {}", text, translation.getTranslatedText());
+            log.info("[TranslateUtil] success textLength={} translatedLength={}",
+                    text.length(),
+                    translation.getTranslatedText().length());
 
             return translation.getTranslatedText();
         } catch (Exception e) {

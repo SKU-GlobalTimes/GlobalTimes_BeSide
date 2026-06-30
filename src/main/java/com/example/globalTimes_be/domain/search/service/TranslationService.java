@@ -28,8 +28,9 @@ public class TranslationService {
         }
 
         // 구글번역 (API 키 미설정 또는 호출 실패 시 원문 그대로 사용)
+        long externalCallStartedAt = 0;
         try {
-            long externalCallStartedAt = System.nanoTime();
+            externalCallStartedAt = System.nanoTime();
             String translatedText = translateUtil.translateToEnglish(text);
             long externalCallMs = elapsedMs(externalCallStartedAt);
             redisUtil.setData("translation:" + text, translatedText, 86400);
@@ -37,8 +38,9 @@ public class TranslationService {
                     externalCallMs, elapsedMs(startedAt), text.length(), translatedText.length());
             return translatedText;
         } catch (Exception e) {
-            log.warn("[Translation] cacheHit=false externalCall=true fallback=original elapsedMs={} textLength={} reason={}",
-                    elapsedMs(startedAt), text.length(), e.getMessage());
+            long externalCallMs = (externalCallStartedAt > 0) ? elapsedMs(externalCallStartedAt) : 0;
+            log.warn("[Translation] cacheHit=false externalCall=true fallback=original externalCallMs={} elapsedMs={} textLength={} reason={}",
+                    externalCallMs, elapsedMs(startedAt), text.length(), e.getMessage());
             return text;
         }
     }
