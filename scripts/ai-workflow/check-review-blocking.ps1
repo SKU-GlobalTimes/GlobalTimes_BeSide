@@ -43,8 +43,10 @@ function Test-EmptySection {
 
 $json = gh pr view $PrNumber --repo $Repo --comments --json comments,url,state,mergeable | ConvertFrom-Json
 
+$bom = [char]0xFEFF
+$reviewHeadingPattern = "(?m)^[$bom\s]*##\s+.*AI Reviewer"
 $reviewComments = @($json.comments | Where-Object {
-        $_.body -match "AI Reviewer" -or $_.body -match "Blocking"
+        $_.body -match $reviewHeadingPattern
     } | Sort-Object createdAt -Descending)
 
 if ($reviewComments.Count -eq 0) {
@@ -63,6 +65,18 @@ $conclusion = Get-Section -Body $body -Name "Conclusion"
 if ([string]::IsNullOrWhiteSpace($conclusion)) {
     $conclusionKo = "$([char]0xACB0)$([char]0xB860)"
     $conclusion = Get-Section -Body $body -Name $conclusionKo
+}
+
+if ([string]::IsNullOrWhiteSpace($blocking)) {
+    Write-Output "PR #$PrNumber AI Reviewer Status"
+    Write-Output "PR URL: $($json.url)"
+    Write-Output "PR State: $($json.state)"
+    Write-Output "Mergeable: $($json.mergeable)"
+    Write-Output "Reviewer Comment: $($latest.url)"
+    Write-Output "Reviewer CreatedAt: $($latest.createdAt)"
+    Write-Output "Decision: REVIEW_NOT_FOUND"
+    Write-Output "Reason: Blocking section was not found in the latest AI Reviewer comment."
+    exit 2
 }
 
 $hasBlocking = -not (Test-EmptySection -Content $blocking)
