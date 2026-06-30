@@ -5,6 +5,7 @@ import com.example.globalTimes_be.domain.article.repository.ArticleRepository;
 import com.example.globalTimes_be.domain.search.dto.response.SearchArticleDTO;
 import com.example.globalTimes_be.domain.search.dto.response.SearchResDTO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -15,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @RequiredArgsConstructor
+@Slf4j
 @Service
 public class SearchArticlesService {
     private final ArticleRepository articleRepository;
@@ -29,6 +31,7 @@ public class SearchArticlesService {
             String category,
             String date
     ) {
+        long startedAt = System.nanoTime();
         LocalDateTime dateFrom = null;
         LocalDateTime dateTo = null;
         if (date != null && !date.isBlank()) {
@@ -43,6 +46,7 @@ public class SearchArticlesService {
         String countryParam = (country != null && !country.isBlank()) ? country : null;
         String categoryParam = (category != null && !category.isBlank()) ? category : null;
 
+        long searchStartedAt = System.nanoTime();
         List<Article> articles = articleRepository.searchByDescriptionOrTitleWithExploreFilters(
                 text,
                 translatedText,
@@ -51,6 +55,7 @@ public class SearchArticlesService {
                 dateFrom,
                 dateTo
         );
+        long searchMs = elapsedMs(searchStartedAt);
         
         // 검색결과에 대한 기사 DTO 리스트 생성
         List<SearchArticleDTO> searchArticleDTOs = new ArrayList<>();
@@ -75,11 +80,25 @@ public class SearchArticlesService {
             searchArticleDTOs.add(searchArticleDTO);
         }
         
+        log.info("[Search] textLength={} translatedLength={} country={} category={} date={} resultCount={} dbSearchMs={} totalMs={}",
+                text.length(),
+                translatedText.length(),
+                countryParam,
+                categoryParam,
+                date,
+                searchArticleDTOs.size(),
+                searchMs,
+                elapsedMs(startedAt));
+
         //결과 반환
         return SearchResDTO.builder()
                 .originalText(text)
                 .translatedText(translatedText)
                 .searchArticles(searchArticleDTOs)
                 .build();
+    }
+
+    private long elapsedMs(long startedAt) {
+        return (System.nanoTime() - startedAt) / 1_000_000;
     }
 }

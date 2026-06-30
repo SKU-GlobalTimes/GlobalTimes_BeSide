@@ -38,13 +38,21 @@ public class PerspectivesService {
 
     @Transactional(readOnly = true)
     public PerspectivesResDTO getPerspectives(Long articleId) {
+        long totalStartedAt = System.nanoTime();
         if (cacheTtlSeconds > 0) {
             try {
+                long cacheStartedAt = System.nanoTime();
                 String cached = redisUtil.getData(CACHE_KEY_PREFIX + articleId);
                 if (cached != null) {
                     try {
-                        log.debug("[Perspectives] 캐시 히트 articleId={}", articleId);
-                        return objectMapper.readValue(cached, PerspectivesResDTO.class);
+                        PerspectivesResDTO response = objectMapper.readValue(cached, PerspectivesResDTO.class);
+                        log.info("[Perspectives] articleId={} cacheHit=true cacheReadMs={} totalMs={} countriesFound={} totalArticles={}",
+                                articleId,
+                                elapsedMs(cacheStartedAt),
+                                elapsedMs(totalStartedAt),
+                                response.getCountriesFound(),
+                                response.getTotalArticles());
+                        return response;
                     } catch (Exception e) {
                         log.warn("[Perspectives] 캐시 역직렬화 실패, 재계산: {}", e.getMessage());
                     }
@@ -54,31 +62,54 @@ public class PerspectivesService {
             }
         }
 
+        long baseLookupStartedAt = System.nanoTime();
         Article base = articleRepository.findById(articleId)
                 .orElseThrow(() -> new BaseException(DetailErrorStatus._EMPTY_NEWS_DATA.getResponse()));
+        long baseLookupMs = elapsedMs(baseLookupStartedAt);
 
+        long keywordStartedAt = System.nanoTime();
         String plainKeyword = KeywordExtractor.extractPlain(base.getTitle());
         String booleanKeyword = KeywordExtractor.extract(base.getTitle());
+        long keywordMs = elapsedMs(keywordStartedAt);
 
-        log.info("[Perspectives] 기사 id={} 키워드 추출: '{}'", articleId, plainKeyword);
+        log.info("[Perspectives] articleId={} keywordLength={} keywordMs={}",
+                articleId,
+                plainKeyword.length(),
+                keywordMs);
 
         // 영어가 아닌 기사는 제목을 영어로 번역해 영어권 기사도 탐색
         String searchKeyword = booleanKeyword;
+        boolean translationRequested = false;
+        boolean translationFallback = false;
+        long translationMs = 0;
         if (!"en".equals(base.getLanguage())) {
             try {
+                translationRequested = true;
+                long translationStartedAt = System.nanoTime();
                 String translated = translationService.translateToEnglish(plainKeyword);
+                translationMs = elapsedMs(translationStartedAt);
                 searchKeyword = KeywordExtractor.extract(translated);
-                log.info("[Perspectives] 번역된 키워드: '{}'", translated);
+                log.info("[Perspectives] articleId={} translationRequested=true sourceLanguage={} translatedLength={} translationMs={}",
+                        articleId,
+                        base.getLanguage(),
+                        translated.length(),
+                        translationMs);
             } catch (Exception e) {
+                translationFallback = true;
                 log.warn("[Perspectives] 번역 실패, 원문 키워드로 탐색: {}", e.getMessage());
             }
         }
 
+        long searchStartedAt = System.nanoTime();
         List<Article> results = articleRepository.findPerspectives(articleId, searchKeyword);
+        long translatedSearchMs = elapsedMs(searchStartedAt);
+        long originalSearchMs = 0;
 
         // 원문 키워드로도 추가 탐색 (번역 키워드와 다를 경우)
         if (!searchKeyword.equals(booleanKeyword) && !booleanKeyword.isBlank()) {
+            long originalSearchStartedAt = System.nanoTime();
             List<Article> originalResults = articleRepository.findPerspectives(articleId, booleanKeyword);
+            originalSearchMs = elapsedMs(originalSearchStartedAt);
             // 중복 제거 후 병합
             List<Long> existingIds = results.stream().map(Article::getId).toList();
             originalResults.stream()
@@ -103,8 +134,18 @@ public class PerspectivesService {
                 .mapToInt(List::size)
                 .sum();
 
-        log.info("[Perspectives] 기사 id={} | 키워드='{}' | {}개 국가, {}개 기사 반환",
-                articleId, plainKeyword, perspectives.size(), totalArticles);
+        log.info("[Perspectives] articleId={} cacheHit=false baseLookupMs={} keywordMs={} translationRequested={} translationFallback={} translationMs={} translatedSearchMs={} originalSearchMs={} countriesFound={} totalArticles={} totalMs={}",
+                articleId,
+                baseLookupMs,
+                keywordMs,
+                translationRequested,
+                translationFallback,
+                translationMs,
+                translatedSearchMs,
+                originalSearchMs,
+                perspectives.size(),
+                totalArticles,
+                elapsedMs(totalStartedAt));
 
         PerspectivesResDTO response = PerspectivesResDTO.builder()
                 .keyword(plainKeyword)
@@ -125,5 +166,9 @@ public class PerspectivesService {
         }
 
         return response;
+    }
+
+    private long elapsedMs(long startedAt) {
+        return (System.nanoTime() - startedAt) / 1_000_000;
     }
 }
