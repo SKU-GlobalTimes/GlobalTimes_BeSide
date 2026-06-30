@@ -11,6 +11,9 @@ AI를 단순 코드 생성 도구가 아니라 조사, 계획, 구현, 검토를
 조사 → 계획 제안 → 사용자 승인 → GitHub Issue → 작업 브랜치 → 구현 → 검증 및 리뷰 → PR → 사용자 확인 후 Merge
 ```
 
+Reviewer 세션을 별도로 운영하는 경우에는 GitHub PR comment를 중심으로 리뷰 결과와 반영 내역을 기록한다.
+자세한 흐름은 [AI Reviewer PR Comment Workflow](./reviewer-comment-workflow.md)를 따른다.
+
 ## 역할 분리
 
 | 역할 | 책임 | 코드 수정 권한 |
@@ -21,6 +24,7 @@ AI를 단순 코드 생성 도구가 아니라 조사, 계획, 구현, 검토를
 | 검토자 | 범위 이탈, 예외 처리, 누락 테스트, 운영 위험을 검토 | 없음 |
 
 한 작업에서 같은 AI가 역할을 수행할 수는 있지만, 검토 단계에서는 구현 관점과 분리해 확인한다.
+별도 Reviewer 세션은 코드 수정, 커밋, push, merge 권한 없이 PR diff 검토와 PR comment 작성만 수행한다.
 
 ## 승인 게이트
 
@@ -41,6 +45,7 @@ AI를 단순 코드 생성 도구가 아니라 조사, 계획, 구현, 검토를
 | 문제, 목표, 범위, 완료 기준 | GitHub Issue |
 | 실제 변경 이력 | 작업 브랜치와 커밋 |
 | 계획 대비 변경점, 테스트·성능 결과 | PR 본문 |
+| AI Reviewer 검토 결과와 반영 내역 | PR comment |
 | 중요한 기술 선택과 대안 | `docs/adr/` |
 | 개선 후보와 우선순위 | `docs/backend-improvement/BACKLOG.md` |
 
