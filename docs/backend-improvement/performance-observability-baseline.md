@@ -28,6 +28,7 @@
 
 - `cacheHit`: Redis 번역 캐시 hit 여부
 - `externalCall`: 외부 번역 API 호출 여부
+- `externalCallMs`: 외부 번역 API 순수 호출 시간
 - `fallback`: 번역 실패 시 원문 사용 여부
 - `textLength`, `translatedLength`: 민감한 원문 대신 길이만 기록
 

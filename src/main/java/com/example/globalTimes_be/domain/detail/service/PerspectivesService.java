@@ -72,7 +72,10 @@ public class PerspectivesService {
         String booleanKeyword = KeywordExtractor.extract(base.getTitle());
         long keywordMs = elapsedMs(keywordStartedAt);
 
-        log.info("[Perspectives] 기사 id={} 키워드 추출: '{}' keywordMs={}", articleId, plainKeyword, keywordMs);
+        log.info("[Perspectives] articleId={} keywordLength={} keywordMs={}",
+                articleId,
+                plainKeyword.length(),
+                keywordMs);
 
         // 영어가 아닌 기사는 제목을 영어로 번역해 영어권 기사도 탐색
         String searchKeyword = booleanKeyword;
@@ -86,7 +89,11 @@ public class PerspectivesService {
                 String translated = translationService.translateToEnglish(plainKeyword);
                 translationMs = elapsedMs(translationStartedAt);
                 searchKeyword = KeywordExtractor.extract(translated);
-                log.info("[Perspectives] 번역된 키워드: '{}' translationMs={}", translated, translationMs);
+                log.info("[Perspectives] articleId={} translationRequested=true sourceLanguage={} translatedLength={} translationMs={}",
+                        articleId,
+                        base.getLanguage(),
+                        translated.length(),
+                        translationMs);
             } catch (Exception e) {
                 translationFallback = true;
                 log.warn("[Perspectives] 번역 실패, 원문 키워드로 탐색: {}", e.getMessage());

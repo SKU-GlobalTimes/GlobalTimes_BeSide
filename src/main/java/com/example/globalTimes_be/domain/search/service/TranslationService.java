@@ -29,10 +29,12 @@ public class TranslationService {
 
         // 구글번역 (API 키 미설정 또는 호출 실패 시 원문 그대로 사용)
         try {
+            long externalCallStartedAt = System.nanoTime();
             String translatedText = translateUtil.translateToEnglish(text);
+            long externalCallMs = elapsedMs(externalCallStartedAt);
             redisUtil.setData("translation:" + text, translatedText, 86400);
-            log.info("[Translation] cacheHit=false externalCall=true elapsedMs={} textLength={} translatedLength={}",
-                    elapsedMs(startedAt), text.length(), translatedText.length());
+            log.info("[Translation] cacheHit=false externalCall=true externalCallMs={} elapsedMs={} textLength={} translatedLength={}",
+                    externalCallMs, elapsedMs(startedAt), text.length(), translatedText.length());
             return translatedText;
         } catch (Exception e) {
             log.warn("[Translation] cacheHit=false externalCall=true fallback=original elapsedMs={} textLength={} reason={}",
