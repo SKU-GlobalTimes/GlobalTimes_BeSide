@@ -44,7 +44,8 @@ function Test-EmptySection {
 $json = gh pr view $PrNumber --repo $Repo --comments --json comments,url,state,mergeable | ConvertFrom-Json
 
 $bom = [char]0xFEFF
-$reviewHeadingPattern = "(?m)^[$bom\s]*##\s+.*AI Reviewer"
+$reviewResultKo = "$([char]0xAC80)$([char]0xD1A0) $([char]0xACB0)$([char]0xACFC)"
+$reviewHeadingPattern = "(?m)^[$bom\s]*##\s+.*AI Reviewer\s+$reviewResultKo\s*$"
 $reviewComments = @($json.comments | Where-Object {
         $_.body -match $reviewHeadingPattern
     } | Sort-Object createdAt -Descending)

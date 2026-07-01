@@ -30,7 +30,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\ai-workflow\check-review-bloc
 
 | 상태 | 의미 |
 | --- | --- |
-| `MERGE_READY` | 최신 AI Reviewer comment의 Blocking 섹션이 비어 있거나 `없음`으로 판단된다. |
+| `MERGE_READY` | 최신 AI Reviewer comment의 Blocking 섹션이 `없음` 등 명시적 비어 있음 표현으로 판단된다. |
 | `CHANGES_REQUIRED` | Blocking 섹션에 수정이 필요한 항목이 있다. |
 | `REVIEW_NOT_FOUND` | AI Reviewer comment를 찾지 못했다. |
 
@@ -47,7 +47,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\ai-workflow\check-review-bloc
 - GitHub CLI(`gh`)가 설치되어 있어야 한다.
 - `gh auth login`으로 대상 저장소를 읽을 권한이 있어야 한다.
 - Reviewer comment는 `### Blocking`, `### Non-blocking`, `### 결론` 섹션을 사용하는 형식을 권장한다.
-- 스크립트는 제목 줄이 `AI Reviewer`를 포함하는 최신 comment를 Reviewer comment 후보로 사용한다.
+- 스크립트는 제목 줄이 `AI Reviewer 검토 결과` 형식을 포함하는 최신 comment를 Reviewer comment 후보로 사용한다.
 - GitHub comment 앞에 BOM 또는 공백이 붙는 경우를 고려해 제목 앞 숨은 문자를 허용한다.
 - Windows PowerShell 5.1의 UTF-8 파싱 차이를 줄이기 위해, 스크립트 내부의 일부 한글 판정은 유니코드 코드포인트 기반으로 처리한다.
 
