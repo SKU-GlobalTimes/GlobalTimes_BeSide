@@ -113,7 +113,7 @@ k6 run .\load-tests\k6\api-baseline.js
 추가 확인:
 
 - `SEARCH_TEXT=war`, `korea`, `economy`, `technology`는 현재 로컬 환경에서 `/api/search` 500 응답을 반환했다.
-- 해당 문제는 부하 테스트 스크립트 문제가 아니라 검색 API의 입력/데이터/쿼리 처리 이슈 후보로 보고 후속 이슈에서 분리한다.
+- 서버 로그에서 `LazyInitializationException`이 확인되었으며, 해당 문제는 부하 테스트 스크립트가 아니라 검색 API의 입력/데이터/쿼리 처리 이슈 후보로 보고 [#123](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/123)에서 분리해 수정한다.
 - 위 smoke test 결과는 부하 한계 측정이 아니라 스크립트 실행 가능성과 기본 지표 수집 가능성을 확인한 결과다.
 
 ## 개선 후보 기록 템플릿
