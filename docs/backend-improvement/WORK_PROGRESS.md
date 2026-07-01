@@ -360,6 +360,9 @@ $env:PERSPECTIVES_DURATION = "15s"
 → Lazy loading 문제 수정 후 실패율 0.00%로 개선
 ```
 
+`16.25%`는 #121 k6 smoke test 중 `SEARCH_TEXT=war`, `ARTICLE_ID=8449`, 각 시나리오 VU 1명, duration 15초 조건에서 측정된 값이다.
+당시 총 80 requests 중 13건이 2xx 응답을 받지 못해 `http_req_failed=16.25%`로 기록되었다.
+
 주의:
 
 - #123은 실제 API 버그 수정 PR이다.
