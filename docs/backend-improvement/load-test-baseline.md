@@ -57,7 +57,7 @@ k6 run .\load-tests\k6\api-baseline.js
 ```powershell
 $env:BASE_URL = "http://localhost:8080"
 $env:ARTICLE_ID = "1"
-$env:SEARCH_TEXT = "war"
+$env:SEARCH_TEXT = "대구"
 k6 run .\load-tests\k6\api-baseline.js
 ```
 
@@ -88,6 +88,33 @@ k6 run .\load-tests\k6\api-baseline.js
 |  | local/dev | articles_baseline |  |  |  |  |
 |  | local/dev | search_baseline |  |  |  |  |
 |  | local/dev | perspectives_repeated |  |  |  |  |
+
+## Smoke test 결과
+
+2026-07-01 로컬 개발 환경에서 k6 실행 가능 여부를 확인하기 위한 짧은 smoke test를 수행했다.
+
+조건:
+
+- `BASE_URL=http://localhost:8080`
+- `ARTICLE_ID=8449`
+- `SEARCH_TEXT=대구`
+- 각 시나리오 VU 1명
+- 각 시나리오 duration 15초
+
+결과:
+
+| API/시나리오 | 평균 응답 시간 | p95 응답 시간 | 오류율 | 비고 |
+| --- | --- | --- | --- | --- |
+| 전체 | 28.38ms | 49.29ms | 0.00% | 86 requests |
+| articles | 28.9ms | 48.84ms | 0.00% | latest, cursor, popular, explore |
+| search | 41.77ms | 61.1ms | 0.00% | `SEARCH_TEXT=대구` |
+| perspectives | 13.05ms | 15.86ms | 0.00% | 반복 호출 기준 |
+
+추가 확인:
+
+- `SEARCH_TEXT=war`, `korea`, `economy`, `technology`는 현재 로컬 환경에서 `/api/search` 500 응답을 반환했다.
+- 해당 문제는 부하 테스트 스크립트 문제가 아니라 검색 API의 입력/데이터/쿼리 처리 이슈 후보로 보고 후속 이슈에서 분리한다.
+- 위 smoke test 결과는 부하 한계 측정이 아니라 스크립트 실행 가능성과 기본 지표 수집 가능성을 확인한 결과다.
 
 ## 개선 후보 기록 템플릿
 
