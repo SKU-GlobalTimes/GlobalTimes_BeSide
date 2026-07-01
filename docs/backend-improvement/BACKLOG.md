@@ -31,7 +31,7 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## P1. Perspectives API 관측성 및 성능 기준선 확보
 
-- 상태: `Backlog`
+- 상태: `In Progress` ([#121](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/121))
 - AS-IS: 캐시 미스 시 기사 조회, 키워드 추출, 번역 API 호출, FULLTEXT 검색이 요청 경로에서 수행되지만 단계별 지연 시간과 캐시 효과를 수치로 설명할 수 없다.
 - TO-BE: 캐시 히트율, 단계별 처리 시간, 외부 번역 API 호출량, p95 응답 시간을 측정하고 부하 테스트 기준선을 만든다.
 - 성공 기준:
