@@ -66,6 +66,19 @@ Blocking 예시:
 
 ## 2. 지금까지 완료한 작업
 
+### 현재까지의 큰 흐름 요약
+
+- #113/#114에서 백엔드 개선 backlog와 AI 협업 운영 규칙을 만들었다.
+- #115/#116에서 주요 API의 성능 관측 로그를 추가했고, 민감 정보 로그 노출은 Reviewer Blocking으로 잡아 같은 PR에서 수정했다.
+- #117/#118, #119/#120에서 Reviewer comment workflow와 Blocking 확인 스크립트를 정리했다.
+- #121/#122에서 k6 기반 주요 API 부하 테스트 기준선을 만들었고, 이 과정에서 `/api/search` 500 응답을 발견했다.
+- #123/#126에서 검색 API `LazyInitializationException`을 수정하고, 동일 k6 smoke 조건에서 `http_req_failed`를 16.25%에서 0.00%로 낮췄다.
+- #127/#128에서 Perspectives API cold/warm Redis cache 부하 테스트를 분리해 cold p95 218.65ms, warm p95 21.29ms를 기록했다.
+- #129/#130에서 Perspectives Redis cache key/TTL/fallback/stale 허용 기준을 문서화했다.
+- #131/#132에서 Perspectives FULLTEXT 쿼리의 `EXPLAIN`/`EXPLAIN ANALYZE`를 기록했고, 현재 데이터 규모에서는 FULLTEXT 인덱스 사용을 확인했다.
+- #133/#134에서 검색 API FULLTEXT 실행 계획을 분석하고, 원문/번역 검색어가 같은 경우 중복 `OR MATCH`를 제거해 FULLTEXT 인덱스를 사용하도록 개선했다.
+- 다음 우선 후보는 외부 I/O 기본기와 연결되는 `[FIX] 기사 원문 크롤링 timeout 및 실패 처리 개선`이다. Jsoup timeout, 본문 없음 fallback, 차단 응답 처리, 트랜잭션 내 외부 I/O 여부를 조사하는 흐름이 자연스럽다.
+
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/113
@@ -452,7 +465,8 @@ WARM_DURATION=15s
 ### #133 - 검색 API FULLTEXT 성능 및 검색어별 안정성 분석
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/133
-- 상태: In Progress
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/134
+- 상태: merged
 - 작업 브랜치: `perf/#133-search-fulltext-analysis`
 - 주요 파일:
   - `src/main/java/com/example/globalTimes_be/domain/article/repository/ArticleRepository.java`
@@ -482,6 +496,23 @@ WARM_DURATION=15s
 
 - 영어처럼 원문/번역어가 같은 검색어에서는 중복 OR를 제거해 의도한 FULLTEXT 인덱스를 사용하도록 하는 것이 작고 안전한 개선이다.
 - 한국어/다국어 검색 품질, 형태소 분석, Elasticsearch/vector search는 별도 품질 개선 이슈로 분리한다.
+
+검증:
+
+```text
+./gradlew.bat test
+git diff --check
+/api/search?text=war -> 200
+/api/search?text=economy -> 200
+/api/search?text=technology -> 200
+/api/search?text=대구 -> 200
+```
+
+Reviewer 결과:
+
+- Blocking 없음.
+- Non-blocking으로 지적된 `EXPLAIN` 예시의 필터 조건 범위 설명은 같은 PR에서 보강했다.
+- 2026-07-03 기준 PR #134는 merge 완료되었다.
 
 ## 4. 이후 개선 로드맵
 
@@ -677,6 +708,13 @@ GlobalTimes_BeSide 백엔드 개선 작업을 이어서 진행하려고 합니�
 먼저 docs/backend-improvement/WORK_PROGRESS.md 를 읽고 현재까지의 작업 흐름을 파악해줘.
 우리는 Issue → Branch → 조사 → 계획 → 승인 → 구현 → 테스트 → PR → AI Reviewer comment → Blocking 확인 → merge 순서로 작업합니다.
 
+현재까지 완료한 큰 흐름은 다음과 같습니다.
+- #123/#126: 검색 API LazyInitializationException으로 인한 500 응답 수정
+- #127/#128: Perspectives API cold/warm Redis cache 부하 테스트 분리
+- #129/#130: Perspectives Redis cache 삭제/무효화/stale 허용 정책 문서화
+- #131/#132: Perspectives FULLTEXT 쿼리 EXPLAIN 분석
+- #133/#134: 검색 API FULLTEXT 성능 및 검색어별 안정성 분석, 중복 OR MATCH 최적화
+
 바로 구현하지 말고,
 1. 현재 develop 최신화
 2. `WORK_PROGRESS.md`의 In Progress 작업과 최근 merged PR을 확인
@@ -686,6 +724,9 @@ GlobalTimes_BeSide 백엔드 개선 작업을 이어서 진행하려고 합니�
 6. 원인/범위/수정 계획을 제안
 7. 사용자 승인 후 구현
 순서로 진행해주세요.
+
+다음 후보로는 `[FIX] 기사 원문 크롤링 timeout 및 실패 처리 개선`을 우선 검토해줘.
+이 작업은 Jsoup timeout, 본문 없음 fallback, 차단 응답 처리, 재크롤링 방지, 트랜잭션 내 외부 I/O 여부를 조사하는 흐름으로 진행하면 됩니다.
 ```
 
 ## 6. 이 문서를 GitHub에 올릴지에 대한 판단
