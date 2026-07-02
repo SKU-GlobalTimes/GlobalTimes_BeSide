@@ -328,7 +328,8 @@ PERSPECTIVES_DURATION=15s
 ### #127 - Perspectives API cold/warm cache 부하 테스트 분리
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/127
-- 상태: In Progress
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/128
+- 상태: merged
 - 작업 브랜치: `perf/#127-perspectives-cache-load-test`
 
 목표:
@@ -381,6 +382,37 @@ WARM_DURATION=15s
 - 현재 Perspectives 관련 기사 탐색은 제목 기반 키워드 추출과 MySQL FULLTEXT 검색에 의존한다.
 - 이는 진정한 의미의 semantic similarity가 아니므로, 같은 사건이라도 표현이 다르면 누락될 수 있다.
 - 이번 작업은 검색 품질 개선이 아니라 cache hit/miss 성능 차이를 분리 측정하는 작업이다.
+
+---
+
+### #129 - Perspectives API Redis 캐시 정책 및 정합성 점검
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/129
+- 상태: In Progress
+- 작업 브랜치: `perf/#129-perspectives-redis-cache-policy`
+- 주요 파일:
+  - `docs/backend-improvement/perspectives-redis-cache-policy.md`
+
+목표:
+
+- #127에서 확인한 Redis warm cache 효과를 바탕으로, `PerspectivesService`의 cache key, TTL, 실패 처리, stale cache 허용 기준을 설명 가능하게 정리한다.
+- Redis를 단순 성능 도구로만 쓰는 것이 아니라, 캐시 정합성 trade-off까지 문서화한다.
+
+현재 확인한 정책:
+
+- Redis key: `perspectives:article:{articleId}`
+- TTL: `perspectives.cache-ttl-seconds`, 기본 3600초
+- `perspectives.cache-ttl-seconds=0`이면 캐시 미사용
+- Redis read 실패, JSON 역직렬화 실패는 warn 로그 후 DB/FULLTEXT 재계산
+- Redis write 실패는 warn 로그 후 무시하고 API 응답은 반환
+- 명시적 invalidation은 현재 없음
+
+정합성 판단:
+
+- 현재 서비스는 뉴스 수집 후 읽기 중심이며, 기사 제목/국가/category/source를 수정하는 API는 없다.
+- `viewCount`, `summary`, `crawledContent` 변경은 Perspectives 응답에 포함되지 않아 무효화 대상이 아니다.
+- 새 관련 기사 삽입, base article title 변경, country/category/source 변경은 stale cache 가능성이 있지만 현재는 1시간 TTL 기반 stale 허용으로 충분하다고 판단한다.
+- 명시적 invalidation은 관리자 수정 API나 더 긴 TTL이 필요해질 때 별도 이슈로 검토한다.
 
 ## 4. 이후 개선 로드맵
 
@@ -576,17 +608,14 @@ GlobalTimes_BeSide 백엔드 개선 작업을 이어서 진행하려고 합니�
 먼저 docs/backend-improvement/WORK_PROGRESS.md 를 읽고 현재까지의 작업 흐름을 파악해줘.
 우리는 Issue → Branch → 조사 → 계획 → 승인 → 구현 → 테스트 → PR → AI Reviewer comment → Blocking 확인 → merge 순서로 작업합니다.
 
-다음 작업은 #127 입니다.
-Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/127
-목표: Perspectives API cold cache와 warm cache 부하 테스트를 분리해 Redis 캐시 효과를 수치화
-
 바로 구현하지 말고,
 1. 현재 develop 최신화
-2. #127 작업 브랜치 확인 또는 생성
-3. `PerspectivesService`, Redis key/TTL, 기존 k6 스크립트 조사
-4. cold/warm cache 측정 방식 분석
-5. 수정 계획 제안
-6. 사용자 승인 후 구현
+2. `WORK_PROGRESS.md`의 In Progress 작업과 최근 merged PR을 확인
+3. 진행 중인 작업이 있으면 해당 Issue/PR/브랜치 상태를 확인
+4. 진행 중인 작업이 없으면 이후 개선 로드맵에서 다음 후보를 제안
+5. 관련 코드와 문서를 조사
+6. 원인/범위/수정 계획을 제안
+7. 사용자 승인 후 구현
 순서로 진행해주세요.
 ```
 

@@ -112,6 +112,7 @@ $env:WARM_DURATION = "15s"
 - cold cache p95가 높다면 병목 후보는 기준 기사 조회, 키워드 추출, 번역, FULLTEXT 검색, 그룹핑 중 하나다.
 - warm cache p95가 높다면 Redis 조회, JSON 역직렬화, 네트워크, 응답 크기를 추가로 확인한다.
 - 캐시 key, TTL, 정합성 정책 변경은 측정 결과를 근거로 후속 이슈에서 다룬다.
+- 현재 Redis key, TTL, 실패 처리, stale cache 허용 판단은 `docs/backend-improvement/perspectives-redis-cache-policy.md`에 기록한다.
 
 ## 주의사항
 
