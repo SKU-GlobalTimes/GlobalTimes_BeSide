@@ -264,110 +264,123 @@ Smoke test 결과:
 
 ## 3. 현재 바로 이어서 해야 할 작업
 
-### #123 - 검색 API LazyInitializationException으로 인한 500 응답 수정
+### #123 / PR #126 - 검색 API LazyInitializationException으로 인한 500 응답 수정
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/123
-- 상태: 시작 전
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/126
+- 상태: merged
+- 주요 파일:
+  - `src/main/java/com/example/globalTimes_be/domain/search/service/SearchArticlesService.java`
 
 문제:
 
-```text
-/api/search?text=war
-/api/search?text=korea
-/api/search?text=economy
-/api/search?text=technology
-```
+- `/api/search?text=war`, `korea`, `economy`, `technology` 요청에서 500 응답이 발생했다.
+- 서버 로그에서 `LazyInitializationException`이 확인되었다.
+- `Article.source`가 `FetchType.LAZY`이고 `spring.jpa.open-in-view=false`인 상태에서, 검색 결과 DTO 변환 중 `article.getSource().getSourceName()` 접근이 영속성 컨텍스트 밖에서 발생할 수 있었다.
 
-위 요청에서 500 응답이 발생했다.
-서버 로그에는 `LazyInitializationException`이 기록되었다.
+수정:
 
-확인된 로그 요약:
+- `SearchArticlesService#getSearchArticles()`에 `@Transactional(readOnly = true)`를 추가했다.
+- 검색 쿼리와 응답 DTO 구조는 변경하지 않았다.
+- N+1, fetch join, DTO projection 개선은 이번 PR에 섞지 않고 후속 성능 이슈 후보로 남겼다.
 
-```text
-[TranslateUtil] success textLength=10 translatedLength=10
-[Translation] cacheHit=false externalCall=true externalCallMs=116 elapsedMs=117 textLength=10 translatedLength=10
-GlobalErrorHandler : 발생한 예외 타입: LazyInitializationException
-GlobalErrorHandler : Exception Error
-```
-
-현재 추정 원인:
-
-- `SearchArticlesService`에서 검색 결과 `Article`을 DTO로 변환할 때 `article.getSource().getSourceName()`에 접근한다.
-- `Article.source`가 lazy loading 관계라면, Repository 조회 이후 영속성 컨텍스트가 닫힌 상태에서 source에 접근하며 `LazyInitializationException`이 발생할 수 있다.
-- 한국어 검색어 `대구`는 200이었고 영어 검색어에서 500이 발생했으므로, 검색 결과 데이터 또는 FULLTEXT 결과에 source lazy loading 문제가 있는 article이 포함될 가능성이 있다.
-
-관련 코드 후보:
-
-- `src/main/java/com/example/globalTimes_be/domain/search/controller/SearchController.java`
-- `src/main/java/com/example/globalTimes_be/domain/search/service/SearchArticlesService.java`
-- `src/main/java/com/example/globalTimes_be/domain/article/repository/ArticleRepository.java`
-- `src/main/java/com/example/globalTimes_be/domain/article/entity/Article.java`
-- `src/main/java/com/example/globalTimes_be/domain/source/entity/Source.java`
-- `src/main/java/com/example/globalTimes_be/domain/search/dto/response/SearchArticleDTO.java`
-
-우선 조사할 것:
-
-1. `/api/search?text=war` 500 재현
-2. stack trace 전체 확인
-3. `Article.source` 연관관계 fetch type 확인
-4. `SearchArticlesService.getSearchArticles()`에 `@Transactional(readOnly = true)`가 없는지 확인
-5. Repository native query 결과에서 source 로딩 방식 확인
-6. N+1 가능성 확인
-
-수정 후보:
-
-| 방법 | 장점 | 단점 |
-| --- | --- | --- |
-| `SearchArticlesService.getSearchArticles()`에 `@Transactional(readOnly = true)` 추가 | 변경이 작고 LazyInitializationException 해결 가능성이 높음 | source 접근 시 N+1 가능성은 남을 수 있음 |
-| Repository 검색 쿼리에 fetch join 또는 EntityGraph 적용 | source를 함께 로딩해 안정적 | native query와 조합이 제한될 수 있음 |
-| DTO projection으로 필요한 필드만 조회 | 성능과 안정성 면에서 명확 | 변경 범위가 커질 수 있음 |
-
-추천 접근:
-
-1. 먼저 가장 작은 수정으로 `@Transactional(readOnly = true)` 적용 가능성을 검토한다.
-2. 해결되면 k6 smoke test를 재실행해 오류율 개선을 확인한다.
-3. N+1이나 추가 성능 문제가 보이면 후속 이슈로 fetch/projection 개선을 분리한다.
-
-검증 계획:
-
-```powershell
-Invoke-WebRequest -UseBasicParsing -Uri "http://localhost:8080/api/search?text=war"
-Invoke-WebRequest -UseBasicParsing -Uri "http://localhost:8080/api/search?text=korea"
-Invoke-WebRequest -UseBasicParsing -Uri "http://localhost:8080/api/search?text=economy"
-Invoke-WebRequest -UseBasicParsing -Uri "http://localhost:8080/api/search?text=technology"
-```
-
-이후 k6 smoke test:
-
-```powershell
-$env:BASE_URL = "http://localhost:8080"
-$env:ARTICLE_ID = "8449"
-$env:SEARCH_TEXT = "war"
-$env:ARTICLES_VUS = "1"
-$env:SEARCH_VUS = "1"
-$env:PERSPECTIVES_VUS = "1"
-$env:ARTICLES_DURATION = "15s"
-$env:SEARCH_DURATION = "15s"
-$env:PERSPECTIVES_DURATION = "15s"
-& "C:\Program Files\k6\k6.exe" run .\load-tests\k6\api-baseline.js
-```
-
-기대 포트폴리오 수치:
+검증:
 
 ```text
-검색 API 영어 검색어 요청에서 LazyInitializationException으로 500 응답 발생
-→ 부하 테스트 smoke run 기준 실패율 16.25%
-→ Lazy loading 문제 수정 후 실패율 0.00%로 개선
+./gradlew.bat test
+git diff --check
+/api/search?text=war -> 200
+/api/search?text=korea -> 200
+/api/search?text=economy -> 200
+/api/search?text=technology -> 200
 ```
 
-`16.25%`는 #121 k6 smoke test 중 `SEARCH_TEXT=war`, `ARTICLE_ID=8449`, 각 시나리오 VU 1명, duration 15초 조건에서 측정된 값이다.
-당시 총 80 requests 중 13건이 2xx 응답을 받지 못해 `http_req_failed=16.25%`로 기록되었다.
+k6 smoke test:
+
+```text
+BASE_URL=http://localhost:8080
+ARTICLE_ID=8449
+SEARCH_TEXT=war
+ARTICLES_VUS=1
+SEARCH_VUS=1
+PERSPECTIVES_VUS=1
+ARTICLES_DURATION=15s
+SEARCH_DURATION=15s
+PERSPECTIVES_DURATION=15s
+```
+
+결과:
+
+| API/시나리오 | p95 응답 시간 | 오류율 | 비고 |
+| --- | --- | --- | --- |
+| 전체 | 63.9ms | 0.00% | 86 requests |
+| articles | 45.21ms | 0.00% | latest, cursor, popular, explore |
+| search | 64.12ms | 0.00% | `SEARCH_TEXT=war` |
+| perspectives | 59.97ms | 0.00% | 반복 호출 기준 |
+
+의미:
+
+- #121/#122 smoke 기준 `SEARCH_TEXT=war` 조건에서 기록된 `http_req_failed=16.25%`가 #123 수정 후 `0.00%`로 개선되었다.
+- 부하 테스트 과정에서 발견한 실제 API 버그를 수정하고, 동일 조건으로 재측정해 개선을 수치로 남겼다.
+
+---
+
+### #127 - Perspectives API cold/warm cache 부하 테스트 분리
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/127
+- 상태: In Progress
+- 작업 브랜치: `perf/#127-perspectives-cache-load-test`
+
+목표:
+
+- 기존 `api-baseline.js`의 `perspectives_repeated`는 Redis cache miss 첫 요청과 cache hit 반복 요청을 하나의 평균/p95에 섞어 기록한다.
+- `GET /api/news/{id}/perspectives`의 cold cache와 warm cache를 분리 측정해 Redis 캐시가 반복 조회 성능을 얼마나 개선하는지 수치화한다.
+
+현재 확인한 구조:
+
+- Redis key: `perspectives:article:{articleId}`
+- TTL: `perspectives.cache-ttl-seconds`, 기본 3600초
+- cache hit 로그: `cacheHit=true`, `cacheReadMs`, `totalMs`, `countriesFound`, `totalArticles`
+- cache miss 로그: `cacheHit=false`, `baseLookupMs`, `keywordMs`, `translationMs`, `translatedSearchMs`, `originalSearchMs`, `totalMs`
+
+작업 범위:
+
+- Perspectives 전용 k6 스크립트 추가
+- cold/warm cache 측정 조건 문서화
+- 측정 결과 기록 템플릿 추가
+- 실제 Redis TTL/key 정책 변경, 로컬 캐시 도입, FULLTEXT 쿼리 개선, semantic similarity 개선은 후속 이슈로 분리
+
+초기 smoke 측정:
+
+```text
+BASE_URL=http://localhost:8080
+ARTICLE_IDS=8449
+WARM_ARTICLE_ID=8449
+COLD_VUS=1
+COLD_ITERATIONS=1
+WARM_VUS=1
+WARM_DURATION=15s
+```
+
+실행 전 Redis key `perspectives:article:8449`를 삭제했다.
+
+| API/시나리오 | 평균 응답 시간 | p95 응답 시간 | 오류율 | 비고 |
+| --- | --- | --- | --- | --- |
+| 전체 | 30.84ms | 71.49ms | 0.00% | 16 requests |
+| cold cache | 218.65ms | 218.65ms | 0.00% | 1 request |
+| warm cache | 18.32ms | 21.29ms | 0.00% | 15 requests |
+
+의미:
+
+- 동일 articleId 기준 warm cache p95가 cold cache p95보다 크게 낮았다.
+- Redis cache hit가 반복 조회 응답 시간을 줄인다는 초기 근거를 확보했다.
+- cold cache는 1회 샘플이므로, 더 안정적인 비교가 필요하면 여러 articleId 대상으로 반복 측정한다.
 
 주의:
 
-- #123은 실제 API 버그 수정 PR이다.
-- #122와 섞지 않는다.
-- 수정 전 반드시 원인 조사와 계획을 먼저 제시하고 승인받는다.
+- 현재 Perspectives 관련 기사 탐색은 제목 기반 키워드 추출과 MySQL FULLTEXT 검색에 의존한다.
+- 이는 진정한 의미의 semantic similarity가 아니므로, 같은 사건이라도 표현이 다르면 누락될 수 있다.
+- 이번 작업은 검색 품질 개선이 아니라 cache hit/miss 성능 차이를 분리 측정하는 작업이다.
 
 ## 4. 이후 개선 로드맵
 
@@ -563,15 +576,15 @@ GlobalTimes_BeSide 백엔드 개선 작업을 이어서 진행하려고 합니�
 먼저 docs/backend-improvement/WORK_PROGRESS.md 를 읽고 현재까지의 작업 흐름을 파악해줘.
 우리는 Issue → Branch → 조사 → 계획 → 승인 → 구현 → 테스트 → PR → AI Reviewer comment → Blocking 확인 → merge 순서로 작업합니다.
 
-다음 작업은 #123 입니다.
-Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/123
-목표: /api/search 영어 검색어 요청에서 발생하는 LazyInitializationException 500 응답 수정
+다음 작업은 #127 입니다.
+Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/127
+목표: Perspectives API cold cache와 warm cache 부하 테스트를 분리해 Redis 캐시 효과를 수치화
 
 바로 구현하지 말고,
 1. 현재 develop 최신화
-2. #123 작업 브랜치 생성
-3. 관련 코드 조사
-4. 원인 분석
+2. #127 작업 브랜치 확인 또는 생성
+3. `PerspectivesService`, Redis key/TTL, 기존 k6 스크립트 조사
+4. cold/warm cache 측정 방식 분석
 5. 수정 계획 제안
 6. 사용자 승인 후 구현
 순서로 진행해주세요.
