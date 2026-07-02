@@ -145,7 +145,9 @@ Reasons:
 ## Safe command template
 
 Use local development credentials from the local environment, not production secrets.
+Avoid placing the password directly in the command because shell history can keep it.
+Use `-p` without the password and enter the password interactively.
 
 ```powershell
-docker exec globaltimes_beside-mysql-1 mysql -uroot -p<local-password> <database> -e "EXPLAIN SELECT * FROM article WHERE article_id != 8449 AND MATCH(title, description) AGAINST('+war' IN BOOLEAN MODE) ORDER BY published_at DESC LIMIT 50"
+docker exec -it globaltimes_beside-mysql-1 mysql -uroot -p <database> -e "EXPLAIN SELECT * FROM article WHERE article_id != 8449 AND MATCH(title, description) AGAINST('+war' IN BOOLEAN MODE) ORDER BY published_at DESC LIMIT 50"
 ```
