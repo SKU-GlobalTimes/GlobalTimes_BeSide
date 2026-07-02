@@ -7,6 +7,7 @@ import com.example.globalTimes_be.domain.search.dto.response.SearchResDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -24,6 +25,7 @@ public class SearchArticlesService {
     /**
      * @param date 탐색과 동일: 하루 단위(yyyy-MM-dd). null/공백이면 날짜 필터 없음.
      */
+    @Transactional(readOnly = true)
     public SearchResDTO getSearchArticles(
             String text,
             String translatedText,
