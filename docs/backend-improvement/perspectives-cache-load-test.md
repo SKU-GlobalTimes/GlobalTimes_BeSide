@@ -26,6 +26,9 @@ load-tests/k6/perspectives-cache.js
 - `warm_cache`: `WARM_ARTICLE_ID`를 반복 호출한다.
 - `warm_cache`는 기본적으로 5초 뒤 시작해, cold 요청이 먼저 캐시를 채우도록 한다.
 - Redis key가 이미 존재하면 cold 측정이 warm에 가깝게 오염될 수 있다.
+- cold 측정은 articleId별 1회 호출이 원칙이다.
+  `COLD_ITERATIONS`가 `ARTICLE_IDS` 개수보다 크면 같은 articleId가 cold 시나리오 안에서 반복 호출되어 2번째 이후 요청은 warm cache에 가까워질 수 있다.
+  반복 측정이 필요하면 여러 articleId를 지정하거나, 실행 사이마다 대상 Redis key를 삭제한다.
 
 ## 실행 전 조건
 
@@ -40,6 +43,15 @@ docker compose -f docker-compose.dev.yml up -d
 
 ```text
 perspectives:article:{ARTICLE_ID}
+```
+
+여러 articleId를 cold cache로 측정할 때는 각 articleId의 Redis key가 모두 없는 상태여야 한다.
+예를 들어 `ARTICLE_IDS=8449,8450,8451`로 실행한다면 아래 key들이 모두 삭제되어 있어야 한다.
+
+```text
+perspectives:article:8449
+perspectives:article:8450
+perspectives:article:8451
 ```
 
 `ARTICLE_ID`는 현재 DB에 존재하는 기사여야 한다.
