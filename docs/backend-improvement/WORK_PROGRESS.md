@@ -420,7 +420,8 @@ WARM_DURATION=15s
 ### #131 - Perspectives API FULLTEXT 쿼리 EXPLAIN 분석
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/131
-- 상태: In Progress
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/132
+- 상태: merged
 - 작업 브랜치: `perf/#131-perspectives-fulltext-explain`
 - 주요 파일:
   - `docs/backend-improvement/perspectives-fulltext-explain.md`
@@ -445,6 +446,42 @@ WARM_DURATION=15s
 - 현재 데이터 규모에서는 `findPerspectives` 쿼리가 FULLTEXT 인덱스를 사용하며, 즉시 쿼리/인덱스 변경이 필요한 병목으로 보이지 않는다.
 - `Using filesort`는 매칭 결과가 커질 때 p95에 영향을 줄 수 있으므로 후속 관찰 포인트로 남긴다.
 - 검색 품질, 다국어 매칭, semantic similarity는 별도 품질 개선 이슈로 분리한다.
+
+---
+
+### #133 - 검색 API FULLTEXT 성능 및 검색어별 안정성 분석
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/133
+- 상태: In Progress
+- 작업 브랜치: `perf/#133-search-fulltext-analysis`
+- 주요 파일:
+  - `src/main/java/com/example/globalTimes_be/domain/article/repository/ArticleRepository.java`
+  - `src/main/java/com/example/globalTimes_be/domain/search/service/SearchArticlesService.java`
+  - `docs/backend-improvement/search-fulltext-analysis.md`
+
+목표:
+
+- `/api/search`가 검색어별로 어떤 FULLTEXT 실행 계획을 사용하는지 확인한다.
+- #123에서 수정한 영어 검색어 500 문제 이후, 영어/한국어/다국어 검색어별 매칭 수와 실행 계획 차이를 정리한다.
+
+조사 결과:
+
+- 검색 API는 원문 검색어와 번역 검색어를 `OR MATCH`로 묶어 검색한다.
+- `war`, `economy`, `technology`, `대구` API 호출은 모두 200 응답을 반환했다.
+- 로컬 DB 기준 FULLTEXT 매칭 수는 `war=404`, `technology=82`, `economy=39`, `대구 OR daegu=0`이었다.
+- 단일 MATCH 쿼리는 `ft_article_title_description` FULLTEXT 인덱스를 사용했다.
+- 원문과 번역어가 같은 영어 검색어에서도 기존 쿼리는 중복 `OR MATCH`가 되어 MySQL이 `idx_article_published_at` 역방향 스캔을 선택했다.
+
+수정:
+
+- `text`와 `translatedText`가 trim/case-insensitive 기준으로 같으면 단일 MATCH 쿼리를 사용하도록 분기했다.
+- 원문과 번역어가 다르면 기존 OR MATCH 쿼리를 유지한다.
+- API 응답 구조는 변경하지 않았다.
+
+판단:
+
+- 영어처럼 원문/번역어가 같은 검색어에서는 중복 OR를 제거해 의도한 FULLTEXT 인덱스를 사용하도록 하는 것이 작고 안전한 개선이다.
+- 한국어/다국어 검색 품질, 형태소 분석, Elasticsearch/vector search는 별도 품질 개선 이슈로 분리한다.
 
 ## 4. 이후 개선 로드맵
 

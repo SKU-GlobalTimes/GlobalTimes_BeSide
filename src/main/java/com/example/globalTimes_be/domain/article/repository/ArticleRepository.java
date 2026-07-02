@@ -66,6 +66,28 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
             @Param("dateTo") LocalDateTime dateTo
     );
 
+    /**
+     * FULLTEXT 검색 + 탐색 필터.
+     * 원문 검색어와 번역 검색어가 같을 때 OR MATCH를 피하기 위한 단일 MATCH 쿼리.
+     */
+    @Query(value =
+            "SELECT * FROM article " +
+            "WHERE MATCH(title, description) AGAINST(:text IN BOOLEAN MODE) " +
+            "AND (:country IS NULL OR country = :country) " +
+            "AND (:category IS NULL OR category = :category) " +
+            "AND (:dateFrom IS NULL OR published_at >= :dateFrom) " +
+            "AND (:dateTo IS NULL OR published_at <= :dateTo) " +
+            "ORDER BY published_at DESC " +
+            "LIMIT 100",
+            nativeQuery = true)
+    List<Article> searchByDescriptionOrTitleWithExploreFilters(
+            @Param("text") String text,
+            @Param("country") String country,
+            @Param("category") String category,
+            @Param("dateFrom") LocalDateTime dateFrom,
+            @Param("dateTo") LocalDateTime dateTo
+    );
+
     // 국가별 시각 비교: 특정 기사 제외 후 키워드 FULLTEXT 탐색, 최신순 최대 50개
     @Query(value =
             "SELECT * FROM article " +

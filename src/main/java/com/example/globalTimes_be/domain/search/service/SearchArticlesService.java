@@ -49,14 +49,25 @@ public class SearchArticlesService {
         String categoryParam = (category != null && !category.isBlank()) ? category : null;
 
         long searchStartedAt = System.nanoTime();
-        List<Article> articles = articleRepository.searchByDescriptionOrTitleWithExploreFilters(
-                text,
-                translatedText,
-                countryParam,
-                categoryParam,
-                dateFrom,
-                dateTo
-        );
+        List<Article> articles;
+        if (isSameSearchText(text, translatedText)) {
+            articles = articleRepository.searchByDescriptionOrTitleWithExploreFilters(
+                    text,
+                    countryParam,
+                    categoryParam,
+                    dateFrom,
+                    dateTo
+            );
+        } else {
+            articles = articleRepository.searchByDescriptionOrTitleWithExploreFilters(
+                    text,
+                    translatedText,
+                    countryParam,
+                    categoryParam,
+                    dateFrom,
+                    dateTo
+            );
+        }
         long searchMs = elapsedMs(searchStartedAt);
         
         // 검색결과에 대한 기사 DTO 리스트 생성
@@ -102,5 +113,12 @@ public class SearchArticlesService {
 
     private long elapsedMs(long startedAt) {
         return (System.nanoTime() - startedAt) / 1_000_000;
+    }
+
+    private boolean isSameSearchText(String text, String translatedText) {
+        if (text == null || translatedText == null) {
+            return false;
+        }
+        return text.trim().equalsIgnoreCase(translatedText.trim());
     }
 }
