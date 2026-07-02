@@ -388,7 +388,8 @@ WARM_DURATION=15s
 ### #129 - Perspectives API Redis 캐시 정책 및 정합성 점검
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/129
-- 상태: In Progress
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/130
+- 상태: merged
 - 작업 브랜치: `perf/#129-perspectives-redis-cache-policy`
 - 주요 파일:
   - `docs/backend-improvement/perspectives-redis-cache-policy.md`
@@ -413,6 +414,37 @@ WARM_DURATION=15s
 - `viewCount`, `summary`, `crawledContent` 변경은 Perspectives 응답에 포함되지 않아 무효화 대상이 아니다.
 - 새 관련 기사 삽입, base article title 변경, country/category/source 변경은 stale cache 가능성이 있지만 현재는 1시간 TTL 기반 stale 허용으로 충분하다고 판단한다.
 - 명시적 invalidation은 관리자 수정 API나 더 긴 TTL이 필요해질 때 별도 이슈로 검토한다.
+
+---
+
+### #131 - Perspectives API FULLTEXT 쿼리 EXPLAIN 분석
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/131
+- 상태: In Progress
+- 작업 브랜치: `perf/#131-perspectives-fulltext-explain`
+- 주요 파일:
+  - `docs/backend-improvement/perspectives-fulltext-explain.md`
+
+목표:
+
+- #127에서 cold cache 비용이 확인되었고 #129에서 Redis 정책을 정리했으므로, cache miss 경로의 DB FULLTEXT 쿼리가 의도한 인덱스를 사용하는지 MySQL `EXPLAIN`으로 확인한다.
+- 캐시를 쓰는 이유뿐 아니라 캐시가 비었을 때 DB 쿼리가 어떤 실행 계획으로 동작하는지도 설명 가능하게 만든다.
+
+조사 결과:
+
+- 대상 쿼리: `ArticleRepository.findPerspectives`
+- 대상 테이블: `article`
+- 로컬 데이터 수: 9853 rows
+- FULLTEXT 인덱스: `ft_article_title_description(title, description)`
+- 대표 쿼리의 `EXPLAIN` 결과: `type=fulltext`, `key=ft_article_title_description`
+- `ORDER BY published_at DESC` 때문에 `Using filesort`가 표시된다.
+- `EXPLAIN ANALYZE` 기준 `+war` 404건 매칭은 정렬 포함 약 10.3ms, `+economy` 39건 매칭은 약 1.37ms였다.
+
+판단:
+
+- 현재 데이터 규모에서는 `findPerspectives` 쿼리가 FULLTEXT 인덱스를 사용하며, 즉시 쿼리/인덱스 변경이 필요한 병목으로 보이지 않는다.
+- `Using filesort`는 매칭 결과가 커질 때 p95에 영향을 줄 수 있으므로 후속 관찰 포인트로 남긴다.
+- 검색 품질, 다국어 매칭, semantic similarity는 별도 품질 개선 이슈로 분리한다.
 
 ## 4. 이후 개선 로드맵
 
