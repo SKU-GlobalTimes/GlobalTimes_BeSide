@@ -608,17 +608,14 @@ GlobalTimes_BeSide 백엔드 개선 작업을 이어서 진행하려고 합니�
 먼저 docs/backend-improvement/WORK_PROGRESS.md 를 읽고 현재까지의 작업 흐름을 파악해줘.
 우리는 Issue → Branch → 조사 → 계획 → 승인 → 구현 → 테스트 → PR → AI Reviewer comment → Blocking 확인 → merge 순서로 작업합니다.
 
-다음 작업은 #127 입니다.
-Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/127
-목표: Perspectives API cold cache와 warm cache 부하 테스트를 분리해 Redis 캐시 효과를 수치화
-
 바로 구현하지 말고,
 1. 현재 develop 최신화
-2. #127 작업 브랜치 확인 또는 생성
-3. `PerspectivesService`, Redis key/TTL, 기존 k6 스크립트 조사
-4. cold/warm cache 측정 방식 분석
-5. 수정 계획 제안
-6. 사용자 승인 후 구현
+2. `WORK_PROGRESS.md`의 In Progress 작업과 최근 merged PR을 확인
+3. 진행 중인 작업이 있으면 해당 Issue/PR/브랜치 상태를 확인
+4. 진행 중인 작업이 없으면 이후 개선 로드맵에서 다음 후보를 제안
+5. 관련 코드와 문서를 조사
+6. 원인/범위/수정 계획을 제안
+7. 사용자 승인 후 구현
 순서로 진행해주세요.
 ```
 
