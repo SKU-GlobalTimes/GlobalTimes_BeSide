@@ -6,24 +6,20 @@ import com.example.globalTimes_be.domain.detail.dto.response.DetailResDTO;
 import com.example.globalTimes_be.domain.detail.dto.response.DetailResponseDTO;
 import com.example.globalTimes_be.domain.detail.dto.response.RecentArticleDTO;
 import com.example.globalTimes_be.domain.detail.exception.DetailErrorStatus;
+import com.example.globalTimes_be.global.crawler.ArticleCrawler;
 import com.example.globalTimes_be.global.exception.BaseException;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
 import java.util.List;
 
-@Slf4j
 @RequiredArgsConstructor
 @Service
 public class DetailService {
     private final ArticleRepository articleRepository;
+    private final ArticleCrawler articleCrawler;
+    private final ArticleCrawlContentService articleCrawlContentService;
 
     @Transactional
     public DetailResDTO getNewsDetail(Long id) {
@@ -79,7 +75,7 @@ public class DetailService {
     }
 
     // GPT 요약 결과를 DB에 저장
-    @org.springframework.transaction.annotation.Transactional
+    @Transactional
     public void saveArticleSummary(Long id, String summary) {
         Article article = articleRepository.findById(id)
                 .orElseThrow(() -> new BaseException(DetailErrorStatus._EMPTY_NEWS_DATA.getResponse()));
@@ -88,43 +84,20 @@ public class DetailService {
         articleRepository.save(article);
     }
 
-    // 크롤링(네트워크 I/O)은 트랜잭션 밖에서 실행하되, DB 조회 부분만 readOnly 트랜잭션으로 처리
-    @Transactional(readOnly = true)
+    // 크롤링(네트워크 I/O)은 트랜잭션 밖에서 실행하고, DB 조회/저장은 별도 트랜잭션에서 처리한다.
     public String getArticleCrawledContent(Long id) {
-        Article article = articleRepository.findById(id)
-                .orElseThrow(() -> new BaseException(DetailErrorStatus._EMPTY_NEWS_DATA.getResponse()));
-
-        String crawledContent = article.getCrawledContent();
-
-        if (crawledContent != null) {
-            return crawledContent;
+        ArticleCrawlContentService.ArticleCrawlTarget target = articleCrawlContentService.getCrawlTarget(id);
+        if (target.crawledContent() != null && !target.crawledContent().isBlank()) {
+            return target.crawledContent();
         }
 
-        crawledContent = getCrawlerUrl(article.getUrl());
-
+        String crawledContent = articleCrawler.crawlParagraphs(target.url())
+                .orElse(null);
         if (crawledContent == null) {
-            throw new BaseException(DetailErrorStatus._CRAWLER_ERROR.getResponse());
-        }
-
-        article.updateCrawledContent(crawledContent);
-        articleRepository.save(article);
-
-        return crawledContent;
-    }
-
-    private String getCrawlerUrl(String crawlerUrl) {
-        try {
-            Document doc = Jsoup.connect(crawlerUrl).get();
-            Elements paragraphs = doc.select("p");
-
-            return paragraphs.stream()
-                    .map(Element::text)
-                    .reduce((p1, p2) -> p1 + "\n" + p2)
-                    .orElse(null);
-
-        } catch (IOException e) {
-            log.error("크롤링에 실패했습니다. \n{}", e.getMessage());
             return null;
         }
+
+        articleCrawlContentService.saveCrawledContent(id, crawledContent);
+        return crawledContent;
     }
 }
