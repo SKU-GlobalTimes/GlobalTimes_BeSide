@@ -69,6 +69,10 @@ k6 run .\load-tests\k6\api-baseline.js
 | `search_baseline` | 3 | 1m | 동일 검색어 반복 호출로 번역 캐시와 FULLTEXT 검색 경로 측정 |
 | `perspectives_repeated` | 3 | 1m | 동일 기사 perspectives 반복 호출로 캐시 적용 전후 차이를 관측 |
 
+`perspectives_repeated`는 전체 주요 API smoke/baseline 안에서 Perspectives API가 정상 동작하는지 확인하기 위한 시나리오다.
+Redis cold cache와 warm cache의 성능 차이를 분리 측정할 때는 `load-tests/k6/perspectives-cache.js`를 사용한다.
+자세한 실행 조건과 결과 기록 방식은 `docs/backend-improvement/perspectives-cache-load-test.md`에 기록한다.
+
 VU와 실행 시간은 환경 변수로 조정한다.
 
 ```powershell
