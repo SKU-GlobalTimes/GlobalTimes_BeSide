@@ -48,6 +48,8 @@ OR MATCH(...) AGAINST('war' ...)
 
 On the local development dataset, a single `MATCH` query used the FULLTEXT index.
 The duplicated `OR MATCH` query chose a reverse scan on `idx_article_published_at` and applied MATCH as a filter.
+The representative `EXPLAIN ANALYZE` examples below use the default search path without optional `country`, `category`, or `date` filters.
+Queries with those filters can choose different execution plans depending on selectivity.
 
 Dataset:
 
