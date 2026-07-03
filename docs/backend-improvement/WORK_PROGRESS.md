@@ -77,7 +77,7 @@ Blocking 예시:
 - #129/#130에서 Perspectives Redis cache key/TTL/fallback/stale 허용 기준을 문서화했다.
 - #131/#132에서 Perspectives FULLTEXT 쿼리의 `EXPLAIN`/`EXPLAIN ANALYZE`를 기록했고, 현재 데이터 규모에서는 FULLTEXT 인덱스 사용을 확인했다.
 - #133/#134에서 검색 API FULLTEXT 실행 계획을 분석하고, 원문/번역 검색어가 같은 경우 중복 `OR MATCH`를 제거해 FULLTEXT 인덱스를 사용하도록 개선했다.
-- 다음 우선 후보는 외부 I/O 기본기와 연결되는 `[FIX] 기사 원문 크롤링 timeout 및 실패 처리 개선`이다. Jsoup timeout, 본문 없음 fallback, 차단 응답 처리, 트랜잭션 내 외부 I/O 여부를 조사하는 흐름이 자연스럽다.
+- 현재 #137에서 외부 I/O 기본기와 연결되는 `[FIX] 기사 원문 크롤링 timeout 및 실패 처리 개선`을 진행 중이다. Jsoup timeout, 본문 없음 fallback, 차단 응답 처리, 트랜잭션 내 외부 I/O 여부를 중심으로 개선한다.
 
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
 
@@ -513,6 +513,39 @@ Reviewer 결과:
 - Blocking 없음.
 - Non-blocking으로 지적된 `EXPLAIN` 예시의 필터 조건 범위 설명은 같은 PR에서 보강했다.
 - 2026-07-03 기준 PR #134는 merge 완료되었다.
+
+---
+
+### #137 - 기사 원문 크롤링 timeout 및 실패 처리 개선
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/137
+- 상태: In Progress
+- 작업 브랜치: `fix/#137-crawling-timeout-fallback`
+- 주요 파일:
+  - `src/main/java/com/example/globalTimes_be/global/crawler/ArticleCrawler.java`
+  - `src/main/java/com/example/globalTimes_be/domain/detail/service/DetailService.java`
+  - `src/main/java/com/example/globalTimes_be/domain/detail/service/ArticleCrawlContentService.java`
+  - `src/main/java/com/example/globalTimes_be/domain/trend/service/TrendCrawledService.java`
+
+목표:
+
+- AI 요약/질의응답 경로에서 외부 언론사 페이지 크롤링이 사용자 요청을 오래 붙잡지 않도록 timeout을 명시한다.
+- 크롤링 실패 또는 본문 추출 실패 시 API별 기존 fallback/에러 정책이 예측 가능하게 동작하도록 한다.
+- DB 조회/저장 트랜잭션과 외부 네트워크 I/O를 분리한다.
+
+조사 결과:
+
+- `DetailService#getArticleCrawledContent()`는 `@Transactional(readOnly = true)` 안에서 외부 크롤링과 `articleRepository.save()`를 함께 수행하고 있었다.
+- `DetailService`와 `TrendCrawledService` 모두 `Jsoup.connect(...).get()`에 timeout/user-agent 설정이 없었다.
+- `AiController#summarizeArticle()`에는 크롤링 실패 시 기사 서두를 제공하는 fallback 분기가 있었지만, 기존 서비스가 예외를 던져 해당 분기가 사실상 도달하기 어려웠다.
+
+수정 방향:
+
+- `ArticleCrawler` 공통 컴포넌트로 Jsoup timeout/user-agent/본문 추출을 모은다.
+- `DetailService`는 크롤링 실패 시 `null`을 반환해 일반 summary API의 기존 fallback 분기를 살린다.
+- SSE summary와 ask API는 기존처럼 `DetailErrorStatus._CRAWLER_ERROR`를 유지한다.
+- `ArticleCrawlContentService`를 별도 서비스로 분리해 DB 조회/저장 트랜잭션이 Spring 프록시를 타도록 한다.
+- 비동기/Kafka는 이번 PR 범위에서 제외하고, 동기 요청 경로의 timeout/fallback을 먼저 안정화한다.
 
 ## 4. 이후 개선 로드맵
 
