@@ -57,6 +57,14 @@ class KeywordExtractorTest {
     }
 
     @Test
+    void extract_returnsEmptyStringWhenOnlyGenericTokensRemain() {
+        String title = "First round Entre";
+
+        assertThat(KeywordExtractor.extractPlain(title)).isEmpty();
+        assertThat(KeywordExtractor.extract(title)).isEmpty();
+    }
+
+    @Test
     void extract_returnsEmptyStringForNullOrBlankTitle() {
         assertThat(KeywordExtractor.extract(null)).isEmpty();
         assertThat(KeywordExtractor.extract("   ")).isEmpty();

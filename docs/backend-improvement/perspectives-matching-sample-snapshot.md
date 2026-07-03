@@ -145,6 +145,7 @@ After #150 and #152, the Java `KeywordExtractor` policy changes the generated ke
 
 This section documents generated keyword changes only.
 It does not replace the original match counts, because DB-level FULLTEXT result quality should be measured separately after the code change is merged.
+If all extracted candidates are removed by the generic-token filter, both `extract()` and `extractPlain()` return an empty string instead of falling back to the original title.
 
 ## Follow-up Candidates
 

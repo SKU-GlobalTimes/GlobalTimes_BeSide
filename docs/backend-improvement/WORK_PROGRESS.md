@@ -881,6 +881,7 @@ git diff --check
 - `KeywordExtractor`의 토큰 후보 추출을 `extractKeywords()`로 모아 `extract()`와 `extractPlain()`이 같은 필터링 정책을 공유하게 했다.
 - 샘플 기반 일반 토큰으로 `first`, `round`, `entre`를 분리했다.
 - `First round of US-Iran...` 샘플은 `Iran talks...`, `Entre Meloni...` 샘플은 `Meloni Trump...` 중심의 검색어를 생성하도록 테스트 기대값을 갱신했다.
+- Reviewer Blocking 반영으로 일반 토큰 필터링 후 후보가 비는 경우 `extract()`와 `extractPlain()` 모두 빈 문자열을 반환하도록 정책을 맞췄다.
 - DB-level FULLTEXT 결과 변화는 이번 PR에서 직접 측정하지 않고, `perspectives-matching-sample-snapshot.md`에 후속 측정 후보로 남겼다.
 
 ## 4. 이후 개선 로드맵

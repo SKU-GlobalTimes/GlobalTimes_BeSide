@@ -36,7 +36,7 @@ public class KeywordExtractor {
 
         List<String> keywords = extractKeywords(title);
 
-        if (keywords.isEmpty()) return title;
+        if (keywords.isEmpty()) return "";
 
         // 첫 2개는 필수(+), 나머지는 선택 → FULLTEXT 정확도 향상
         return formatBooleanModeKeywords(keywords);
