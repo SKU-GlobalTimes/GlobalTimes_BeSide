@@ -667,6 +667,7 @@ Reviewer 결과:
 ### #144 - AI Reviewer MERGE_READY 이후 merge 흐름 문서화
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/144
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/145
 - 상태: In Progress
 - 작업 브랜치: `docs/#144-merge-ready-flow`
 - 주요 파일:
