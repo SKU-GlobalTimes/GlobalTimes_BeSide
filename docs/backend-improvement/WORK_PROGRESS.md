@@ -86,7 +86,7 @@ Blocking 예시:
 - #144/#145에서 Reviewer `MERGE_READY` 이후 PR별 명시 승인에 따라 바로 merge하고, Issue/PR 생성 시 Reviewer 요청 예시를 함께 안내하는 운영 흐름을 문서화했다.
 - #146/#147에서 #142 기준선에 이어 로컬 개발 DB의 대표 샘플 후보와 MySQL FULLTEXT 매칭 스냅샷을 기록했다.
 - #148/#149에서 `KeywordExtractor` 현행 정책을 회귀 테스트로 고정하고, 의미 유사도 개선이 아니라 키워드 후보 탐색 정책임을 명확히 남겼다.
-- #150에서는 `KeywordExtractor.extract()`의 MySQL FULLTEXT BOOLEAN MODE 검색어 공백 포맷을 정규화한다.
+- #150/#151에서 `KeywordExtractor.extract()`의 MySQL FULLTEXT BOOLEAN MODE 검색어 공백 포맷을 정규화했다.
 - 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140, #142, #146)와 AI workflow 보강(#144)은 merge 완료 상태다.
 
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
@@ -802,7 +802,7 @@ Reviewer 결과:
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/150
 - PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/151
-- 상태: In Progress
+- 상태: merged
 - 작업 브랜치: `fix/#150-keyword-boolean-format`
 - 주요 파일:
   - `src/main/java/com/example/globalTimes_be/domain/detail/util/KeywordExtractor.java`
@@ -822,7 +822,7 @@ Reviewer 결과:
 - `extractPlain()`은 변경하지 않는다.
 - 기존 회귀 테스트 기대값을 정규화된 BOOLEAN MODE 문자열로 갱신한다.
 
-검증 예정:
+검증:
 
 ```text
 ./gradlew.bat test
@@ -833,6 +833,13 @@ git diff --check
 
 - `KeywordExtractor.extract()`의 토큰 추출 정책은 유지하고, BOOLEAN MODE 문자열 조립만 `+first +second third fourth` 형태로 단일 공백 join하도록 변경했다.
 - 기존 깨진 한글 fixture는 읽을 수 있는 한국어 Unicode ellipsis 샘플로 정리해, 토큰화 한계는 유지하되 테스트 의도를 명확히 했다.
+
+Reviewer 결과:
+
+- `## AI Reviewer 검토 결과` 제목의 Reviewer comment 기준 Blocking 없음.
+- Non-blocking: `WORK_PROGRESS.md`의 `검증 예정` 표현을 완료 상태와 맞추는 문서 정정 제안이 있었고, merge 후 후처리에서 `검증`으로 정리했다.
+- `check-review-blocking.ps1 -PrNumber 151` 결과 `MERGE_READY`를 확인했다.
+- 2026-07-03 기준 PR #151은 merge 완료되었고, Issue #150은 closed 상태다.
 
 ## 4. 이후 개선 로드맵
 
