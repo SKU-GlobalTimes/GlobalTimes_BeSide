@@ -128,11 +128,15 @@ This is a useful partial-match sample for evaluating future ranking or entity fi
 - BTS is a good positive sample because the extracted keyword is a strong entity.
 - Korean and French original keyword samples often return zero in this local query snapshot.
 - Some `language='zh'` rows contain English titles, so the `language` field alone does not fully describe search text language.
+- The manual keyword examples in this snapshot are measurement aids, not a replacement for the Java policy.
+  `KeywordExtractorTest` fixes the current Java behavior before any token policy changes are attempted.
+- The regression tests also expose current formatting/tokenization quirks, such as compacted `+first+second` BOOLEAN MODE output and Korean tokens joined by the Unicode ellipsis character.
 
 ## Follow-up Candidates
 
 1. Measure the full API path for the same samples, including translation behavior, with external API usage explicitly approved.
-2. Add entity-aware keyword extraction or a better stop-word/token policy before changing search engines.
-3. Compare the current recency ordering with a relevance-first or hybrid ranking strategy.
-4. Define expected countries per sample before trying vector search or Elasticsearch.
-5. Keep `issue_id` or clustering as an ADR-level option until concrete sample failures justify the added model.
+2. Add entity-aware keyword extraction or a better stop-word/token policy only after comparing against the fixed regression tests.
+3. Normalize BOOLEAN MODE keyword formatting only after confirming it does not change query semantics unexpectedly.
+4. Compare the current recency ordering with a relevance-first or hybrid ranking strategy.
+5. Define expected countries per sample before trying vector search or Elasticsearch.
+6. Keep `issue_id` or clustering as an ADR-level option until concrete sample failures justify the added model.
