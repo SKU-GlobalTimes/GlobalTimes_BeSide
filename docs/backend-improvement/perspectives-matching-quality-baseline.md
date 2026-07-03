@@ -7,6 +7,8 @@ The current implementation uses title keywords, optional English translation, an
 
 This document defines a small baseline for measuring the current matching quality before introducing heavier search layers such as Elasticsearch, vector search, RAG, or issue clustering.
 
+The first local MySQL snapshot is recorded in `perspectives-matching-sample-snapshot.md`.
+
 ## Current Flow
 
 ```text

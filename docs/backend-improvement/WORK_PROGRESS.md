@@ -84,6 +84,7 @@ Blocking 예시:
 - #140/#141에서 Perspectives API 캐시 hit/miss, Redis 실패, 번역 fallback 흐름을 회귀 테스트로 고정했다.
 - #142/#143에서 Perspectives 다국어 이슈 매칭 품질 기준선을 정의해, Elasticsearch/Vector DB/RAG 같은 기술 도입 전에 현재 FULLTEXT 기반 매칭의 한계를 측정 가능하게 만들었다.
 - #144/#145에서 Reviewer `MERGE_READY` 이후 PR별 명시 승인에 따라 바로 merge하고, Issue/PR 생성 시 Reviewer 요청 예시를 함께 안내하는 운영 흐름을 문서화했다.
+- #146에서는 #142 기준선에 이어 로컬 개발 DB의 대표 샘플 후보와 MySQL FULLTEXT 매칭 스냅샷을 기록한다.
 - 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140, #142)와 AI workflow 보강(#144)은 merge 완료 상태다.
 
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
@@ -703,6 +704,46 @@ Reviewer 결과:
 - 같은 PR에서 두 Blocking을 반영했다.
 - 재검토 결과 `MERGE_READY`, Blocking 없음, Non-blocking 없음으로 확인했다.
 - 2026-07-03 기준 PR #145는 merge 완료되었고, Issue #144는 closed 상태다.
+
+---
+
+### #146 - Perspectives 대표 샘플 FULLTEXT 매칭 스냅샷 기록
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/146
+- 상태: In Progress
+- 작업 브랜치: `perf/#146-perspectives-sample-snapshot`
+- 주요 파일:
+  - `docs/backend-improvement/perspectives-matching-sample-snapshot.md`
+  - `docs/backend-improvement/perspectives-matching-quality-baseline.md`
+  - `docs/backend-improvement/BACKLOG.md`
+  - `docs/backend-improvement/WORK_PROGRESS.md`
+
+목표:
+
+- #142에서 정의한 Perspectives 매칭 품질 기준선에 실제 로컬 개발 DB 샘플 스냅샷을 추가한다.
+- 외부 번역 API 호출 없이 MySQL FULLTEXT 원문 키워드 기준의 match count, 국가/언어 분포, 성공/실패 후보를 기록한다.
+- FULLTEXT match count가 곧 품질을 의미하지 않는다는 점을 반환 예시와 함께 남긴다.
+
+조사 결과:
+
+- 로컬 개발 DB에는 2026-07-03 기준 `article` 9853건이 있다.
+- `kr/ko/general`, `global/en/general`, `cn/zh/general`, `us/en/*`, `gb/en/*` 등 여러 국가/언어 샘플이 존재한다.
+- `8146` US-Iran talks 샘플은 25건을 반환하지만, `First`, `round` 같은 일반 토큰 때문에 sports 등 약한 매칭이 섞였다.
+- `8149` BTS 샘플은 BTS entity가 강해 여러 국가/언어에서 비교적 좋은 매칭을 반환했다.
+- `8148`, `8468`, `8461`, `9440` 등은 현재 원문 FULLTEXT 조건에서 0건을 반환해 키워드 추출/언어/표현 차이 한계를 보여준다.
+- `.env`의 민감 정보와 외부 API 응답 전문은 문서에 포함하지 않는다.
+
+수정 방향:
+
+- API 동작, DB 스키마, 검색 로직, Redis 정책은 변경하지 않는다.
+- `perspectives-matching-sample-snapshot.md`에 측정 환경, SQL 형태, 샘플 요약, 반환 예시, 후속 후보를 기록한다.
+- 전체 API 경로와 번역 포함 측정은 외부 API 사용 승인 후 별도 이슈로 분리한다.
+
+검증:
+
+```text
+git diff --check
+```
 
 ## 4. 이후 개선 로드맵
 
