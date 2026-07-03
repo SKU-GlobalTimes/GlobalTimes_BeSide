@@ -77,7 +77,8 @@ Blocking 예시:
 - #129/#130에서 Perspectives Redis cache key/TTL/fallback/stale 허용 기준을 문서화했다.
 - #131/#132에서 Perspectives FULLTEXT 쿼리의 `EXPLAIN`/`EXPLAIN ANALYZE`를 기록했고, 현재 데이터 규모에서는 FULLTEXT 인덱스 사용을 확인했다.
 - #133/#134에서 검색 API FULLTEXT 실행 계획을 분석하고, 원문/번역 검색어가 같은 경우 중복 `OR MATCH`를 제거해 FULLTEXT 인덱스를 사용하도록 개선했다.
-- 현재 #137에서 외부 I/O 기본기와 연결되는 `[FIX] 기사 원문 크롤링 timeout 및 실패 처리 개선`을 진행 중이다. Jsoup timeout, 본문 없음 fallback, 차단 응답 처리, 트랜잭션 내 외부 I/O 여부를 중심으로 개선한다.
+- #137/#138에서 기사 원문 크롤링 timeout/fallback과 외부 I/O 트랜잭션 분리를 개선했다.
+- 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137)는 merge 완료 상태다.
 
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
 
@@ -519,7 +520,8 @@ Reviewer 결과:
 ### #137 - 기사 원문 크롤링 timeout 및 실패 처리 개선
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/137
-- 상태: In Progress
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/138
+- 상태: merged
 - 작업 브랜치: `fix/#137-crawling-timeout-fallback`
 - 주요 파일:
   - `src/main/java/com/example/globalTimes_be/global/crawler/ArticleCrawler.java`
@@ -546,6 +548,20 @@ Reviewer 결과:
 - SSE summary와 ask API는 기존처럼 `DetailErrorStatus._CRAWLER_ERROR`를 유지한다.
 - `ArticleCrawlContentService`를 별도 서비스로 분리해 DB 조회/저장 트랜잭션이 Spring 프록시를 타도록 한다.
 - 비동기/Kafka는 이번 PR 범위에서 제외하고, 동기 요청 경로의 timeout/fallback을 먼저 안정화한다.
+
+검증:
+
+```text
+./gradlew.bat test
+git diff --check
+```
+
+Reviewer 결과:
+
+- `## AI Reviewer 검토 결과` 제목의 Reviewer comment 기준 Blocking 없음.
+- Non-blocking: `ArticleCrawler` URL 포함 warn 로그는 추후 운영 로그 정책에 따라 도메인/articleId 중심으로 축소 검토 가능.
+- Non-blocking: PR #136 merge 후 Issue #135가 open으로 남은 housekeeping 항목 확인.
+- 2026-07-03 기준 PR #138은 merge 완료되었고, Issue #137은 closed 상태다.
 
 ## 4. 이후 개선 로드맵
 
@@ -747,6 +763,7 @@ GlobalTimes_BeSide 백엔드 개선 작업을 이어서 진행하려고 합니�
 - #129/#130: Perspectives Redis cache 삭제/무효화/stale 허용 정책 문서화
 - #131/#132: Perspectives FULLTEXT 쿼리 EXPLAIN 분석
 - #133/#134: 검색 API FULLTEXT 성능 및 검색어별 안정성 분석, 중복 OR MATCH 최적화
+- #137/#138: 기사 원문 크롤링 timeout/fallback 및 외부 I/O 트랜잭션 분리
 
 바로 구현하지 말고,
 1. 현재 develop 최신화
@@ -758,8 +775,8 @@ GlobalTimes_BeSide 백엔드 개선 작업을 이어서 진행하려고 합니�
 7. 사용자 승인 후 구현
 순서로 진행해주세요.
 
-다음 후보로는 `[FIX] 기사 원문 크롤링 timeout 및 실패 처리 개선`을 우선 검토해줘.
-이 작업은 Jsoup timeout, 본문 없음 fallback, 차단 응답 처리, 재크롤링 방지, 트랜잭션 내 외부 I/O 여부를 조사하는 흐름으로 진행하면 됩니다.
+다음 후보는 `WORK_PROGRESS.md`의 이후 개선 로드맵과 열린 GitHub Issue를 먼저 확인한 뒤 제안해줘.
+현재 장기 열린 이슈로 #110 `[Troubleshooting] 서비스 설계의 근본적 한계`가 남아 있으므로, 이것이 바로 구현 이슈인지 아니면 별도 정리/문서화 이슈인지 먼저 판단해주세요.
 ```
 
 ## 6. 이 문서를 GitHub에 올릴지에 대한 판단
