@@ -759,6 +759,7 @@ Reviewer 결과:
 ### #148 - KeywordExtractor 현행 정책 회귀 테스트 및 한계 명시
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/148
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/149
 - 상태: In Progress
 - 작업 브랜치: `test/#148-keyword-extractor-regression`
 - 주요 파일:
