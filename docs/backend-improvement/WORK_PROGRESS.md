@@ -847,7 +847,7 @@ Reviewer 결과:
 ### #152 - Perspectives KeywordExtractor 일반 토큰 필터링 개선
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/152
-- PR: TBD
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/153
 - 상태: In Progress
 - 작업 브랜치: `perf/#152-keyword-generic-token-filtering`
 - 주요 파일:
