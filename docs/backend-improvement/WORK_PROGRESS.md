@@ -78,7 +78,9 @@ Blocking 예시:
 - #131/#132에서 Perspectives FULLTEXT 쿼리의 `EXPLAIN`/`EXPLAIN ANALYZE`를 기록했고, 현재 데이터 규모에서는 FULLTEXT 인덱스 사용을 확인했다.
 - #133/#134에서 검색 API FULLTEXT 실행 계획을 분석하고, 원문/번역 검색어가 같은 경우 중복 `OR MATCH`를 제거해 FULLTEXT 인덱스를 사용하도록 개선했다.
 - #137/#138에서 기사 원문 크롤링 timeout/fallback과 외부 I/O 트랜잭션 분리를 개선했다.
-- 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137)는 merge 완료 상태다.
+- #140/#141에서 Perspectives API 캐시 hit/miss, Redis 실패, 번역 fallback 흐름을 회귀 테스트로 고정했다.
+- 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140)는 merge 완료 상태다.
+- #142에서는 Perspectives 다국어 이슈 매칭 품질 기준선을 정의해, Elasticsearch/Vector DB/RAG 같은 기술 도입 전에 현재 FULLTEXT 기반 매칭의 한계를 측정 가능하게 만든다.
 
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
 
@@ -568,7 +570,8 @@ Reviewer 결과:
 ### #140 - Perspectives API 캐시/실패 회귀 테스트 기반 마련
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/140
-- 상태: In Progress
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/141
+- 상태: merged
 - 작업 브랜치: `test/#140-perspectives-regression-tests`
 - 주요 파일:
   - `src/main/java/com/example/globalTimes_be/domain/detail/service/PerspectivesService.java`
@@ -607,6 +610,45 @@ git diff --check
 - 캐시 JSON 테스트에서 `LocalDateTime` 직렬화를 위해 테스트 `ObjectMapper`에 JavaTime module 등록이 필요했다.
 - 비영어 번역 실패 테스트는 `KeywordExtractor`의 실제 plain/boolean keyword 추출 결과를 기준으로 기대값을 맞췄다.
 - 서비스 코드는 변경하지 않고 테스트 코드의 fixture/기대값만 실제 동작에 맞게 조정했다.
+- 2026-07-03 기준 PR #141은 merge 완료되었고, Issue #140은 closed 상태다.
+
+---
+
+### #142 - Perspectives 다국어 이슈 매칭 품질 기준선 정의
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/142
+- 상태: In Progress
+- 작업 브랜치: `perf/#142-perspectives-matching-baseline`
+- 주요 파일:
+  - `docs/backend-improvement/perspectives-matching-quality-baseline.md`
+  - `docs/backend-improvement/BACKLOG.md`
+  - `docs/backend-improvement/WORK_PROGRESS.md`
+
+목표:
+
+- Perspectives API가 현재 제목 키워드, 영어 번역, MySQL FULLTEXT 검색으로 다국어 이슈를 어떻게 매칭하는지 기준선을 정의한다.
+- Elasticsearch, Vector DB, RAG, issue clustering 같은 기술 도입 전에 대표 샘플 기준으로 현재 매칭 품질과 한계를 측정할 수 있게 만든다.
+- #110의 장기 troubleshooting 내용은 직접 구현하지 않고, 그중 P3 다국어 이슈 매칭 품질 개선의 첫 측정 단계만 분리해 진행한다.
+
+조사 결과:
+
+- `PerspectivesService`는 기준 기사 제목에서 `KeywordExtractor.extractPlain()`과 `KeywordExtractor.extract()`로 평문/BOOLEAN MODE 키워드를 만든다.
+- 기준 기사 언어가 영어가 아니면 평문 키워드를 영어로 번역한 뒤 다시 BOOLEAN MODE 키워드로 변환해 검색한다.
+- 번역 키워드와 원문 키워드가 다르면 `findPerspectives`를 한 번 더 호출해 결과를 병합한다.
+- `ArticleRepository.findPerspectives`는 `MATCH(title, description) AGAINST(:keywords IN BOOLEAN MODE)`와 `ORDER BY published_at DESC LIMIT 50`을 사용한다.
+- 결과는 국가별로 그룹핑되고 국가당 최대 3개 기사로 제한된다.
+
+수정 방향:
+
+- API 동작, DB 스키마, 검색 엔진, 캐시 정책은 변경하지 않는다.
+- 현재 매칭 흐름, 알려진 한계, 대표 샘플 선정 기준, 측정 절차, 결과 기록 템플릿을 문서화한다.
+- 기술 도입 후보는 기준선 측정 이후 ADR 또는 후속 이슈로 분리한다.
+
+검증:
+
+```text
+git diff --check
+```
 
 ## 4. 이후 개선 로드맵
 
