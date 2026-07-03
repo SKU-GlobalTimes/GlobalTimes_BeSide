@@ -617,6 +617,7 @@ git diff --check
 ### #142 - Perspectives 다국어 이슈 매칭 품질 기준선 정의
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/142
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/143
 - 상태: In Progress
 - 작업 브랜치: `perf/#142-perspectives-matching-baseline`
 - 주요 파일:
