@@ -710,6 +710,7 @@ Reviewer 결과:
 ### #146 - Perspectives 대표 샘플 FULLTEXT 매칭 스냅샷 기록
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/146
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/147
 - 상태: In Progress
 - 작업 브랜치: `perf/#146-perspectives-sample-snapshot`
 - 주요 파일:
