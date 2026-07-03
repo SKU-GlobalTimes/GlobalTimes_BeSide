@@ -139,9 +139,9 @@ PR #<PR_NUMBER>의 AI Reviewer comment를 읽고 수정 계획을 세워줘.
 `scripts/ai-workflow/check-review-blocking.ps1` 또는 동일한 수동 확인으로 최신 `## AI Reviewer 검토 결과` comment의 결정이 `MERGE_READY`이고 Blocking이 없음을 확인하면, Implementer는 아래 기준에 따라 merge를 진행한다.
 
 1. PR이 승인된 Issue 범위 안에 머문다.
-2. Reviewer comment 이후 추가 변경이 없다. 추가 변경이 있다면 필요한 경우 재검토를 요청한다.
+2. Reviewer comment 이후 PR diff에 추가 변경이 없다. 추가 변경이 있다면 최신 diff 기준으로 Reviewer 재검토를 받아야 한다.
 3. PR이 GitHub 기준 mergeable 상태다.
-4. 사용자가 해당 PR 또는 앞으로의 동일 흐름에 대해 merge 진행을 승인했다.
+4. 사용자가 해당 PR에 대해 명시적으로 merge 진행을 승인했다.
 
 위 조건이 충족되면 Implementer는 별도 대기 없이 PR을 merge할 수 있다.
 merge 후에는 로컬 `develop`을 최신화하고 `WORK_PROGRESS.md`에 PR 상태, Reviewer 결정, merge 시각, 다음 작업 상태를 기록한다.
