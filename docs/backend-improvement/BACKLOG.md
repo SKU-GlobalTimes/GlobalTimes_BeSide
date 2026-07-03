@@ -50,7 +50,7 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## P3. 다국어 이슈 매칭 품질 개선
 
-- 상태: `Backlog`
+- 상태: `In Progress` ([#142](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/142))
 - AS-IS: 기사 제목의 키워드와 영어 번역 키워드를 MySQL FULLTEXT 검색에 사용하므로, 표현이 다른 동일 이슈 또는 비영어권 기사 간 매칭이 누락될 수 있다.
 - TO-BE: 기존 후보 검색을 유지하면서 이슈 유사도와 국가 다양성 기준으로 결과를 재정렬하는 정책을 검증한다.
 - 성공 기준:
@@ -60,7 +60,7 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## P4. 핵심 API 회귀 테스트 기반 마련
 
-- 상태: `In Progress` ([#140](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/140))
+- 상태: `Done` ([#140](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/140), [PR #141](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/141))
 - AS-IS: 핵심 수집, 검색, Perspectives 경로의 정상·실패 동작을 자동 검증하는 테스트 기반이 부족하다.
 - TO-BE: 외부 API를 격리한 서비스 단위 테스트와 핵심 API 통합 테스트를 단계적으로 도입한다.
 - 성공 기준:
