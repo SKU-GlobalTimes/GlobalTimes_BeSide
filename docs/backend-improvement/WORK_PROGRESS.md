@@ -83,8 +83,8 @@ Blocking 예시:
 - #137/#138에서 기사 원문 크롤링 timeout/fallback과 외부 I/O 트랜잭션 분리를 개선했다.
 - #140/#141에서 Perspectives API 캐시 hit/miss, Redis 실패, 번역 fallback 흐름을 회귀 테스트로 고정했다.
 - #142/#143에서 Perspectives 다국어 이슈 매칭 품질 기준선을 정의해, Elasticsearch/Vector DB/RAG 같은 기술 도입 전에 현재 FULLTEXT 기반 매칭의 한계를 측정 가능하게 만들었다.
-- #144에서는 Reviewer `MERGE_READY` 이후 PR별 명시 승인에 따라 바로 merge하고, Issue/PR 생성 시 Reviewer 요청 예시를 함께 안내하는 운영 흐름을 문서화한다.
-- 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140, #142)는 merge 완료 상태다.
+- #144/#145에서 Reviewer `MERGE_READY` 이후 PR별 명시 승인에 따라 바로 merge하고, Issue/PR 생성 시 Reviewer 요청 예시를 함께 안내하는 운영 흐름을 문서화했다.
+- 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140, #142)와 AI workflow 보강(#144)은 merge 완료 상태다.
 
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
 
@@ -668,7 +668,7 @@ Reviewer 결과:
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/144
 - PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/145
-- 상태: In Progress
+- 상태: merged
 - 작업 브랜치: `docs/#144-merge-ready-flow`
 - 주요 파일:
   - `docs/ai-workflow/reviewer-comment-workflow.md`
@@ -694,6 +694,15 @@ Reviewer 결과:
 ```text
 git diff --check
 ```
+
+Reviewer 결과:
+
+- 첫 Reviewer comment에서 Blocking 2건이 있었다.
+- Blocking 1: merge 승인 조건이 포괄 승인으로 해석될 수 있어 PR별 명시 승인으로 좁히도록 지적했다.
+- Blocking 2: Reviewer comment 이후 PR diff 변경 시 재검토 기준이 단정적이지 않아 최신 diff 기준 재검토 필수로 명확히 하도록 지적했다.
+- 같은 PR에서 두 Blocking을 반영했다.
+- 재검토 결과 `MERGE_READY`, Blocking 없음, Non-blocking 없음으로 확인했다.
+- 2026-07-03 기준 PR #145는 merge 완료되었고, Issue #144는 closed 상태다.
 
 ## 4. 이후 개선 로드맵
 
