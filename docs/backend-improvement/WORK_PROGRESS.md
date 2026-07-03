@@ -84,8 +84,8 @@ Blocking 예시:
 - #140/#141에서 Perspectives API 캐시 hit/miss, Redis 실패, 번역 fallback 흐름을 회귀 테스트로 고정했다.
 - #142/#143에서 Perspectives 다국어 이슈 매칭 품질 기준선을 정의해, Elasticsearch/Vector DB/RAG 같은 기술 도입 전에 현재 FULLTEXT 기반 매칭의 한계를 측정 가능하게 만들었다.
 - #144/#145에서 Reviewer `MERGE_READY` 이후 PR별 명시 승인에 따라 바로 merge하고, Issue/PR 생성 시 Reviewer 요청 예시를 함께 안내하는 운영 흐름을 문서화했다.
-- #146에서는 #142 기준선에 이어 로컬 개발 DB의 대표 샘플 후보와 MySQL FULLTEXT 매칭 스냅샷을 기록한다.
-- 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140, #142)와 AI workflow 보강(#144)은 merge 완료 상태다.
+- #146/#147에서 #142 기준선에 이어 로컬 개발 DB의 대표 샘플 후보와 MySQL FULLTEXT 매칭 스냅샷을 기록했다.
+- 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140, #142, #146)와 AI workflow 보강(#144)은 merge 완료 상태다.
 
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
 
@@ -711,7 +711,7 @@ Reviewer 결과:
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/146
 - PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/147
-- 상태: In Progress
+- 상태: merged
 - 작업 브랜치: `perf/#146-perspectives-sample-snapshot`
 - 주요 파일:
   - `docs/backend-improvement/perspectives-matching-sample-snapshot.md`
@@ -745,6 +745,13 @@ Reviewer 결과:
 ```text
 git diff --check
 ```
+
+Reviewer 결과:
+
+- `## AI Reviewer 검토 결과` 제목의 Reviewer comment 기준 Blocking 없음.
+- Non-blocking 없음.
+- `check-review-blocking.ps1 -PrNumber 147` 결과 `MERGE_READY`를 확인했다.
+- 2026-07-03 기준 PR #147은 merge 완료되었고, Issue #146은 closed 상태다.
 
 ## 4. 이후 개선 로드맵
 
