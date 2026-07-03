@@ -22,6 +22,7 @@ Issue 생성
 → Blocking 반영
 → 최종 Blocking 없음 확인
 → 사용자 승인 후 merge
+→ WORK_PROGRESS.md 상태 갱신
 ```
 
 ### 역할 분리
@@ -36,6 +37,8 @@ Issue 생성
 
 Reviewer는 코드 수정, 커밋, push, merge를 하지 않는다.
 Reviewer는 `## AI Reviewer 검토 결과` 제목으로 GitHub PR comment를 남긴다.
+Implementer는 새 Issue/PR을 만든 뒤 Reviewer Agent에게 전달할 검토 요청 예시를 사용자에게 함께 안내한다.
+최신 Reviewer comment가 `MERGE_READY`이고 사용자가 해당 PR에 대해 명시적으로 merge 진행을 승인한 경우, Implementer는 PR을 merge한 뒤 이 문서에 merge 상태와 다음 작업 상태를 기록한다.
 
 ### 커밋 메시지 규칙
 
@@ -79,8 +82,9 @@ Blocking 예시:
 - #133/#134에서 검색 API FULLTEXT 실행 계획을 분석하고, 원문/번역 검색어가 같은 경우 중복 `OR MATCH`를 제거해 FULLTEXT 인덱스를 사용하도록 개선했다.
 - #137/#138에서 기사 원문 크롤링 timeout/fallback과 외부 I/O 트랜잭션 분리를 개선했다.
 - #140/#141에서 Perspectives API 캐시 hit/miss, Redis 실패, 번역 fallback 흐름을 회귀 테스트로 고정했다.
-- 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140)는 merge 완료 상태다.
-- #142에서는 Perspectives 다국어 이슈 매칭 품질 기준선을 정의해, Elasticsearch/Vector DB/RAG 같은 기술 도입 전에 현재 FULLTEXT 기반 매칭의 한계를 측정 가능하게 만든다.
+- #142/#143에서 Perspectives 다국어 이슈 매칭 품질 기준선을 정의해, Elasticsearch/Vector DB/RAG 같은 기술 도입 전에 현재 FULLTEXT 기반 매칭의 한계를 측정 가능하게 만들었다.
+- #144에서는 Reviewer `MERGE_READY` 이후 PR별 명시 승인에 따라 바로 merge하고, Issue/PR 생성 시 Reviewer 요청 예시를 함께 안내하는 운영 흐름을 문서화한다.
+- 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140, #142)는 merge 완료 상태다.
 
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
 
@@ -618,7 +622,7 @@ git diff --check
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/142
 - PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/143
-- 상태: In Progress
+- 상태: merged
 - 작업 브랜치: `perf/#142-perspectives-matching-baseline`
 - 주요 파일:
   - `docs/backend-improvement/perspectives-matching-quality-baseline.md`
@@ -644,6 +648,46 @@ git diff --check
 - API 동작, DB 스키마, 검색 엔진, 캐시 정책은 변경하지 않는다.
 - 현재 매칭 흐름, 알려진 한계, 대표 샘플 선정 기준, 측정 절차, 결과 기록 템플릿을 문서화한다.
 - 기술 도입 후보는 기준선 측정 이후 ADR 또는 후속 이슈로 분리한다.
+
+검증:
+
+```text
+git diff --check
+```
+
+Reviewer 결과:
+
+- `## AI Reviewer 검토 결과` 제목의 Reviewer comment 기준 Blocking 없음.
+- Non-blocking 없음.
+- `check-review-blocking.ps1 -PrNumber 143` 결과 `MERGE_READY`를 확인했다.
+- 2026-07-03 기준 PR #143은 merge 완료되었고, Issue #142는 closed 상태다.
+
+---
+
+### #144 - AI Reviewer MERGE_READY 이후 merge 흐름 문서화
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/144
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/145
+- 상태: In Progress
+- 작업 브랜치: `docs/#144-merge-ready-flow`
+- 주요 파일:
+  - `docs/ai-workflow/reviewer-comment-workflow.md`
+  - `docs/ai-workflow/README.md`
+  - `docs/backend-improvement/WORK_PROGRESS.md`
+
+목표:
+
+- Reviewer comment에서 `MERGE_READY`와 Blocking 없음이 확인되고 사용자가 해당 PR에 대해 명시적으로 merge 진행을 승인한 경우, Implementer가 바로 merge까지 수행하는 흐름을 문서화한다.
+- Reviewer comment 이후 PR diff에 추가 변경이 있으면 최신 diff 기준으로 재검토를 받아야 한다는 기준을 명확히 한다.
+- 새 Issue/PR 생성 후에는 Reviewer Agent에게 전달할 검토 요청 예시를 사용자에게 함께 안내하는 규칙을 추가한다.
+- merge 후 `WORK_PROGRESS.md`에 PR 상태, Reviewer 결정, merge 결과, 다음 작업 상태를 남겨 새 Implementer 세션이 흐름을 복원할 수 있게 한다.
+
+수정 방향:
+
+- `reviewer-comment-workflow.md`에 MERGE_READY 이후 처리 기준을 추가한다.
+- `docs/ai-workflow/README.md`에 merge 결과와 다음 작업 상태 기록 위치를 추가한다.
+- `WORK_PROGRESS.md`에 #142/#143 merge 완료 상태와 #144 진행 상태를 기록한다.
+- AI Reviewer Blocking 반영으로 merge 승인을 PR별 명시 승인으로 좁히고, Reviewer comment 이후 diff 변경 시 재검토 필수 기준을 추가한다.
 
 검증:
 

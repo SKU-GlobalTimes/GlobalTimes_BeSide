@@ -49,6 +49,7 @@ Issue 생성
 → 필요 시 Reviewer 재검토
 → Blocking 없음 확인
 → 사용자 승인 후 merge
+→ merge 결과와 다음 상태를 WORK_PROGRESS.md에 기록
 ```
 
 ## Reviewer comment 형식
@@ -119,6 +120,9 @@ Issue: #<ISSUE_NUMBER>
 - 리뷰 결과만 PR comment로 기록
 ```
 
+Implementer는 새 Issue/PR을 생성한 뒤 사용자에게 Reviewer 세션에 전달할 검토 요청 예시를 함께 안내한다.
+검토 요청 예시는 PR URL, Issue 번호, 이번 PR의 핵심 검토 관점, Reviewer 제약, `## AI Reviewer 검토 결과` comment 작성 요구를 포함한다.
+
 ## Implementer 세션 표준 프롬프트
 
 ```text
@@ -130,12 +134,26 @@ PR #<PR_NUMBER>의 AI Reviewer comment를 읽고 수정 계획을 세워줘.
 - 코드 변경 전 사용자 승인을 먼저 받는다.
 ```
 
+## MERGE_READY 이후 처리
+
+`scripts/ai-workflow/check-review-blocking.ps1` 또는 동일한 수동 확인으로 최신 `## AI Reviewer 검토 결과` comment의 결정이 `MERGE_READY`이고 Blocking이 없음을 확인하면, Implementer는 아래 기준에 따라 merge를 진행한다.
+
+1. PR이 승인된 Issue 범위 안에 머문다.
+2. Reviewer comment 이후 PR diff에 추가 변경이 없다. 추가 변경이 있다면 최신 diff 기준으로 Reviewer 재검토를 받아야 한다.
+3. PR이 GitHub 기준 mergeable 상태다.
+4. 사용자가 해당 PR에 대해 명시적으로 merge 진행을 승인했다.
+
+위 조건이 충족되면 Implementer는 별도 대기 없이 PR을 merge할 수 있다.
+merge 후에는 로컬 `develop`을 최신화하고 `WORK_PROGRESS.md`에 PR 상태, Reviewer 결정, merge 시각, 다음 작업 상태를 기록한다.
+
 ## 기록 기준
 
 - Reviewer 검토 결과는 PR comment에 남긴다.
 - Implementer 반영 계획과 반영 완료 내역도 PR comment에 남긴다.
 - 최종 Reviewer 확인 결과는 “Blocking 없음” comment로 남긴다.
-- merge는 사용자의 명시적 승인 후에만 수행한다.
+- merge는 `MERGE_READY`와 사용자 승인 기준을 충족한 뒤 수행한다.
+- 새 Issue/PR 생성 후에는 Reviewer Agent에게 전달할 검토 요청 예시를 사용자에게 안내한다.
+- merge 완료 후에는 `WORK_PROGRESS.md`를 기준 문서로 갱신한다.
 
 ## 후속 자동화 후보
 
