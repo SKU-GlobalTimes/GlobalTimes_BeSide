@@ -60,7 +60,7 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## P4. 핵심 API 회귀 테스트 기반 마련
 
-- 상태: `Backlog`
+- 상태: `In Progress` ([#140](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/140))
 - AS-IS: 핵심 수집, 검색, Perspectives 경로의 정상·실패 동작을 자동 검증하는 테스트 기반이 부족하다.
 - TO-BE: 외부 API를 격리한 서비스 단위 테스트와 핵심 API 통합 테스트를 단계적으로 도입한다.
 - 성공 기준:
