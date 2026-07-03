@@ -563,6 +563,51 @@ Reviewer 결과:
 - Non-blocking: PR #136 merge 후 Issue #135가 open으로 남은 housekeeping 항목 확인.
 - 2026-07-03 기준 PR #138은 merge 완료되었고, Issue #137은 closed 상태다.
 
+---
+
+### #140 - Perspectives API 캐시/실패 회귀 테스트 기반 마련
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/140
+- 상태: In Progress
+- 작업 브랜치: `test/#140-perspectives-regression-tests`
+- 주요 파일:
+  - `src/main/java/com/example/globalTimes_be/domain/detail/service/PerspectivesService.java`
+  - `src/test/java/com/example/globalTimes_be/domain/detail/service/PerspectivesServiceTest.java`
+  - `docs/backend-improvement/BACKLOG.md`
+  - `docs/backend-improvement/WORK_PROGRESS.md`
+
+목표:
+
+- #127/#129/#131에서 측정/문서화한 Perspectives cache hit/miss, Redis 실패, 번역 fallback 흐름을 테스트로 고정한다.
+- 이후 Redis, 검색, 번역, 유사도 개선을 이어갈 때 기존 동작이 깨졌는지 자동으로 확인할 안전망을 만든다.
+
+조사 결과:
+
+- `PerspectivesService`는 cache hit 시 Redis JSON을 `PerspectivesResDTO`로 역직렬화해 즉시 반환한다.
+- Redis read 실패 또는 캐시 역직렬화 실패는 warn 로그 후 재계산한다.
+- cache miss 시 기준 기사 조회, 키워드 추출, 비영어 기사 번역, FULLTEXT 검색, 국가별 grouping, Redis 저장 순서로 동작한다.
+- 번역 실패는 원문 키워드 fallback으로 처리한다.
+- Redis write 실패는 warn 로그 후 API 응답을 정상 반환한다.
+
+수정 방향:
+
+- Spring context를 띄우지 않는 mock 기반 `PerspectivesServiceTest`를 추가한다.
+- cache hit, cache miss, Redis read 실패, 캐시 역직렬화 실패, Redis write 실패, 번역 실패 fallback 분기를 테스트로 고정한다.
+- API 응답 구조와 운영 코드는 변경하지 않고 회귀 테스트 안전망을 우선 확보한다.
+
+검증:
+
+```text
+./gradlew.bat test
+git diff --check
+```
+
+초기 테스트 실패와 조정:
+
+- 캐시 JSON 테스트에서 `LocalDateTime` 직렬화를 위해 테스트 `ObjectMapper`에 JavaTime module 등록이 필요했다.
+- 비영어 번역 실패 테스트는 `KeywordExtractor`의 실제 plain/boolean keyword 추출 결과를 기준으로 기대값을 맞췄다.
+- 서비스 코드는 변경하지 않고 테스트 코드의 fixture/기대값만 실제 동작에 맞게 조정했다.
+
 ## 4. 이후 개선 로드맵
 
 ### A. #123 이후 바로 할 수 있는 성능 개선
