@@ -41,14 +41,7 @@ public class KeywordExtractor {
         if (keywords.isEmpty()) return title;
 
         // 첫 2개는 필수(+), 나머지는 선택 → FULLTEXT 정확도 향상
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < keywords.size(); i++) {
-            if (i < 2) sb.append("+").append(keywords.get(i));
-            else sb.append(" ").append(keywords.get(i));
-            if (i < keywords.size() - 1 && i >= 1) sb.append(" ");
-        }
-
-        return sb.toString().trim();
+        return formatBooleanModeKeywords(keywords);
     }
 
     // 로깅/응답용 평문 키워드 (+ 기호 없이)
@@ -60,6 +53,12 @@ public class KeywordExtractor {
                 .filter(word -> !STOP_WORDS.contains(word.toLowerCase()))
                 .distinct()
                 .limit(MAX_KEYWORDS)
+                .collect(Collectors.joining(" "));
+    }
+
+    private static String formatBooleanModeKeywords(List<String> keywords) {
+        return java.util.stream.IntStream.range(0, keywords.size())
+                .mapToObj(i -> i < 2 ? "+" + keywords.get(i) : keywords.get(i))
                 .collect(Collectors.joining(" "));
     }
 }

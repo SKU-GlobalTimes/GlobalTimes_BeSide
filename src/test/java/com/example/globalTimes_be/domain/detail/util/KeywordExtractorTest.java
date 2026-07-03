@@ -7,13 +7,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 class KeywordExtractorTest {
 
     @Test
-    void extract_keepsCurrentLeadingTokenPolicyForGenericEnglishWords() {
+    void extract_keepsLeadingTokenPolicyForGenericEnglishWords() {
         String title = "First round of US-Iran talks ends with encouraging progress";
 
         assertThat(KeywordExtractor.extractPlain(title))
                 .isEqualTo("First round Iran talks");
         assertThat(KeywordExtractor.extract(title))
-                .isEqualTo("+First+round  Iran  talks");
+                .isEqualTo("+First +round Iran talks");
     }
 
     @Test
@@ -23,7 +23,7 @@ class KeywordExtractorTest {
         assertThat(KeywordExtractor.extractPlain(title))
                 .isEqualTo("BTS fans losing thousands");
         assertThat(KeywordExtractor.extract(title))
-                .isEqualTo("+BTS+fans  losing  thousands");
+                .isEqualTo("+BTS +fans losing thousands");
     }
 
     @Test
@@ -33,17 +33,17 @@ class KeywordExtractorTest {
         assertThat(KeywordExtractor.extractPlain(title))
                 .isEqualTo("Trump backed political outsider");
         assertThat(KeywordExtractor.extract(title))
-                .isEqualTo("+Trump+backed  political  outsider");
+                .isEqualTo("+Trump +backed political outsider");
     }
 
     @Test
     void extract_keepsKoreanTokenJoinedByUnicodeEllipsis() {
-        String title = "AI 반도체 붐에 車 디스플레이칩도 쑥쑥…대만 하이맥스 약진";
+        String title = "AI 반도체…대만 하이맥스 급등";
 
         assertThat(KeywordExtractor.extractPlain(title))
-                .isEqualTo("반도체 디스플레이칩도 쑥쑥…대만 하이맥스");
+                .isEqualTo("반도체…대만 하이맥스");
         assertThat(KeywordExtractor.extract(title))
-                .isEqualTo("+반도체+디스플레이칩도  쑥쑥…대만  하이맥스");
+                .isEqualTo("+반도체…대만 +하이맥스");
     }
 
     @Test
@@ -53,7 +53,7 @@ class KeywordExtractorTest {
         assertThat(KeywordExtractor.extractPlain(title))
                 .isEqualTo("Entre Meloni Trump divorce");
         assertThat(KeywordExtractor.extract(title))
-                .isEqualTo("+Entre+Meloni  Trump  divorce");
+                .isEqualTo("+Entre +Meloni Trump divorce");
     }
 
     @Test
