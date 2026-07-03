@@ -18,6 +18,9 @@ public class KeywordExtractor {
             "what", "how", "when", "where", "who", "which", "can", "do", "did",
             "he", "she", "we", "you", "his", "her", "our", "your"
     );
+    private static final Set<String> GENERIC_TOKENS = Set.of(
+            "first", "round", "entre"
+    );
 
     private static final int MAX_KEYWORDS = 4;
 
@@ -31,12 +34,7 @@ public class KeywordExtractor {
     public static String extract(String title) {
         if (title == null || title.isBlank()) return "";
 
-        List<String> keywords = Arrays.stream(title.split("[\\s\\p{Punct}]+"))
-                .filter(word -> word.length() > 2)
-                .filter(word -> !STOP_WORDS.contains(word.toLowerCase()))
-                .distinct()
-                .limit(MAX_KEYWORDS)
-                .collect(Collectors.toList());
+        List<String> keywords = extractKeywords(title);
 
         if (keywords.isEmpty()) return title;
 
@@ -48,12 +46,21 @@ public class KeywordExtractor {
     public static String extractPlain(String title) {
         if (title == null || title.isBlank()) return "";
 
+        return String.join(" ", extractKeywords(title));
+    }
+
+    private static List<String> extractKeywords(String title) {
         return Arrays.stream(title.split("[\\s\\p{Punct}]+"))
                 .filter(word -> word.length() > 2)
-                .filter(word -> !STOP_WORDS.contains(word.toLowerCase()))
+                .filter(KeywordExtractor::isSearchKeyword)
                 .distinct()
                 .limit(MAX_KEYWORDS)
-                .collect(Collectors.joining(" "));
+                .collect(Collectors.toList());
+    }
+
+    private static boolean isSearchKeyword(String word) {
+        String normalized = word.toLowerCase();
+        return !STOP_WORDS.contains(normalized) && !GENERIC_TOKENS.contains(normalized);
     }
 
     private static String formatBooleanModeKeywords(List<String> keywords) {

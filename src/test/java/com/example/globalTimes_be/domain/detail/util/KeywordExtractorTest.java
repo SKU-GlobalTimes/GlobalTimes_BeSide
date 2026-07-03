@@ -7,13 +7,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 class KeywordExtractorTest {
 
     @Test
-    void extract_keepsLeadingTokenPolicyForGenericEnglishWords() {
+    void extract_filtersGenericLeadingTokensForIssueSearch() {
         String title = "First round of US-Iran talks ends with encouraging progress";
 
         assertThat(KeywordExtractor.extractPlain(title))
-                .isEqualTo("First round Iran talks");
+                .isEqualTo("Iran talks ends encouraging");
         assertThat(KeywordExtractor.extract(title))
-                .isEqualTo("+First +round Iran talks");
+                .isEqualTo("+Iran +talks ends encouraging");
     }
 
     @Test
@@ -47,13 +47,13 @@ class KeywordExtractorTest {
     }
 
     @Test
-    void extract_keepsFrenchGeneralTokenBecauseOnlyEnglishStopWordsExist() {
+    void extract_filtersFrenchGeneralTokenFromSample() {
         String title = "Entre Meloni et Trump, divorce a l'italienne";
 
         assertThat(KeywordExtractor.extractPlain(title))
-                .isEqualTo("Entre Meloni Trump divorce");
+                .isEqualTo("Meloni Trump divorce italienne");
         assertThat(KeywordExtractor.extract(title))
-                .isEqualTo("+Entre +Meloni Trump divorce");
+                .isEqualTo("+Meloni +Trump divorce italienne");
     }
 
     @Test

@@ -87,6 +87,7 @@ Blocking 예시:
 - #146/#147에서 #142 기준선에 이어 로컬 개발 DB의 대표 샘플 후보와 MySQL FULLTEXT 매칭 스냅샷을 기록했다.
 - #148/#149에서 `KeywordExtractor` 현행 정책을 회귀 테스트로 고정하고, 의미 유사도 개선이 아니라 키워드 후보 탐색 정책임을 명확히 남겼다.
 - #150/#151에서 `KeywordExtractor.extract()`의 MySQL FULLTEXT BOOLEAN MODE 검색어 공백 포맷을 정규화했다.
+- #152에서는 `First`, `round`, `Entre` 같은 샘플 기반 일반 토큰을 필터링해 Perspectives 후보 검색어 품질을 개선한다.
 - 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140, #142, #146)와 AI workflow 보강(#144)은 merge 완료 상태다.
 
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
@@ -840,6 +841,47 @@ Reviewer 결과:
 - Non-blocking: `WORK_PROGRESS.md`의 `검증 예정` 표현을 완료 상태와 맞추는 문서 정정 제안이 있었고, merge 후 후처리에서 `검증`으로 정리했다.
 - `check-review-blocking.ps1 -PrNumber 151` 결과 `MERGE_READY`를 확인했다.
 - 2026-07-03 기준 PR #151은 merge 완료되었고, Issue #150은 closed 상태다.
+
+---
+
+### #152 - Perspectives KeywordExtractor 일반 토큰 필터링 개선
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/152
+- PR: TBD
+- 상태: In Progress
+- 작업 브랜치: `perf/#152-keyword-generic-token-filtering`
+- 주요 파일:
+  - `src/main/java/com/example/globalTimes_be/domain/detail/util/KeywordExtractor.java`
+  - `src/test/java/com/example/globalTimes_be/domain/detail/util/KeywordExtractorTest.java`
+  - `docs/backend-improvement/perspectives-matching-sample-snapshot.md`
+  - `docs/backend-improvement/BACKLOG.md`
+  - `docs/backend-improvement/WORK_PROGRESS.md`
+
+목표:
+
+- #146 스냅샷에서 드러난 `First`, `round`, `Entre` 같은 일반 토큰이 required token으로 잡히는 문제를 샘플 기반 최소 필터링으로 줄인다.
+- #150에서 정규화한 BOOLEAN MODE 포맷 위에서 검색어 후보 품질을 개선한다.
+- ranking, entity-aware extraction, translation, DB query, Redis 정책은 변경하지 않는다.
+
+수정 방향:
+
+- `KeywordExtractor`에 기존 stop words와 별도로 샘플 기반 약한 토큰 필터를 둔다.
+- `extract()`와 `extractPlain()`이 같은 토큰 후보 추출 정책을 공유하도록 정리한다.
+- `BTS`, `Trump`, `Iran`, `Meloni` 같은 핵심 entity 토큰이 유지되는지 테스트로 확인한다.
+
+검증:
+
+```text
+./gradlew.bat test
+git diff --check
+```
+
+구현 메모:
+
+- `KeywordExtractor`의 토큰 후보 추출을 `extractKeywords()`로 모아 `extract()`와 `extractPlain()`이 같은 필터링 정책을 공유하게 했다.
+- 샘플 기반 일반 토큰으로 `first`, `round`, `entre`를 분리했다.
+- `First round of US-Iran...` 샘플은 `Iran talks...`, `Entre Meloni...` 샘플은 `Meloni Trump...` 중심의 검색어를 생성하도록 테스트 기대값을 갱신했다.
+- DB-level FULLTEXT 결과 변화는 이번 PR에서 직접 측정하지 않고, `perspectives-matching-sample-snapshot.md`에 후속 측정 후보로 남겼다.
 
 ## 4. 이후 개선 로드맵
 

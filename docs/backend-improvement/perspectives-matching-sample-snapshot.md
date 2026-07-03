@@ -133,11 +133,24 @@ This is a useful partial-match sample for evaluating future ranking or entity fi
 - The regression tests exposed formatting/tokenization quirks, such as compacted `+first+second` BOOLEAN MODE output and Korean tokens joined by the Unicode ellipsis character.
   The compacted BOOLEAN MODE formatting is normalized in #150; token policy changes remain separate follow-up work.
 
+## Java Policy Follow-up
+
+The snapshot table above preserves the original local measurement keywords and match counts.
+After #150 and #152, the Java `KeywordExtractor` policy changes the generated keywords for the weakest generic-token samples:
+
+| Base article ID | Previous keyword | #152 Java keyword | Reason |
+| --- | --- | --- | --- |
+| 8146 | `+First +round Iran talks` | `+Iran +talks ends encouraging` | `First` and `round` are filtered as sample-based generic tokens. |
+| 9440 | `+Entre +Meloni Trump divorce` | `+Meloni +Trump divorce italienne` | `Entre` is filtered as a sample-based generic token. |
+
+This section documents generated keyword changes only.
+It does not replace the original match counts, because DB-level FULLTEXT result quality should be measured separately after the code change is merged.
+
 ## Follow-up Candidates
 
 1. Measure the full API path for the same samples, including translation behavior, with external API usage explicitly approved.
-2. Add entity-aware keyword extraction or a better stop-word/token policy only after comparing against the fixed regression tests.
-3. Normalize BOOLEAN MODE keyword formatting only after confirming it does not change query semantics unexpectedly.
+2. Measure DB-level result changes for #152 generic-token filtering on the representative samples.
+3. Add entity-aware keyword extraction only after comparing against the fixed regression tests.
 4. Compare the current recency ordering with a relevance-first or hybrid ranking strategy.
 5. Define expected countries per sample before trying vector search or Elasticsearch.
 6. Keep `issue_id` or clustering as an ADR-level option until concrete sample failures justify the added model.
