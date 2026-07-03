@@ -130,7 +130,8 @@ This is a useful partial-match sample for evaluating future ranking or entity fi
 - Some `language='zh'` rows contain English titles, so the `language` field alone does not fully describe search text language.
 - The manual keyword examples in this snapshot are measurement aids, not a replacement for the Java policy.
   `KeywordExtractorTest` fixes the current Java behavior before any token policy changes are attempted.
-- The regression tests also expose current formatting/tokenization quirks, such as compacted `+first+second` BOOLEAN MODE output and Korean tokens joined by the Unicode ellipsis character.
+- The regression tests exposed formatting/tokenization quirks, such as compacted `+first+second` BOOLEAN MODE output and Korean tokens joined by the Unicode ellipsis character.
+  The compacted BOOLEAN MODE formatting is normalized in #150; token policy changes remain separate follow-up work.
 
 ## Follow-up Candidates
 
