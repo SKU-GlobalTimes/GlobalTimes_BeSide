@@ -801,7 +801,7 @@ Reviewer 결과:
 ### #150 - KeywordExtractor BOOLEAN MODE 검색어 포맷 정규화
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/150
-- PR: TBD
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/151
 - 상태: In Progress
 - 작업 브랜치: `fix/#150-keyword-boolean-format`
 - 주요 파일:
