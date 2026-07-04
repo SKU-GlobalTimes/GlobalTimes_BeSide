@@ -89,6 +89,7 @@ Blocking 예시:
 - #150/#151에서 `KeywordExtractor.extract()`의 MySQL FULLTEXT BOOLEAN MODE 검색어 공백 포맷을 정규화했다.
 - #152/#153에서 `First`, `round`, `Entre` 같은 샘플 기반 일반 토큰을 필터링해 Perspectives 후보 검색어 품질을 개선했다.
 - #154/#155에서 RSS/News API 수집 편차와 갱신 주기가 FULLTEXT/향후 연관도 측정 해석에 주는 한계를 별도 LOG로 남겼다.
+- #156에서는 #152 전후 키워드로 대표 샘플의 MySQL FULLTEXT 결과 변화를 측정한다.
 - 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140, #142, #146)와 AI workflow 보강(#144)은 merge 완료 상태다.
 
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
@@ -933,6 +934,39 @@ Reviewer 결과:
 - Non-blocking: `WORK_PROGRESS.md`의 `검증 예정` 표현을 완료 상태와 맞추는 문서 정정 제안이 있었고, merge 후 후처리에서 `검증`으로 정리했다.
 - `check-review-blocking.ps1 -PrNumber 155` 결과 `MERGE_READY`를 확인했다.
 - 2026-07-04 기준 PR #155는 merge 완료되었고, Issue #154는 closed 상태다.
+
+---
+
+### #156 - Perspectives #152 일반 토큰 필터링 FULLTEXT 결과 변화 측정
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/156
+- PR: TBD
+- 상태: In Progress
+- 작업 브랜치: `perf/#156-fulltext-after-generic-token-filter`
+- 주요 파일:
+  - `docs/backend-improvement/perspectives-fulltext-generic-token-filter-result.md`
+  - `docs/backend-improvement/perspectives-matching-sample-snapshot.md`
+  - `docs/backend-improvement/BACKLOG.md`
+  - `docs/backend-improvement/WORK_PROGRESS.md`
+
+목표:
+
+- #152에서 일반 토큰 필터링 후 생성 keyword가 바뀐 대표 샘플 8146, 9440의 실제 MySQL FULLTEXT 결과 변화를 측정한다.
+- match count, top 50 국가/언어 분포, 상위 반환 예시를 기록한다.
+- #154 source coverage LOG를 전제로 검색 품질 문제와 데이터 공급 한계를 구분해 해석한다.
+
+측정 결과:
+
+- 8146은 `+First +round Iran talks` 25건에서 `+Iran +talks ends encouraging` 27건으로 바뀌었고, 상위 결과가 스포츠/라운드 노이즈에서 Iran/US talks 중심으로 이동했다.
+- 9440은 `+Entre +Meloni Trump divorce` 0건에서 `+Meloni +Trump divorce italienne` 3건으로 바뀌어 Meloni/Trump 후보가 생겼다.
+- 운영 코드, DB schema, FULLTEXT query, ranking, crawler/RSS feed 정책은 변경하지 않았다.
+
+검증 예정:
+
+```text
+로컬 MySQL FULLTEXT 측정 쿼리
+git diff --check
+```
 
 ## 4. 이후 개선 로드맵
 
