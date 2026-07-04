@@ -87,7 +87,7 @@ Blocking 예시:
 - #146/#147에서 #142 기준선에 이어 로컬 개발 DB의 대표 샘플 후보와 MySQL FULLTEXT 매칭 스냅샷을 기록했다.
 - #148/#149에서 `KeywordExtractor` 현행 정책을 회귀 테스트로 고정하고, 의미 유사도 개선이 아니라 키워드 후보 탐색 정책임을 명확히 남겼다.
 - #150/#151에서 `KeywordExtractor.extract()`의 MySQL FULLTEXT BOOLEAN MODE 검색어 공백 포맷을 정규화했다.
-- #152에서는 `First`, `round`, `Entre` 같은 샘플 기반 일반 토큰을 필터링해 Perspectives 후보 검색어 품질을 개선한다.
+- #152/#153에서 `First`, `round`, `Entre` 같은 샘플 기반 일반 토큰을 필터링해 Perspectives 후보 검색어 품질을 개선했다.
 - 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140, #142, #146)와 AI workflow 보강(#144)은 merge 완료 상태다.
 
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
@@ -848,7 +848,7 @@ Reviewer 결과:
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/152
 - PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/153
-- 상태: In Progress
+- 상태: merged
 - 작업 브랜치: `perf/#152-keyword-generic-token-filtering`
 - 주요 파일:
   - `src/main/java/com/example/globalTimes_be/domain/detail/util/KeywordExtractor.java`
@@ -883,6 +883,15 @@ git diff --check
 - `First round of US-Iran...` 샘플은 `Iran talks...`, `Entre Meloni...` 샘플은 `Meloni Trump...` 중심의 검색어를 생성하도록 테스트 기대값을 갱신했다.
 - Reviewer Blocking 반영으로 일반 토큰 필터링 후 후보가 비는 경우 `extract()`와 `extractPlain()` 모두 빈 문자열을 반환하도록 정책을 맞췄다.
 - DB-level FULLTEXT 결과 변화는 이번 PR에서 직접 측정하지 않고, `perspectives-matching-sample-snapshot.md`에 후속 측정 후보로 남겼다.
+
+Reviewer 결과:
+
+- 첫 Reviewer comment에서 Blocking 1건이 있었다.
+- Blocking: 일반 토큰만 남는 제목에서 `extract()`가 원문 fallback으로 `first`, `round`, `entre`를 다시 살릴 수 있다고 지적했다.
+- 반영: 필터링 후 후보가 비면 `extract()`와 `extractPlain()` 모두 빈 문자열을 반환하도록 수정하고 `First round Entre` 회귀 테스트를 추가했다.
+- 재검토 결과 `MERGE_READY`, Blocking 없음, Non-blocking 없음으로 확인했다.
+- `check-review-blocking.ps1 -PrNumber 153` 결과 `MERGE_READY`를 확인했다.
+- 2026-07-04 기준 PR #153은 merge 완료되었고, Issue #152는 closed 상태다.
 
 ## 4. 이후 개선 로드맵
 
