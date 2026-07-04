@@ -940,7 +940,7 @@ Reviewer 결과:
 ### #156 - Perspectives #152 일반 토큰 필터링 FULLTEXT 결과 변화 측정
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/156
-- PR: TBD
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/157
 - 상태: In Progress
 - 작업 브랜치: `perf/#156-fulltext-after-generic-token-filter`
 - 주요 파일:
