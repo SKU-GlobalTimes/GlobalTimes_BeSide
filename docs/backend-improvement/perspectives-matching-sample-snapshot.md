@@ -6,6 +6,7 @@ This document records a first local snapshot for the Perspectives matching quali
 It follows `perspectives-matching-quality-baseline.md` and uses the local development MySQL data to identify representative samples before introducing heavier search technology.
 
 This snapshot does not change API behavior, DB schema, Redis policy, or search logic.
+Interpret this snapshot together with `perspectives-source-coverage-limit-log.md`, because some low-match cases can be caused by source coverage or feed freshness rather than only FULLTEXT behavior.
 
 ## Environment
 
@@ -40,6 +41,7 @@ Top local article groups:
 | jp | ja | sports | 248 |
 
 The dataset is large enough to test English and non-English candidate behavior, but this snapshot is still a local development sample and should not be treated as production quality evidence.
+It also does not prove that every country/source had a comparable opportunity to publish and be collected for the same issue.
 
 ## Method
 
