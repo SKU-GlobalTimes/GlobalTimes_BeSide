@@ -899,7 +899,7 @@ Reviewer 결과:
 ### #154 - Perspectives 데이터 수집 편차와 매칭 품질 해석 한계 LOG
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/154
-- PR: TBD
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/155
 - 상태: In Progress
 - 작업 브랜치: `docs/#154-perspectives-source-coverage-log`
 - 주요 파일:
