@@ -88,7 +88,7 @@ Blocking 예시:
 - #148/#149에서 `KeywordExtractor` 현행 정책을 회귀 테스트로 고정하고, 의미 유사도 개선이 아니라 키워드 후보 탐색 정책임을 명확히 남겼다.
 - #150/#151에서 `KeywordExtractor.extract()`의 MySQL FULLTEXT BOOLEAN MODE 검색어 공백 포맷을 정규화했다.
 - #152/#153에서 `First`, `round`, `Entre` 같은 샘플 기반 일반 토큰을 필터링해 Perspectives 후보 검색어 품질을 개선했다.
-- #154에서는 RSS/News API 수집 편차와 갱신 주기가 FULLTEXT/향후 연관도 측정 해석에 주는 한계를 별도 LOG로 남긴다.
+- #154/#155에서 RSS/News API 수집 편차와 갱신 주기가 FULLTEXT/향후 연관도 측정 해석에 주는 한계를 별도 LOG로 남겼다.
 - 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140, #142, #146)와 AI workflow 보강(#144)은 merge 완료 상태다.
 
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
@@ -900,7 +900,7 @@ Reviewer 결과:
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/154
 - PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/155
-- 상태: In Progress
+- 상태: merged
 - 작업 브랜치: `docs/#154-perspectives-source-coverage-log`
 - 주요 파일:
   - `docs/backend-improvement/perspectives-source-coverage-limit-log.md`
@@ -921,11 +921,18 @@ Reviewer 결과:
 - 기존 matching quality baseline과 sample snapshot에서 이 LOG를 참조하도록 링크를 추가한다.
 - 코드, DB schema, RSS feed, FULLTEXT query, ranking 정책은 변경하지 않는다.
 
-검증 예정:
+검증:
 
 ```text
 git diff --check
 ```
+
+Reviewer 결과:
+
+- `## AI Reviewer 검토 결과` 제목의 Reviewer comment 기준 Blocking 없음.
+- Non-blocking: `WORK_PROGRESS.md`의 `검증 예정` 표현을 완료 상태와 맞추는 문서 정정 제안이 있었고, merge 후 후처리에서 `검증`으로 정리했다.
+- `check-review-blocking.ps1 -PrNumber 155` 결과 `MERGE_READY`를 확인했다.
+- 2026-07-04 기준 PR #155는 merge 완료되었고, Issue #154는 closed 상태다.
 
 ## 4. 이후 개선 로드맵
 
