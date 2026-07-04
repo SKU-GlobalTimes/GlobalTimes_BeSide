@@ -88,6 +88,7 @@ Blocking 예시:
 - #148/#149에서 `KeywordExtractor` 현행 정책을 회귀 테스트로 고정하고, 의미 유사도 개선이 아니라 키워드 후보 탐색 정책임을 명확히 남겼다.
 - #150/#151에서 `KeywordExtractor.extract()`의 MySQL FULLTEXT BOOLEAN MODE 검색어 공백 포맷을 정규화했다.
 - #152/#153에서 `First`, `round`, `Entre` 같은 샘플 기반 일반 토큰을 필터링해 Perspectives 후보 검색어 품질을 개선했다.
+- #154에서는 RSS/News API 수집 편차와 갱신 주기가 FULLTEXT/향후 연관도 측정 해석에 주는 한계를 별도 LOG로 남긴다.
 - 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140, #142, #146)와 AI workflow 보강(#144)은 merge 완료 상태다.
 
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
@@ -892,6 +893,39 @@ Reviewer 결과:
 - 재검토 결과 `MERGE_READY`, Blocking 없음, Non-blocking 없음으로 확인했다.
 - `check-review-blocking.ps1 -PrNumber 153` 결과 `MERGE_READY`를 확인했다.
 - 2026-07-04 기준 PR #153은 merge 완료되었고, Issue #152는 closed 상태다.
+
+---
+
+### #154 - Perspectives 데이터 수집 편차와 매칭 품질 해석 한계 LOG
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/154
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/155
+- 상태: In Progress
+- 작업 브랜치: `docs/#154-perspectives-source-coverage-log`
+- 주요 파일:
+  - `docs/backend-improvement/perspectives-source-coverage-limit-log.md`
+  - `docs/backend-improvement/perspectives-matching-quality-baseline.md`
+  - `docs/backend-improvement/perspectives-matching-sample-snapshot.md`
+  - `docs/backend-improvement/BACKLOG.md`
+  - `docs/backend-improvement/WORK_PROGRESS.md`
+
+목표:
+
+- RSS/News API 수집 소스별 갱신 주기, 기사 선택 기준, 국가/언론사별 기사 수 편차가 Perspectives 매칭 품질 해석에 주는 영향을 별도 LOG로 남긴다.
+- FULLTEXT, Vector/Embedding, Issue clustering 같은 검색/연관도 기술이 해결할 수 있는 문제와 데이터 공급 문제를 분리한다.
+- #152 이후 DB-level FULLTEXT 결과 변화 측정에서 이 LOG를 해석 기준으로 참조하게 한다.
+
+수정 방향:
+
+- `perspectives-source-coverage-limit-log.md`를 추가한다.
+- 기존 matching quality baseline과 sample snapshot에서 이 LOG를 참조하도록 링크를 추가한다.
+- 코드, DB schema, RSS feed, FULLTEXT query, ranking 정책은 변경하지 않는다.
+
+검증 예정:
+
+```text
+git diff --check
+```
 
 ## 4. 이후 개선 로드맵
 

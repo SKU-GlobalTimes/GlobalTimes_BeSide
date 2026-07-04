@@ -8,6 +8,7 @@ The current implementation uses title keywords, optional English translation, an
 This document defines a small baseline for measuring the current matching quality before introducing heavier search layers such as Elasticsearch, vector search, RAG, or issue clustering.
 
 The first local MySQL snapshot is recorded in `perspectives-matching-sample-snapshot.md`.
+When interpreting any snapshot, also apply `perspectives-source-coverage-limit-log.md` to separate search quality from source coverage and freshness limits.
 
 ## Current Flow
 
@@ -53,6 +54,7 @@ Known behavior:
 - Search results can be recent but weakly related because the final ordering is recency-based.
 - The current model has no stable `issue_id` or article cluster identity.
 - Translating only the extracted base keywords to English favors English matching and does not fully cover all article languages.
+- Matching quality is bounded by collected source coverage; missing or delayed RSS/News API articles cannot be recovered by FULLTEXT or semantic search alone.
 
 ## Sample Selection Criteria
 
