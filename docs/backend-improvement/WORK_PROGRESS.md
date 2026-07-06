@@ -981,7 +981,7 @@ Reviewer 결과:
 ### #158 - backend-improvement 다음 세션 handoff 문서 정리
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/158
-- PR: 생성 예정
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/159
 - 상태: In Progress
 - 작업 브랜치: `docs/#158-next-agent-brief`
 - 주요 파일:
