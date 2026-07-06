@@ -90,6 +90,7 @@ Blocking 예시:
 - #152/#153에서 `First`, `round`, `Entre` 같은 샘플 기반 일반 토큰을 필터링해 Perspectives 후보 검색어 품질을 개선했다.
 - #154/#155에서 RSS/News API 수집 편차와 갱신 주기가 FULLTEXT/향후 연관도 측정 해석에 주는 한계를 별도 LOG로 남겼다.
 - #156/#157에서 #152 전후 키워드로 대표 샘플의 MySQL FULLTEXT 결과 변화를 측정했다.
+- #158에서 긴 `WORK_PROGRESS.md`를 보완하기 위한 다음 세션 handoff 문서를 정리 중이다.
 - 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140, #142, #146)와 AI workflow 보강(#144)은 merge 완료 상태다.
 
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
@@ -975,6 +976,37 @@ Reviewer 결과:
 - `check-review-blocking.ps1 -PrNumber 157` 결과 `MERGE_READY`를 확인했다.
 - 2026-07-04 기준 PR #157은 merge 완료되었고, Issue #156은 closed 상태다.
 
+---
+
+### #158 - backend-improvement 다음 세션 handoff 문서 정리
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/158
+- PR: 생성 예정
+- 상태: In Progress
+- 작업 브랜치: `docs/#158-next-agent-brief`
+- 주요 파일:
+  - `docs/backend-improvement/NEXT_AGENT_BRIEF.md`
+  - `docs/backend-improvement/BACKLOG.md`
+  - `docs/backend-improvement/WORK_PROGRESS.md`
+
+목표:
+
+- `WORK_PROGRESS.md`가 장기 audit log로 길어지는 것은 유지하되, 새 Codex 세션이 먼저 읽을 짧은 handoff 문서를 추가한다.
+- 다음 세션이 workflow, 최근 완료 작업, #110 제외 조건, 다음 추천 후보를 빠르게 파악할 수 있게 한다.
+- #156 결과에서 드러난 최신순 정렬의 한계를 바탕으로 다음 추천 후보를 `Perspectives FULLTEXT relevance-first/hybrid ordering 비교`로 명시한다.
+
+수정 방향:
+
+- `NEXT_AGENT_BRIEF.md`를 추가해 읽는 순서, 현재 snapshot, 최근 완료 작업, 다음 추천 이슈, Reviewer 요청 템플릿을 정리한다.
+- `BACKLOG.md`의 P3에 #156 이후 다음 후보와 판단 기준을 추가한다.
+- 코드, DB schema, API 동작, crawler/RSS feed, Redis 정책은 변경하지 않는다.
+
+검증 예정:
+
+```text
+git diff --check
+```
+
 ## 4. 이후 개선 로드맵
 
 ### A. #123 이후 바로 할 수 있는 성능 개선
@@ -1161,7 +1193,8 @@ PR comment 조회
 
 ## 5. 다음 세션에서 바로 이어가기 위한 시작 프롬프트
 
-새 Codex 세션에서 이어갈 때 아래 내용을 전달하면 된다.
+새 Codex 세션에서 이어갈 때는 먼저 `docs/backend-improvement/NEXT_AGENT_BRIEF.md`를 읽고, 더 자세한 이력이 필요할 때 이 문서를 읽는다.
+아래 내용은 간단한 시작 프롬프트로 사용할 수 있다.
 
 ```text
 GlobalTimes_BeSide 백엔드 개선 작업을 이어서 진행하려고 합니다.
