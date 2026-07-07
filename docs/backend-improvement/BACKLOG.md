@@ -53,6 +53,7 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 - 상태: `Backlog` (최근 완료: [#142](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/142), [#146](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/146), [#148](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/148), [#150](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/150), [#152](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/152), [#154](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/154), [#156](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/156))
 - AS-IS: 기사 제목의 키워드와 영어 번역 키워드를 MySQL FULLTEXT 검색에 사용하므로, 표현이 다른 동일 이슈 또는 비영어권 기사 간 매칭이 누락될 수 있다.
 - TO-BE: 기존 후보 검색을 유지하면서 이슈 유사도와 국가 다양성 기준으로 결과를 재정렬하는 정책을 검증한다.
+- 다음 추천 후보: #156에서 8146 샘플의 keyword 품질은 개선됐지만 최신순 정렬 때문에 Lebanon/ceasefire 같은 인접 노이즈가 남았다. 따라서 다음 단계는 `[PERF] Perspectives FULLTEXT relevance-first/hybrid ordering 비교`로, 현재 `ORDER BY published_at DESC`와 FULLTEXT score 기반 정렬 또는 hybrid 정렬을 같은 샘플에서 비교하는 것이다.
 - 성공 기준:
   - 대표 이슈 샘플과 기대 국가를 정의한다.
   - 개선 전후의 국가별 관련 기사 노출 수와 매칭 근거를 비교한다.
