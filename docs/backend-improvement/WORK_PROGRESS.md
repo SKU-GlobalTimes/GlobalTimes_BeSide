@@ -91,6 +91,7 @@ Blocking 예시:
 - #154/#155에서 RSS/News API 수집 편차와 갱신 주기가 FULLTEXT/향후 연관도 측정 해석에 주는 한계를 별도 LOG로 남겼다.
 - #156/#157에서 #152 전후 키워드로 대표 샘플의 MySQL FULLTEXT 결과 변화를 측정했다.
 - #158/#159에서 긴 `WORK_PROGRESS.md`를 보완하기 위한 다음 세션 handoff 문서를 정리했다.
+- #160에서 Perspectives FULLTEXT 정렬 기준을 latest-first, relevance-first, hybrid ordering으로 비교하는 작업을 시작했다.
 - 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140, #142, #146)와 AI workflow 보강(#144)은 merge 완료 상태다.
 
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
@@ -1013,6 +1014,38 @@ Reviewer 결과:
 - Non-blocking: `WORK_PROGRESS.md`의 `검증 예정` 표현을 완료 상태와 맞추는 문서 정정 제안이 있었고, merge 후 후처리에서 `검증`으로 정리했다.
 - `check-review-blocking.ps1 -PrNumber 159` 결과 `MERGE_READY`를 확인했다.
 - 2026-07-07 기준 PR #159는 merge 완료되었고, Issue #158은 closed 상태다.
+
+---
+
+### #160 - Perspectives FULLTEXT relevance-first/hybrid ordering 비교
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/160
+- PR: 생성 예정
+- 상태: In Progress
+- 작업 브랜치: `perf/#160-perspectives-fulltext-ordering-comparison`
+- 주요 파일:
+  - `docs/backend-improvement/perspectives-fulltext-ordering-comparison.md` 예정
+  - `docs/backend-improvement/BACKLOG.md`
+  - `docs/backend-improvement/NEXT_AGENT_BRIEF.md`
+  - `docs/backend-improvement/WORK_PROGRESS.md`
+
+목표:
+
+- #156에서 keyword 품질 개선 후에도 남은 최신순 정렬 노이즈를 분리해 확인한다.
+- 현재 운영 쿼리와 같은 latest-first, FULLTEXT score 기반 relevance-first, relevance와 최신성을 함께 보는 hybrid ordering을 같은 샘플에서 비교한다.
+- API 동작을 바로 변경하지 않고 DB-level 측정 문서로 후속 코드 변경 판단 근거를 만든다.
+
+조사 메모:
+
+- `ArticleRepository.findPerspectives`는 `MATCH(title, description) AGAINST(:keywords IN BOOLEAN MODE)`로 후보를 찾고 `ORDER BY published_at DESC LIMIT 50`으로 정렬한다.
+- #156 문서 기준 8146은 keyword 개선 후 Iran/US talks 중심으로 좋아졌지만 Lebanon/ceasefire 같은 인접 노이즈가 최신순 상위에 남았다.
+- 2026-07-08 기준 Docker daemon이 실행 중이 아니어서 로컬 MySQL 측정은 Docker Desktop 또는 컨테이너 시작 후 진행해야 한다.
+
+계획:
+
+- 8146, 9440, 8147, 8149 샘플을 우선 대상으로 삼는다.
+- 각 샘플에서 latest-first, relevance-first, hybrid ordering의 top results와 score, 국가/언어 분포를 비교한다.
+- source coverage 한계로 인한 누락과 ranking 문제를 분리해 해석한다.
 
 ## 4. 이후 개선 로드맵
 

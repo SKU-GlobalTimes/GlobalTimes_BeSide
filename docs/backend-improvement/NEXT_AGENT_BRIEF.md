@@ -39,7 +39,7 @@ Issue
 - Long-running open issue: #110 `[Troubleshooting] 서비스 설계의 근본적 한계`
 - #110은 사용자가 별도로 지시하기 전까지 구현하거나 정리하지 않는다.
 - #158/#159에서 다음 세션 handoff 문서 정리를 완료했다.
-- 다음 추천 후보는 Perspectives FULLTEXT relevance-first/hybrid ordering 비교다.
+- 현재 진행 후보는 #160 Perspectives FULLTEXT relevance-first/hybrid ordering 비교다.
 
 ## Recent Completed Work
 
@@ -62,7 +62,7 @@ Issue
 추천 후보:
 
 ```text
-[PERF] Perspectives FULLTEXT relevance-first/hybrid ordering 비교
+[PERF] Perspectives FULLTEXT relevance-first/hybrid ordering 비교 (#160)
 ```
 
 목표:
