@@ -92,6 +92,7 @@ Blocking 예시:
 - #156/#157에서 #152 전후 키워드로 대표 샘플의 MySQL FULLTEXT 결과 변화를 측정했다.
 - #158/#159에서 긴 `WORK_PROGRESS.md`를 보완하기 위한 다음 세션 handoff 문서를 정리했다.
 - #160/#161에서 Perspectives FULLTEXT 정렬 기준을 latest-first, relevance-first, hybrid ordering으로 비교했다.
+- #162에서 새 이슈 후보마다 overengineering 여부를 먼저 판단하는 docs guardrail을 추가 중이다.
 - 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140, #142, #146)와 AI workflow 보강(#144)은 merge 완료 상태다.
 
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
@@ -1070,6 +1071,36 @@ Reviewer 결과:
 - `check-review-blocking.ps1 -PrNumber 161` 결과 `MERGE_READY`를 확인했다.
 - 2026-07-07 기준 PR #161은 merge 완료되었고, Issue #160은 closed 상태다.
 
+---
+
+### #162 - 백엔드 개선 후보 overengineering 판단 기준 추가
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/162
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/163
+- 상태: In Progress
+- 작업 브랜치: `docs/#162-overengineering-guardrail`
+- 주요 파일:
+  - `docs/backend-improvement/NEXT_AGENT_BRIEF.md`
+  - `docs/backend-improvement/BACKLOG.md`
+  - `docs/backend-improvement/WORK_PROGRESS.md`
+
+목표:
+
+- 새 백엔드 개선 후보를 고를 때마다 “지금 구현하면 과한가?”를 먼저 판단하는 기준을 workflow에 추가한다.
+- #160 이후 hybrid ranking query variant를 바로 구현하기보다, 현재 단계에서는 도입 보류와 적용 기준을 docs/ADR로 정리하는 방향을 명시한다.
+- 신입 포트폴리오 관점에서 “구현하지 않는 판단”도 근거 있는 결과로 남긴다.
+
+수정 방향:
+
+- `NEXT_AGENT_BRIEF.md`에 Overengineering Guardrail 섹션을 추가한다.
+- `BACKLOG.md` 운영 규칙과 P3 다음 판단에 overengineering 기준을 반영한다.
+- 코드, API 동작, DB schema, FULLTEXT query, Redis 정책은 변경하지 않는다.
+
+검증:
+
+```text
+git diff --check
+```
 ## 4. 이후 개선 로드맵
 
 ### A. #123 이후 바로 할 수 있는 성능 개선

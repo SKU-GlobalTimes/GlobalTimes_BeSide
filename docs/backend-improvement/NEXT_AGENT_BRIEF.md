@@ -32,6 +32,21 @@ Issue
 바로 구현하지 말고, 먼저 develop 최신화, 열린 Issue/PR 확인, `WORK_PROGRESS.md`와 `BACKLOG.md` 조사를 수행한다.
 새 Issue/PR 본문은 repository template을 읽고 반드시 `--body-file` 방식으로 작성한다.
 
+## Overengineering Guardrail
+
+새 이슈 후보를 제안할 때는 구현 가능성만 보지 말고, 먼저 과한 구현인지 함께 판단한다.
+
+매번 아래 질문에 답한 뒤 Issue 범위를 정한다.
+
+- 현재 데이터 규모와 사용자 흐름에서 지금 필요한가?
+- 신입 백엔드 포트폴리오 관점에서 설명 가능한 복잡도인가?
+- 기존 MySQL FULLTEXT, Redis, Spring 코드 안에서 더 단순하게 검증할 방법이 있는가?
+- 코드 변경 없이 측정/문서화/ADR로 남기는 편이 더 성숙한 판단인가?
+- 운영 API 응답이나 DB schema를 바꿀 만큼 충분한 근거가 있는가?
+
+기술적으로 가능해도 근거가 부족하면 바로 구현하지 않는다.
+이 경우 `측정`, `판단 기록`, `ADR`, `후속 적용 기준 정리` 같은 문서 작업으로 낮춰 잡는다.
+
 ## Current Snapshot
 
 - Repo: `SKU-GlobalTimes/GlobalTimes_BeSide`
@@ -40,7 +55,7 @@ Issue
 - #110은 사용자가 별도로 지시하기 전까지 구현하거나 정리하지 않는다.
 - #158/#159에서 다음 세션 handoff 문서 정리를 완료했다.
 - #160/#161에서 Perspectives FULLTEXT relevance-first/hybrid ordering 비교를 완료했다.
-- 다음 후보는 hybrid ranking을 실제 `findPerspectives` 쿼리 또는 별도 query variant로 실험할지 검토하는 작업이다.
+- 다음 후보는 hybrid ranking query variant를 바로 구현하기보다, #160 측정 결과를 바탕으로 적용 보류/도입 기준을 정리하는 docs/ADR 작업이다.
 
 ## Recent Completed Work
 
@@ -63,21 +78,21 @@ Issue
 추천 후보:
 
 ```text
-[PERF] Perspectives FULLTEXT hybrid ranking query variant 실험
+[DOCS/ADR] Perspectives ranking policy 도입 보류와 hybrid 후보 적용 기준 정리
 ```
 
 목표:
 
-- #160 측정 결과를 바탕으로 pure relevance-first가 아니라 bounded recency signal을 함께 쓰는 hybrid ranking 후보를 코드 레벨에서 실험할지 판단한다.
-- 바로 운영 응답을 바꾸기보다 별도 repository query variant 또는 feature-limited path로 테스트 가능성을 먼저 검토한다.
-- 8146, 8147, 8149 같은 기존 대표 샘플에서 API 응답 order가 DB-level baseline과 일치하는지 확인한다.
+- #160 측정 결과를 바탕으로 pure relevance-first와 hybrid ranking의 장단점을 정리한다.
+- 현재 단계에서 query variant 구현이 과한지 판단하고, 바로 운영 응답을 바꾸지 않는 이유를 남긴다.
+- 나중에 코드 실험을 한다면 필요한 조건을 정의한다.
 - source coverage 한계와 ranking 개선 효과를 계속 분리해서 해석한다.
 
 판단 기준:
 
-- hybrid ranking이 pure relevance-first의 wrong-context 승격 문제를 줄이는가?
-- 기존 latest-first 대비 상위 결과 품질이 좋아지는가?
-- API 응답 변경이 필요하다면 테스트와 문서 기준선이 충분한가?
+- 지금 구현하면 복잡도 대비 설명 가능한 효과가 있는가?
+- API 응답 변경 없이 문서/ADR로 보류 판단을 남기는 편이 더 적절한가?
+- 나중에 hybrid ranking을 적용하려면 어떤 샘플, 테스트, API 기준선이 필요한가?
 - source coverage 한계를 ranking 문제로 오판하지 않는가?
 
 참고 문서:
