@@ -1024,7 +1024,7 @@ Reviewer 결과:
 - 상태: In Progress
 - 작업 브랜치: `perf/#160-perspectives-fulltext-ordering-comparison`
 - 주요 파일:
-  - `docs/backend-improvement/perspectives-fulltext-ordering-comparison.md` 예정
+  - `docs/backend-improvement/perspectives-fulltext-ordering-comparison.md`
   - `docs/backend-improvement/BACKLOG.md`
   - `docs/backend-improvement/NEXT_AGENT_BRIEF.md`
   - `docs/backend-improvement/WORK_PROGRESS.md`
@@ -1040,12 +1040,28 @@ Reviewer 결과:
 - `ArticleRepository.findPerspectives`는 `MATCH(title, description) AGAINST(:keywords IN BOOLEAN MODE)`로 후보를 찾고 `ORDER BY published_at DESC LIMIT 50`으로 정렬한다.
 - #156 문서 기준 8146은 keyword 개선 후 Iran/US talks 중심으로 좋아졌지만 Lebanon/ceasefire 같은 인접 노이즈가 최신순 상위에 남았다.
 - 2026-07-08 기준 Docker daemon이 실행 중이 아니어서 로컬 MySQL 측정은 Docker Desktop 또는 컨테이너 시작 후 진행해야 한다.
+- 이후 Docker 컨테이너 실행을 확인하고 local MySQL에서 측정을 진행했다.
 
 계획:
 
 - 8146, 9440, 8147, 8149 샘플을 우선 대상으로 삼는다.
 - 각 샘플에서 latest-first, relevance-first, hybrid ordering의 top results와 score, 국가/언어 분포를 비교한다.
 - source coverage 한계로 인한 누락과 ranking 문제를 분리해 해석한다.
+
+측정 결과:
+
+- 모든 측정 샘플은 match count가 50개 미만이므로 candidate set은 동일하고 top ordering만 달라진다.
+- 8146은 latest-first가 최신 Iran/US talks 흐름을 유지하지만 Lebanon/ceasefire 인접 노이즈를 상위에 남겼고, relevance-first는 오래된 March 기사와 broad token overlap을 끌어올렸다.
+- 8147은 pure relevance-first가 wrong-context Iran/Trump 기사를 1위로 올렸고, hybrid 후보는 Colombia election 기사를 1위로 유지했다.
+- 8149는 good-match control sample로, relevance-first/hybrid가 BTS comeback 관련 강한 score 기사를 더 위로 올렸다.
+- 따라서 pure relevance-first로 바로 바꾸기보다는 bounded recency signal을 함께 쓰는 hybrid 후보를 후속 코드 실험 대상으로 보는 것이 안전하다.
+
+검증:
+
+```text
+local MySQL FULLTEXT 측정 쿼리
+git diff --check
+```
 
 ## 4. 이후 개선 로드맵
 

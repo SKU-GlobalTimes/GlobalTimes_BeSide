@@ -71,6 +71,7 @@ Issue
 - 필요하면 relevance score와 `published_at`을 함께 쓰는 hybrid ordering 후보를 비교한다.
 - 8146, 9440, 8147, 8149 같은 기존 대표 샘플을 우선 사용한다.
 - API 동작을 바로 변경하기보다 DB-level 측정 문서부터 만든다.
+- #160 측정 문서는 `docs/backend-improvement/perspectives-fulltext-ordering-comparison.md`에 기록한다.
 
 판단 기준:
 
@@ -78,10 +79,12 @@ Issue
 - 국가/언어 다양성이 과하게 무너지지 않는가?
 - 최신성 요구와 relevance 요구의 trade-off가 설명 가능한가?
 - source coverage 한계 때문에 생기는 누락을 ranking 문제로 오판하지 않는가?
+- pure relevance-first가 wrong-context 기사를 과하게 올리지 않는가?
 
 참고 문서:
 
 - `docs/backend-improvement/perspectives-fulltext-generic-token-filter-result.md`
+- `docs/backend-improvement/perspectives-fulltext-ordering-comparison.md`
 - `docs/backend-improvement/perspectives-matching-sample-snapshot.md`
 - `docs/backend-improvement/perspectives-source-coverage-limit-log.md`
 - `docs/backend-improvement/perspectives-matching-quality-baseline.md`
