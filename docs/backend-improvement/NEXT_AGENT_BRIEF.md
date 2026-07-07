@@ -38,7 +38,8 @@ Issue
 - Base branch: `develop`
 - Long-running open issue: #110 `[Troubleshooting] 서비스 설계의 근본적 한계`
 - #110은 사용자가 별도로 지시하기 전까지 구현하거나 정리하지 않는다.
-- 최근 열린 PR은 없는 상태에서 #158 문서화 작업을 시작했다.
+- #158/#159에서 다음 세션 handoff 문서 정리를 완료했다.
+- 다음 추천 후보는 Perspectives FULLTEXT relevance-first/hybrid ordering 비교다.
 
 ## Recent Completed Work
 
@@ -47,6 +48,7 @@ Issue
 - #152/#153: `First`, `round`, `Entre` 같은 샘플 기반 일반 토큰을 필터링해 weak keyword 후보를 줄였다.
 - #154/#155: RSS/News API 수집 편차와 source coverage 한계가 FULLTEXT/향후 연관도 측정 해석에 주는 영향을 별도 LOG로 남겼다.
 - #156/#157: #152 전후 DB-level FULLTEXT 결과 변화를 측정했다.
+- #158/#159: 긴 `WORK_PROGRESS.md`를 보완하기 위한 다음 세션 handoff 문서를 추가했다.
 
 ## Why #156 Matters
 
