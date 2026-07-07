@@ -1020,7 +1020,7 @@ Reviewer 결과:
 ### #160 - Perspectives FULLTEXT relevance-first/hybrid ordering 비교
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/160
-- PR: 생성 예정
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/161
 - 상태: In Progress
 - 작업 브랜치: `perf/#160-perspectives-fulltext-ordering-comparison`
 - 주요 파일:
