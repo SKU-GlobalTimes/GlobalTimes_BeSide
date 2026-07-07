@@ -1096,7 +1096,7 @@ Reviewer 결과:
 - `BACKLOG.md` 운영 규칙과 P3 다음 판단에 overengineering 기준을 반영한다.
 - 코드, API 동작, DB schema, FULLTEXT query, Redis 정책은 변경하지 않는다.
 
-검증 예정:
+검증:
 
 ```text
 git diff --check
