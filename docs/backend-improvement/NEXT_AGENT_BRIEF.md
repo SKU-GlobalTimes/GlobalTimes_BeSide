@@ -39,7 +39,7 @@ Issue
 - Long-running open issue: #110 `[Troubleshooting] 서비스 설계의 근본적 한계`
 - #110은 사용자가 별도로 지시하기 전까지 구현하거나 정리하지 않는다.
 - #158/#159에서 다음 세션 handoff 문서 정리를 완료했다.
-- 다음 추천 후보는 Perspectives FULLTEXT relevance-first/hybrid ordering 비교다.
+- 현재 진행 후보는 #160 Perspectives FULLTEXT relevance-first/hybrid ordering 비교다.
 
 ## Recent Completed Work
 
@@ -62,7 +62,7 @@ Issue
 추천 후보:
 
 ```text
-[PERF] Perspectives FULLTEXT relevance-first/hybrid ordering 비교
+[PERF] Perspectives FULLTEXT relevance-first/hybrid ordering 비교 (#160)
 ```
 
 목표:
@@ -71,6 +71,7 @@ Issue
 - 필요하면 relevance score와 `published_at`을 함께 쓰는 hybrid ordering 후보를 비교한다.
 - 8146, 9440, 8147, 8149 같은 기존 대표 샘플을 우선 사용한다.
 - API 동작을 바로 변경하기보다 DB-level 측정 문서부터 만든다.
+- #160 측정 문서는 `docs/backend-improvement/perspectives-fulltext-ordering-comparison.md`에 기록한다.
 
 판단 기준:
 
@@ -78,10 +79,12 @@ Issue
 - 국가/언어 다양성이 과하게 무너지지 않는가?
 - 최신성 요구와 relevance 요구의 trade-off가 설명 가능한가?
 - source coverage 한계 때문에 생기는 누락을 ranking 문제로 오판하지 않는가?
+- pure relevance-first가 wrong-context 기사를 과하게 올리지 않는가?
 
 참고 문서:
 
 - `docs/backend-improvement/perspectives-fulltext-generic-token-filter-result.md`
+- `docs/backend-improvement/perspectives-fulltext-ordering-comparison.md`
 - `docs/backend-improvement/perspectives-matching-sample-snapshot.md`
 - `docs/backend-improvement/perspectives-source-coverage-limit-log.md`
 - `docs/backend-improvement/perspectives-matching-quality-baseline.md`
