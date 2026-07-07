@@ -93,6 +93,7 @@ Blocking 예시:
 - #158/#159에서 긴 `WORK_PROGRESS.md`를 보완하기 위한 다음 세션 handoff 문서를 정리했다.
 - #160/#161에서 Perspectives FULLTEXT 정렬 기준을 latest-first, relevance-first, hybrid ordering으로 비교했다.
 - #162/#163에서 새 이슈 후보마다 overengineering 여부를 먼저 판단하는 docs guardrail을 추가했다.
+- #164에서 #160 측정 결과를 바탕으로 Perspectives ranking policy 도입 보류와 hybrid 후보 적용 기준을 docs/ADR로 정리 중이다.
 - 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140, #142, #146)와 AI workflow 보강(#144)은 merge 완료 상태다.
 
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
@@ -1108,6 +1109,46 @@ Reviewer 결과:
 - Non-blocking: `WORK_PROGRESS.md`의 `검증 예정` 표현을 완료 상태와 맞추는 문서 정정 제안이 있었고, merge 전 `검증`으로 정리했다.
 - `check-review-blocking.ps1 -PrNumber 163` 결과 `MERGE_READY`를 확인했다.
 - 2026-07-07 기준 PR #163은 merge 완료되었고, Issue #162는 closed 상태다.
+
+---
+
+### #164 - Perspectives ranking policy 도입 보류와 hybrid 후보 적용 기준 정리
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/164
+- 상태: In Progress
+- 작업 브랜치: `docs/#164-perspectives-ranking-policy-adr`
+- 주요 파일:
+  - `docs/backend-improvement/perspectives-ranking-policy-adr.md`
+  - `docs/backend-improvement/BACKLOG.md`
+  - `docs/backend-improvement/NEXT_AGENT_BRIEF.md`
+  - `docs/backend-improvement/WORK_PROGRESS.md`
+
+목표:
+
+- #160 측정 결과를 바탕으로 pure relevance-first를 현재 latest-first의 직접 대체안으로 적용하지 않는 이유를 정리한다.
+- hybrid ranking은 폐기하지 않고, 추후 code experiment 후보로 남기되 적용 조건을 명시한다.
+- source coverage 한계와 ranking 개선 효과를 분리해서 해석하는 기준을 ADR에 남긴다.
+- 신입 포트폴리오 관점에서 "구현하지 않는 판단"도 측정 근거와 함께 설명 가능하게 만든다.
+
+Overengineering 판단:
+
+- 지금 hybrid ranking query variant를 구현하면 운영 API 응답 순서가 바뀌지만, 대표 샘플과 회귀 기준이 아직 부족하다.
+- #160 측정은 candidate set이 모두 50건 미만인 조건에서 top ordering 차이를 비교한 것이므로 recall 개선 근거는 아니다.
+- pure relevance-first는 wrong-context 기사를 끌어올릴 수 있어 바로 적용하기 위험하다.
+- 현재 단계에서는 코드 변경 없이 ADR로 보류 판단과 후속 적용 기준을 남기는 편이 더 적절하다.
+
+수정 방향:
+
+- `perspectives-ranking-policy-adr.md`를 추가해 도입 보류 결정, 근거, 후속 hybrid 실험 조건, non-goals를 정리한다.
+- `BACKLOG.md`의 P3 상태를 #164 In Progress로 갱신하고 다음 판단을 ADR 작업 기준으로 좁힌다.
+- `NEXT_AGENT_BRIEF.md`가 새 세션에서 #164 진행 상태와 Reviewer 검토 관점을 바로 파악할 수 있게 갱신한다.
+- 코드, API 응답, DB schema, FULLTEXT query, Redis 정책은 변경하지 않는다.
+
+검증:
+
+```text
+git diff --check
+```
 
 ## 4. 이후 개선 로드맵
 
