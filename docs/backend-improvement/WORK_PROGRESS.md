@@ -1045,7 +1045,7 @@ Reviewer 결과:
 계획:
 
 - 8146, 9440, 8147, 8149 샘플을 우선 대상으로 삼는다.
-- 각 샘플에서 latest-first, relevance-first, hybrid ordering의 top results와 score, 국가/언어 분포를 비교한다.
+- 각 샘플에서 latest-first, relevance-first, hybrid ordering의 top results와 score 기반 ordering 차이, 국가/언어 분포를 비교한다.
 - source coverage 한계로 인한 누락과 ranking 문제를 분리해 해석한다.
 
 측정 결과:
