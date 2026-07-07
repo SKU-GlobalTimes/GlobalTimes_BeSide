@@ -56,7 +56,7 @@ Issue
 - #158/#159에서 다음 세션 handoff 문서 정리를 완료했다.
 - #160/#161에서 Perspectives FULLTEXT relevance-first/hybrid ordering 비교를 완료했다.
 - #162/#163에서 새 이슈 후보마다 overengineering 여부를 먼저 판단하는 guardrail을 추가했다.
-- 다음 후보는 hybrid ranking query variant를 바로 구현하기보다, #160 측정 결과를 바탕으로 적용 보류/도입 기준을 정리하는 docs/ADR 작업이다.
+- #164에서 hybrid ranking query variant를 바로 구현하지 않는 이유와 후속 적용 기준을 docs/ADR로 정리하는 작업을 진행 중이다.
 
 ## Recent Completed Work
 
@@ -66,20 +66,23 @@ Issue
 - #154/#155: RSS/News API 수집 편차와 source coverage 한계가 FULLTEXT/향후 연관도 측정 해석에 주는 영향을 별도 LOG로 남겼다.
 - #156/#157: #152 전후 DB-level FULLTEXT 결과 변화를 측정했다.
 - #158/#159: 긴 `WORK_PROGRESS.md`를 보완하기 위한 다음 세션 handoff 문서를 추가했다.
+- #160/#161: Perspectives FULLTEXT ordering을 latest-first, relevance-first, hybrid 후보로 비교했다.
+- #162/#163: 새 후보마다 overengineering 여부를 먼저 판단하는 guardrail을 추가했다.
 
-## Why #156 Matters
+## Why #160 Matters
 
 #156에서 대표 샘플 8146은 키워드가 `+First +round Iran talks`에서 `+Iran +talks ends encouraging`로 바뀌며 상위 결과가 스포츠/라운드 노이즈에서 Iran/US talks 중심으로 이동했다.
 다만 현재 쿼리는 여전히 `ORDER BY published_at DESC` 최신순이라 Lebanon/ceasefire 같은 인접 노이즈가 남는다.
 
-이 때문에 다음 P3 후보는 keyword extractor를 더 넓게 만지는 것보다, 동일 후보군에서 정렬 기준을 비교하는 작업이 자연스럽다.
+#160에서는 동일 후보군에서 latest-first, relevance-first, hybrid 후보를 비교했다.
+pure relevance-first는 wrong-context 기사를 끌어올릴 수 있어 바로 적용하기 위험하고, hybrid는 폐기하지 않되 후속 실험 기준이 필요한 후보로 남겼다.
 
-## Recommended Next Backend Issue
+## Current Backend Issue
 
-추천 후보:
+현재 진행 중:
 
 ```text
-[DOCS/ADR] Perspectives ranking policy 도입 보류와 hybrid 후보 적용 기준 정리
+#164 [DOCS/ADR] Perspectives ranking policy 도입 보류와 hybrid 후보 적용 기준 정리
 ```
 
 목표:
@@ -88,6 +91,7 @@ Issue
 - 현재 단계에서 query variant 구현이 과한지 판단하고, 바로 운영 응답을 바꾸지 않는 이유를 남긴다.
 - 나중에 코드 실험을 한다면 필요한 조건을 정의한다.
 - source coverage 한계와 ranking 개선 효과를 계속 분리해서 해석한다.
+- 코드, API 응답, DB schema, Redis 정책, FULLTEXT query는 변경하지 않는다.
 
 판단 기준:
 
@@ -100,6 +104,7 @@ Issue
 
 - `docs/backend-improvement/perspectives-fulltext-generic-token-filter-result.md`
 - `docs/backend-improvement/perspectives-fulltext-ordering-comparison.md`
+- `docs/backend-improvement/perspectives-ranking-policy-adr.md`
 - `docs/backend-improvement/perspectives-matching-sample-snapshot.md`
 - `docs/backend-improvement/perspectives-source-coverage-limit-log.md`
 - `docs/backend-improvement/perspectives-matching-quality-baseline.md`
@@ -124,15 +129,16 @@ Issue
 
 Repo: SKU-GlobalTimes/GlobalTimes_BeSide
 PR: <PR URL>
-Issue: #<ISSUE NUMBER>
+Issue: #164
 
 검토 관점:
-1. 이번 PR이 문서/handoff 구조 정리 범위에 머무르는가?
-2. NEXT_AGENT_BRIEF.md가 새 세션이 현재 workflow, 최근 완료 작업, #110 제외 조건, 다음 추천 후보를 빠르게 파악하기에 충분한가?
-3. WORK_PROGRESS.md와 BACKLOG.md가 Issue 목적과 진행 상태를 정확히 반영하는가?
-4. #156 이후 다음 후보로 FULLTEXT relevance-first/hybrid ordering 비교를 제안하는 근거가 기존 측정 문서와 일치하는가?
-5. 민감 정보가 포함되어 있지 않은가?
-6. 새 Blocking이 있는가?
+1. 이번 PR이 #164 문서/ADR 범위에 머무르고 코드, API 응답, DB schema, Redis 정책, FULLTEXT query를 변경하지 않는가?
+2. ADR이 #160 측정 결과를 근거로 pure relevance-first 직접 적용을 보류하는 이유를 명확히 설명하는가?
+3. hybrid ranking을 폐기하지 않고 후속 실험 조건으로 남기는 기준이 충분한가?
+4. source coverage 한계와 ranking 개선 효과를 분리해서 해석하고 있는가?
+5. NEXT_AGENT_BRIEF.md, WORK_PROGRESS.md, BACKLOG.md가 Issue 목적과 진행 상태를 정확히 반영하는가?
+6. 민감 정보가 포함되어 있지 않은가?
+7. 새 Blocking이 있는가?
 
 제약:
 - 코드 직접 수정 금지

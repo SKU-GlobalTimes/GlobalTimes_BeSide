@@ -52,11 +52,11 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## P3. 다국어 이슈 매칭 품질 개선
 
-- 상태: `Backlog` (최근 완료: [#142](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/142), [#146](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/146), [#148](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/148), [#150](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/150), [#152](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/152), [#154](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/154), [#156](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/156), [#160](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/160))
+- 상태: `In Progress` ([#164](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/164), 최근 완료: [#142](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/142), [#146](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/146), [#148](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/148), [#150](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/150), [#152](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/152), [#154](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/154), [#156](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/156), [#160](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/160))
 - AS-IS: 기사 제목의 키워드와 영어 번역 키워드를 MySQL FULLTEXT 검색에 사용하므로, 표현이 다른 동일 이슈 또는 비영어권 기사 간 매칭이 누락될 수 있다.
 - TO-BE: 기존 후보 검색을 유지하면서 이슈 유사도와 국가 다양성 기준으로 결과를 재정렬하는 정책을 검증한다.
 - 최근 측정: #160에서 `ORDER BY published_at DESC` latest-first, FULLTEXT score 기반 relevance-first, bounded recency signal을 더한 hybrid 후보를 비교했다. 측정상 pure relevance-first는 wrong-context 기사도 끌어올릴 수 있어, 후속 코드 변경은 hybrid 후보 중심으로 검토하는 것이 안전하다.
-- 다음 판단: hybrid ranking query variant를 바로 구현하기보다, 현재 단계에서 과한 구현인지 검토하고 도입 보류/적용 기준을 docs/ADR로 정리하는 것이 우선이다.
+- 다음 판단: #164에서 hybrid ranking query variant를 바로 구현하지 않는 이유와 후속 적용 기준을 docs/ADR로 정리한다. 코드 변경은 대표 샘플, 기대 top-result intent, 회귀 테스트, before/after 측정 기준이 준비된 뒤 별도 Issue로 검토한다.
 - 성공 기준:
   - 대표 이슈 샘플과 기대 국가를 정의한다.
   - 개선 전후의 국가별 관련 기사 노출 수와 매칭 근거를 비교한다.
