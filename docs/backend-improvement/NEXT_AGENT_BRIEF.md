@@ -39,7 +39,8 @@ Issue
 - Long-running open issue: #110 `[Troubleshooting] 서비스 설계의 근본적 한계`
 - #110은 사용자가 별도로 지시하기 전까지 구현하거나 정리하지 않는다.
 - #158/#159에서 다음 세션 handoff 문서 정리를 완료했다.
-- 현재 진행 후보는 #160 Perspectives FULLTEXT relevance-first/hybrid ordering 비교다.
+- #160/#161에서 Perspectives FULLTEXT relevance-first/hybrid ordering 비교를 완료했다.
+- 다음 후보는 hybrid ranking을 실제 `findPerspectives` 쿼리 또는 별도 query variant로 실험할지 검토하는 작업이다.
 
 ## Recent Completed Work
 
@@ -62,24 +63,22 @@ Issue
 추천 후보:
 
 ```text
-[PERF] Perspectives FULLTEXT relevance-first/hybrid ordering 비교 (#160)
+[PERF] Perspectives FULLTEXT hybrid ranking query variant 실험
 ```
 
 목표:
 
-- 현재 latest-first 정렬과 `MATCH(title, description) AGAINST(...)` score 기반 relevance-first 정렬을 비교한다.
-- 필요하면 relevance score와 `published_at`을 함께 쓰는 hybrid ordering 후보를 비교한다.
-- 8146, 9440, 8147, 8149 같은 기존 대표 샘플을 우선 사용한다.
-- API 동작을 바로 변경하기보다 DB-level 측정 문서부터 만든다.
-- #160 측정 문서는 `docs/backend-improvement/perspectives-fulltext-ordering-comparison.md`에 기록한다.
+- #160 측정 결과를 바탕으로 pure relevance-first가 아니라 bounded recency signal을 함께 쓰는 hybrid ranking 후보를 코드 레벨에서 실험할지 판단한다.
+- 바로 운영 응답을 바꾸기보다 별도 repository query variant 또는 feature-limited path로 테스트 가능성을 먼저 검토한다.
+- 8146, 8147, 8149 같은 기존 대표 샘플에서 API 응답 order가 DB-level baseline과 일치하는지 확인한다.
+- source coverage 한계와 ranking 개선 효과를 계속 분리해서 해석한다.
 
 판단 기준:
 
-- 관련성 높은 기사들이 상위에 더 안정적으로 올라오는가?
-- 국가/언어 다양성이 과하게 무너지지 않는가?
-- 최신성 요구와 relevance 요구의 trade-off가 설명 가능한가?
-- source coverage 한계 때문에 생기는 누락을 ranking 문제로 오판하지 않는가?
-- pure relevance-first가 wrong-context 기사를 과하게 올리지 않는가?
+- hybrid ranking이 pure relevance-first의 wrong-context 승격 문제를 줄이는가?
+- 기존 latest-first 대비 상위 결과 품질이 좋아지는가?
+- API 응답 변경이 필요하다면 테스트와 문서 기준선이 충분한가?
+- source coverage 한계를 ranking 문제로 오판하지 않는가?
 
 참고 문서:
 
