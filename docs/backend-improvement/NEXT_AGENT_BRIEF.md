@@ -55,6 +55,7 @@ Issue
 - #110은 사용자가 별도로 지시하기 전까지 구현하거나 정리하지 않는다.
 - #158/#159에서 다음 세션 handoff 문서 정리를 완료했다.
 - #160/#161에서 Perspectives FULLTEXT relevance-first/hybrid ordering 비교를 완료했다.
+- #162/#163에서 새 이슈 후보마다 overengineering 여부를 먼저 판단하는 guardrail을 추가했다.
 - 다음 후보는 hybrid ranking query variant를 바로 구현하기보다, #160 측정 결과를 바탕으로 적용 보류/도입 기준을 정리하는 docs/ADR 작업이다.
 
 ## Recent Completed Work

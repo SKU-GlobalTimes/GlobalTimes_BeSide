@@ -92,7 +92,7 @@ Blocking 예시:
 - #156/#157에서 #152 전후 키워드로 대표 샘플의 MySQL FULLTEXT 결과 변화를 측정했다.
 - #158/#159에서 긴 `WORK_PROGRESS.md`를 보완하기 위한 다음 세션 handoff 문서를 정리했다.
 - #160/#161에서 Perspectives FULLTEXT 정렬 기준을 latest-first, relevance-first, hybrid ordering으로 비교했다.
-- #162에서 새 이슈 후보마다 overengineering 여부를 먼저 판단하는 docs guardrail을 추가 중이다.
+- #162/#163에서 새 이슈 후보마다 overengineering 여부를 먼저 판단하는 docs guardrail을 추가했다.
 - 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140, #142, #146)와 AI workflow 보강(#144)은 merge 완료 상태다.
 
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
@@ -1077,7 +1077,7 @@ Reviewer 결과:
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/162
 - PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/163
-- 상태: In Progress
+- 상태: merged
 - 작업 브랜치: `docs/#162-overengineering-guardrail`
 - 주요 파일:
   - `docs/backend-improvement/NEXT_AGENT_BRIEF.md`
@@ -1101,6 +1101,14 @@ Reviewer 결과:
 ```text
 git diff --check
 ```
+
+Reviewer 결과:
+
+- `## AI Reviewer 검토 결과` 제목의 Reviewer comment 기준 Blocking 없음.
+- Non-blocking: `WORK_PROGRESS.md`의 `검증 예정` 표현을 완료 상태와 맞추는 문서 정정 제안이 있었고, merge 전 `검증`으로 정리했다.
+- `check-review-blocking.ps1 -PrNumber 163` 결과 `MERGE_READY`를 확인했다.
+- 2026-07-07 기준 PR #163은 merge 완료되었고, Issue #162는 closed 상태다.
+
 ## 4. 이후 개선 로드맵
 
 ### A. #123 이후 바로 할 수 있는 성능 개선
