@@ -56,7 +56,8 @@ Issue
 - #158/#159에서 다음 세션 handoff 문서 정리를 완료했다.
 - #160/#161에서 Perspectives FULLTEXT relevance-first/hybrid ordering 비교를 완료했다.
 - #162/#163에서 새 이슈 후보마다 overengineering 여부를 먼저 판단하는 guardrail을 추가했다.
-- #164에서 hybrid ranking query variant를 바로 구현하지 않는 이유와 후속 적용 기준을 docs/ADR로 정리하는 작업을 진행 중이다.
+- #164/#165에서 hybrid ranking query variant를 바로 구현하지 않는 이유와 후속 적용 기준을 docs/ADR로 정리했다.
+- 현재 진행 중인 단기 작업은 없다. 다음 작업은 열린 Issue/PR과 `WORK_PROGRESS.md`, `BACKLOG.md`를 다시 확인한 뒤 선택한다.
 
 ## Recent Completed Work
 
@@ -68,6 +69,7 @@ Issue
 - #158/#159: 긴 `WORK_PROGRESS.md`를 보완하기 위한 다음 세션 handoff 문서를 추가했다.
 - #160/#161: Perspectives FULLTEXT ordering을 latest-first, relevance-first, hybrid 후보로 비교했다.
 - #162/#163: 새 후보마다 overengineering 여부를 먼저 판단하는 guardrail을 추가했다.
+- #164/#165: Perspectives ranking policy 도입 보류와 hybrid 후보 적용 기준을 ADR로 정리했다.
 
 ## Why #160 Matters
 
@@ -77,21 +79,20 @@ Issue
 #160에서는 동일 후보군에서 latest-first, relevance-first, hybrid 후보를 비교했다.
 pure relevance-first는 wrong-context 기사를 끌어올릴 수 있어 바로 적용하기 위험하고, hybrid는 폐기하지 않되 후속 실험 기준이 필요한 후보로 남겼다.
 
-## Current Backend Issue
+## Recommended Next Backend Issue
 
-현재 진행 중:
+현재 확정된 다음 이슈는 없다.
+다음 세션에서는 먼저 develop 최신화, 열린 Issue/PR 확인, `WORK_PROGRESS.md`와 `BACKLOG.md` 확인을 다시 수행한다.
+#110은 사용자가 별도로 지시하기 전까지 다루지 않는다.
+
+후보를 고를 때는 #162 guardrail에 따라 "지금 구현하면 과한가?"를 먼저 판단한다.
+#164 ADR 기준상 hybrid ranking code experiment는 아래 조건이 준비된 뒤 별도 Issue로 검토한다.
 
 ```text
-#164 [DOCS/ADR] Perspectives ranking policy 도입 보류와 hybrid 후보 적용 기준 정리
+대표 샘플, 기대 top-result intent, 회귀 테스트, before/after 측정 기준
 ```
 
-목표:
-
-- #160 측정 결과를 바탕으로 pure relevance-first와 hybrid ranking의 장단점을 정리한다.
-- 현재 단계에서 query variant 구현이 과한지 판단하고, 바로 운영 응답을 바꾸지 않는 이유를 남긴다.
-- 나중에 코드 실험을 한다면 필요한 조건을 정의한다.
-- source coverage 한계와 ranking 개선 효과를 계속 분리해서 해석한다.
-- 코드, API 응답, DB schema, Redis 정책, FULLTEXT query는 변경하지 않는다.
+그 전까지는 P1/P2/P3 로드맵 중 더 작고 설명 가능한 측정/문서화/테스트 후보를 우선 검토한다.
 
 판단 기준:
 
@@ -129,14 +130,14 @@ pure relevance-first는 wrong-context 기사를 끌어올릴 수 있어 바로 �
 
 Repo: SKU-GlobalTimes/GlobalTimes_BeSide
 PR: <PR URL>
-Issue: #164
+Issue: #<ISSUE NUMBER>
 
 검토 관점:
-1. 이번 PR이 #164 문서/ADR 범위에 머무르고 코드, API 응답, DB schema, Redis 정책, FULLTEXT query를 변경하지 않는가?
-2. ADR이 #160 측정 결과를 근거로 pure relevance-first 직접 적용을 보류하는 이유를 명확히 설명하는가?
-3. hybrid ranking을 폐기하지 않고 후속 실험 조건으로 남기는 기준이 충분한가?
-4. source coverage 한계와 ranking 개선 효과를 분리해서 해석하고 있는가?
-5. NEXT_AGENT_BRIEF.md, WORK_PROGRESS.md, BACKLOG.md가 Issue 목적과 진행 상태를 정확히 반영하는가?
+1. 이번 PR이 Issue 범위에 머무르는가?
+2. 변경 사항이 기존 측정 문서와 workflow 문서의 판단 기준과 충돌하지 않는가?
+3. overengineering guardrail에 따라 구현/문서화/측정 범위가 적절히 잡혔는가?
+4. NEXT_AGENT_BRIEF.md, WORK_PROGRESS.md, BACKLOG.md가 Issue 목적과 진행 상태를 정확히 반영하는가?
+5. 코드, API 응답, DB schema, Redis 정책, FULLTEXT query 변경 여부가 PR 범위에 맞게 명확한가?
 6. 민감 정보가 포함되어 있지 않은가?
 7. 새 Blocking이 있는가?
 
