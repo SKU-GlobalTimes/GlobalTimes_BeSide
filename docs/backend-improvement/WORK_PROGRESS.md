@@ -1076,7 +1076,7 @@ Reviewer 결과:
 ### #162 - 백엔드 개선 후보 overengineering 판단 기준 추가
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/162
-- PR: 생성 예정
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/163
 - 상태: In Progress
 - 작업 브랜치: `docs/#162-overengineering-guardrail`
 - 주요 파일:
