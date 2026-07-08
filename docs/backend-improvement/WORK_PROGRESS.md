@@ -22,7 +22,7 @@ Issue 생성
 → Blocking 반영
 → 최종 Blocking 없음 확인
 → 사용자 승인 후 merge
-→ WORK_PROGRESS.md 상태 갱신
+→ GitHub PR/Issue 상태 확인
 ```
 
 ### 역할 분리
@@ -38,7 +38,10 @@ Issue 생성
 Reviewer는 코드 수정, 커밋, push, merge를 하지 않는다.
 Reviewer는 `## AI Reviewer 검토 결과` 제목으로 GitHub PR comment를 남긴다.
 Implementer는 새 Issue/PR을 만든 뒤 Reviewer Agent에게 전달할 검토 요청 예시를 사용자에게 함께 안내한다.
-최신 Reviewer comment가 `MERGE_READY`이고 사용자가 해당 PR에 대해 명시적으로 merge 진행을 승인한 경우, Implementer는 PR을 merge한 뒤 이 문서에 merge 상태와 다음 작업 상태를 기록한다.
+최신 Reviewer comment가 `MERGE_READY`이고 사용자가 해당 PR에 대해 명시적으로 merge 진행을 승인한 경우, Implementer는 PR을 merge한 뒤 GitHub PR/Issue 상태와 local `develop` 최신화로 merge 결과를 확인한다.
+다만 develop commit history를 이슈별 핵심 변경 중심으로 유지하기 위해, 작업 내용과 관련 docs 기록은 가능한 한 PR 본 작업 커밋에 함께 포함한다.
+merge 후 `WORK_PROGRESS.md`만 갱신하는 후처리 커밋은 기본값으로 만들지 않고, GitHub PR/Issue 상태로 merge 결과를 확인한다.
+후처리 커밋은 PR에 포함된 문서가 다음 세션을 잘못 안내하거나 Reviewer가 명시적으로 요구한 경우처럼 필요한 때에만 만든다.
 
 ### 커밋 메시지 규칙
 
@@ -94,6 +97,7 @@ Blocking 예시:
 - #160/#161에서 Perspectives FULLTEXT 정렬 기준을 latest-first, relevance-first, hybrid ordering으로 비교했다.
 - #162/#163에서 새 이슈 후보마다 overengineering 여부를 먼저 판단하는 docs guardrail을 추가했다.
 - #164/#165에서 #160 측정 결과를 바탕으로 Perspectives ranking policy 도입 보류와 hybrid 후보 적용 기준을 docs/ADR로 정리했다.
+- #166에서 PR 본 작업 커밋에 docs 기록을 함께 포함하고 merge 후 후처리 커밋을 기본값으로 만들지 않는 기준을 정리 중이다.
 - 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140, #142, #146)와 AI workflow 보강(#144)은 merge 완료 상태다.
 
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
@@ -690,7 +694,7 @@ Reviewer 결과:
 - Reviewer comment에서 `MERGE_READY`와 Blocking 없음이 확인되고 사용자가 해당 PR에 대해 명시적으로 merge 진행을 승인한 경우, Implementer가 바로 merge까지 수행하는 흐름을 문서화한다.
 - Reviewer comment 이후 PR diff에 추가 변경이 있으면 최신 diff 기준으로 재검토를 받아야 한다는 기준을 명확히 한다.
 - 새 Issue/PR 생성 후에는 Reviewer Agent에게 전달할 검토 요청 예시를 사용자에게 함께 안내하는 규칙을 추가한다.
-- merge 후 `WORK_PROGRESS.md`에 PR 상태, Reviewer 결정, merge 결과, 다음 작업 상태를 남겨 새 Implementer 세션이 흐름을 복원할 수 있게 한다.
+- 당시 기준으로는 merge 후 `WORK_PROGRESS.md`에 PR 상태, Reviewer 결정, merge 결과, 다음 작업 상태를 남기도록 했다. 이 기본값은 #166에서 PR 본 작업 커밋에 docs 기록을 포함하고 GitHub PR/Issue 상태로 merge 결과를 확인하는 방향으로 조정한다.
 
 수정 방향:
 
@@ -1157,6 +1161,46 @@ Reviewer 결과:
 - Non-blocking 없음.
 - `check-review-blocking.ps1 -PrNumber 165` 결과 `MERGE_READY`를 확인했다.
 - 2026-07-08 기준 PR #165는 merge 완료되었고, Issue #164는 closed 상태다.
+
+---
+
+### #166 - PR 단위 문서 기록과 develop 커밋 이력 정리 기준 추가
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/166
+- 상태: PR 기준 진행 기록
+- 작업 브랜치: `docs/#166-commit-history-policy`
+- 주요 파일:
+  - `docs/ai-workflow/reviewer-comment-workflow.md`
+  - `docs/ai-workflow/README.md`
+  - `docs/backend-improvement/NEXT_AGENT_BRIEF.md`
+  - `docs/backend-improvement/WORK_PROGRESS.md`
+  - `docs/backend-improvement/BACKLOG.md`
+
+목표:
+
+- merge 후 `WORK_PROGRESS.md`만 갱신하는 후처리 커밋이 반복되어 develop commit history가 잘게 쪼개지는 문제를 줄인다.
+- 작업 내용, 검증 결과, docs 기록을 PR 본 작업 커밋에 함께 포함하는 기준을 명확히 한다.
+- Reviewer 이후 diff 변경 금지와 최신 diff 기준 재검토 원칙을 유지한다.
+- merge 시각이나 closed 상태처럼 사후에만 확정되는 정보는 GitHub PR/Issue 상태로 확인한다.
+
+Overengineering 판단:
+
+- MCP 자동화나 스크립트 구현은 아직 과하다.
+- 현재 문제는 문서화된 workflow 기본값이 후처리 커밋을 유도하는 것이므로, 코드 변경 없이 문서 기준을 정리하는 것이 적절하다.
+- develop 이력을 깔끔하게 유지하는 기준은 포트폴리오 설명 가능성과 협업 재현성에 직접 도움이 된다.
+
+수정 방향:
+
+- `reviewer-comment-workflow.md`의 merge 후 처리 기준을 GitHub PR/Issue 상태 확인 중심으로 바꾼다.
+- `README.md`의 GitHub 기록 기준에서 merge 결과와 다음 상태의 위치를 PR 본문, GitHub PR/Issue 상태, 필요 시 `WORK_PROGRESS.md`로 조정한다.
+- `NEXT_AGENT_BRIEF.md`와 이 문서에 #166 진행 상태와 새 기본 원칙을 기록한다.
+- 이번 PR 자체도 작업 내용과 docs 기록을 한 커밋에 포함하고, merge 후 별도 기록 커밋을 만들지 않는 기준을 따른다.
+
+검증:
+
+```text
+git diff --check
+```
 
 ## 4. 이후 개선 로드맵
 

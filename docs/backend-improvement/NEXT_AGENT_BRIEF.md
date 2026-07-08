@@ -26,11 +26,13 @@ Issue
 → AI Reviewer comment
 → Blocking 확인
 → merge
-→ WORK_PROGRESS.md 갱신
+→ GitHub PR/Issue 상태 확인
 ```
 
 바로 구현하지 말고, 먼저 develop 최신화, 열린 Issue/PR 확인, `WORK_PROGRESS.md`와 `BACKLOG.md` 조사를 수행한다.
 새 Issue/PR 본문은 repository template을 읽고 반드시 `--body-file` 방식으로 작성한다.
+작업 내용과 관련 docs 기록은 가능한 한 PR 본 작업 커밋에 함께 포함한다.
+Reviewer 이후 diff 변경을 피하기 위해 merge 후 `WORK_PROGRESS.md`만 갱신하는 후처리 커밋은 기본값으로 만들지 않는다.
 
 ## Overengineering Guardrail
 
@@ -57,7 +59,7 @@ Issue
 - #160/#161에서 Perspectives FULLTEXT relevance-first/hybrid ordering 비교를 완료했다.
 - #162/#163에서 새 이슈 후보마다 overengineering 여부를 먼저 판단하는 guardrail을 추가했다.
 - #164/#165에서 hybrid ranking query variant를 바로 구현하지 않는 이유와 후속 적용 기준을 docs/ADR로 정리했다.
-- 현재 진행 중인 단기 작업은 없다. 다음 작업은 열린 Issue/PR과 `WORK_PROGRESS.md`, `BACKLOG.md`를 다시 확인한 뒤 선택한다.
+- #166에서 PR 단위 문서 기록과 develop 커밋 이력 정리 기준을 문서화하는 작업을 진행 중이다.
 
 ## Recent Completed Work
 
@@ -70,6 +72,7 @@ Issue
 - #160/#161: Perspectives FULLTEXT ordering을 latest-first, relevance-first, hybrid 후보로 비교했다.
 - #162/#163: 새 후보마다 overengineering 여부를 먼저 판단하는 guardrail을 추가했다.
 - #164/#165: Perspectives ranking policy 도입 보류와 hybrid 후보 적용 기준을 ADR로 정리했다.
+- #166: PR 본 작업 커밋에 docs 기록을 함께 포함하고 merge 후 후처리 커밋을 기본값으로 만들지 않는 기준을 정리 중이다.
 
 ## Why #160 Matters
 
@@ -81,11 +84,22 @@ pure relevance-first는 wrong-context 기사를 끌어올릴 수 있어 바로 �
 
 ## Recommended Next Backend Issue
 
-현재 확정된 다음 이슈는 없다.
-다음 세션에서는 먼저 develop 최신화, 열린 Issue/PR 확인, `WORK_PROGRESS.md`와 `BACKLOG.md` 확인을 다시 수행한다.
-#110은 사용자가 별도로 지시하기 전까지 다루지 않는다.
+현재 진행 중:
 
-후보를 고를 때는 #162 guardrail에 따라 "지금 구현하면 과한가?"를 먼저 판단한다.
+```text
+#166 [DOCS] PR 단위 문서 기록과 develop 커밋 이력 정리 기준 추가
+```
+
+목표:
+
+- merge 후 `WORK_PROGRESS.md`만 갱신하는 후처리 커밋을 기본값으로 만들지 않는다.
+- 작업 내용, 검증, docs 기록을 PR 본 작업 커밋에 함께 포함한다.
+- Reviewer 이후 diff 변경 금지와 재검토 기준을 유지한다.
+- merge 시각/closed 상태처럼 사후에만 확정되는 정보는 GitHub PR/Issue 상태로 대체한다.
+
+다음 세션에서 새 후보를 고를 때는 먼저 develop 최신화, 열린 Issue/PR 확인, `WORK_PROGRESS.md`와 `BACKLOG.md` 확인을 다시 수행한다.
+#110은 사용자가 별도로 지시하기 전까지 다루지 않는다.
+#162 guardrail에 따라 "지금 구현하면 과한가?"를 먼저 판단한다.
 #164 ADR 기준상 hybrid ranking code experiment는 아래 조건이 준비된 뒤 별도 Issue로 검토한다.
 
 ```text
@@ -119,7 +133,8 @@ pure relevance-first는 wrong-context 기사를 끌어올릴 수 있어 바로 �
 
 - 이 문서에는 최신 상태와 다음 판단만 남긴다.
 - 세부 측정값, Reviewer 결과, merge 이력은 `WORK_PROGRESS.md`와 개별 문서에 남긴다.
-- 새 작업을 시작하거나 merge할 때 이 문서의 `Current Snapshot`과 `Recommended Next Backend Issue`를 갱신한다.
+- 새 작업을 시작할 때 이 문서의 `Current Snapshot`과 `Recommended Next Backend Issue`를 갱신한다.
+- merge 후 상태 확인은 GitHub PR/Issue 상태를 기준으로 하고, 별도 후처리 커밋은 예외 상황에만 만든다.
 - 의사결정 근거를 압축하되, 근거 문서 링크는 반드시 남긴다.
 
 ## Reviewer Agent Prompt Template
