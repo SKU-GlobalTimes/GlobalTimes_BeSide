@@ -14,7 +14,8 @@ AI를 단순 코드 생성 도구가 아니라 조사, 계획, 구현, 검토를
 Reviewer 세션을 별도로 운영하는 경우에는 GitHub PR comment를 중심으로 리뷰 결과와 반영 내역을 기록한다.
 자세한 흐름은 [AI Reviewer PR Comment Workflow](./reviewer-comment-workflow.md)를 따른다.
 
-AI Reviewer가 `MERGE_READY`를 반환하고 사용자가 해당 PR에 대해 명시적으로 merge 진행을 승인한 경우, Implementer는 PR을 merge한 뒤 `WORK_PROGRESS.md`에 merge 결과와 다음 상태를 기록한다.
+AI Reviewer가 `MERGE_READY`를 반환하고 사용자가 해당 PR에 대해 명시적으로 merge 진행을 승인한 경우, Implementer는 PR을 merge한 뒤 GitHub PR/Issue 상태와 local `develop` 최신화로 merge 결과를 확인한다.
+`WORK_PROGRESS.md`, `NEXT_AGENT_BRIEF.md`, `BACKLOG.md` 갱신이 필요한 작업은 가능한 한 PR 본 작업 커밋에 함께 포함해 develop commit history를 이슈별 핵심 변경 중심으로 유지한다.
 새 Issue/PR을 만든 경우에는 Reviewer Agent에게 전달할 검토 요청 예시도 사용자에게 함께 안내한다.
 
 ## 역할 분리
@@ -51,7 +52,7 @@ AI Reviewer가 `MERGE_READY`를 반환하고 사용자가 해당 PR에 대해 �
 | AI Reviewer 검토 결과와 반영 내역 | PR comment |
 | 중요한 기술 선택과 대안 | `docs/adr/` |
 | 개선 후보와 우선순위 | `docs/backend-improvement/BACKLOG.md` |
-| merge 결과와 다음 작업 상태 | `docs/backend-improvement/WORK_PROGRESS.md` |
+| merge 결과와 다음 작업 상태 | PR 본문, GitHub PR/Issue 상태, 필요 시 `docs/backend-improvement/WORK_PROGRESS.md` |
 
 PR은 해당 Issue를 `Closes #번호`로 연결한다.
 

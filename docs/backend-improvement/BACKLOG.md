@@ -13,6 +13,8 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 - 성능 작업은 개선 전 기준값과 개선 후 결과를 같은 측정 조건에서 기록한다.
 - 새 이슈 후보를 고를 때마다 현재 프로젝트 단계, 데이터 규모, 신입 포트폴리오 설명 가능성을 기준으로 overengineering 여부를 먼저 판단한다.
 - 기술적으로 가능하더라도 근거가 부족하거나 복잡도 대비 효과가 작으면 구현 대신 측정 문서, 판단 기록, ADR, 후속 적용 기준 정리로 범위를 낮춘다.
+- 작업 내용, 검증 결과, docs 기록은 가능한 한 PR 본 작업 커밋에 함께 포함해 develop commit history를 이슈별 핵심 변경 중심으로 유지한다.
+- merge 후 `WORK_PROGRESS.md`만 갱신하는 후처리 커밋은 기본값으로 만들지 않고, GitHub PR/Issue 상태로 merge 결과를 확인한다.
 
 ## 상태 표기
 
@@ -24,7 +26,7 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## P0. AI 작업 운영 규칙 및 개선 Backlog 정립
 
-- 상태: `In Progress` ([#113](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/113))
+- 상태: `In Progress` ([#113](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/113), [#166](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/166))
 - AS-IS: 개선 작업의 계획, 승인, AI 검토 결과가 GitHub 흐름과 일관되게 연결되어 있지 않다.
 - TO-BE: 작업 계획과 승인 기준을 Issue, 브랜치, PR, 문서에 연결해 재현 가능한 작업 흐름을 만든다.
 - 성공 기준:

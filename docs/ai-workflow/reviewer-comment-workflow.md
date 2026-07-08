@@ -49,7 +49,7 @@ Issue 생성
 → 필요 시 Reviewer 재검토
 → Blocking 없음 확인
 → 사용자 승인 후 merge
-→ merge 결과와 다음 상태를 WORK_PROGRESS.md에 기록
+→ GitHub PR/Issue 상태로 merge 결과 확인
 ```
 
 ## Reviewer comment 형식
@@ -144,7 +144,19 @@ PR #<PR_NUMBER>의 AI Reviewer comment를 읽고 수정 계획을 세워줘.
 4. 사용자가 해당 PR에 대해 명시적으로 merge 진행을 승인했다.
 
 위 조건이 충족되면 Implementer는 별도 대기 없이 PR을 merge할 수 있다.
-merge 후에는 로컬 `develop`을 최신화하고 `WORK_PROGRESS.md`에 PR 상태, Reviewer 결정, merge 시각, 다음 작업 상태를 기록한다.
+merge 후에는 로컬 `develop`을 최신화하고 GitHub PR/Issue 상태를 확인한다.
+
+develop commit history를 이슈별 핵심 변경 중심으로 유지하기 위해, merge 후 `WORK_PROGRESS.md`만 갱신하는 후처리 커밋은 기본값으로 만들지 않는다.
+작업 내용, 검증 결과, Reviewer 확인 방식, 다음 상태는 가능한 한 PR 본문과 PR에 포함된 문서 변경에 미리 기록한다.
+merge 시각, closed 상태처럼 merge 후에만 확정되는 정보는 GitHub PR/Issue 상태를 기준으로 확인한다.
+
+예외적으로 merge 후 문서 커밋을 만들 수 있는 경우는 다음과 같다.
+
+- PR에 포함된 문서가 실제 다음 세션을 잘못 안내하는 경우
+- Reviewer가 후처리 문서 갱신을 명시적으로 요구한 경우
+- merge 후 발견된 상태 불일치가 다음 작업 판단에 직접 영향을 주는 경우
+
+이 예외가 아니면 새 이슈의 작업 커밋 안에 관련 docs 기록을 함께 포함한다.
 
 ## 기록 기준
 
@@ -153,7 +165,8 @@ merge 후에는 로컬 `develop`을 최신화하고 `WORK_PROGRESS.md`에 PR 상
 - 최종 Reviewer 확인 결과는 “Blocking 없음” comment로 남긴다.
 - merge는 `MERGE_READY`와 사용자 승인 기준을 충족한 뒤 수행한다.
 - 새 Issue/PR 생성 후에는 Reviewer Agent에게 전달할 검토 요청 예시를 사용자에게 안내한다.
-- merge 완료 후에는 `WORK_PROGRESS.md`를 기준 문서로 갱신한다.
+- `WORK_PROGRESS.md`, `NEXT_AGENT_BRIEF.md`, `BACKLOG.md` 갱신이 필요한 작업은 PR 본 작업 커밋에 포함한다.
+- merge 후 상태 확인은 GitHub PR/Issue 상태와 local `develop` 최신화로 처리하고, 별도 후처리 커밋은 예외 상황에만 만든다.
 
 ## 후속 자동화 후보
 
