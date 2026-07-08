@@ -98,7 +98,8 @@ Blocking 예시:
 - #162/#163에서 새 이슈 후보마다 overengineering 여부를 먼저 판단하는 docs guardrail을 추가했다.
 - #164/#165에서 #160 측정 결과를 바탕으로 Perspectives ranking policy 도입 보류와 hybrid 후보 적용 기준을 docs/ADR로 정리했다.
 - #166/#167에서 PR 본 작업 커밋에 docs 기록을 함께 포함하고 merge 후 후처리 커밋을 기본값으로 만들지 않는 기준을 정리했다.
-- #168에서 검색 API FULLTEXT 검색어별 성능 기준선을 수립 중이다.
+- #168/#169에서 검색 API FULLTEXT 검색어별 성능 기준선을 수립했다.
+- #170에서 기사 원문 크롤링 동기 외부 호출 응답 지연 기준선을 수립 중이다.
 - 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140, #142, #146)와 AI workflow 보강(#144)은 merge 완료 상태다.
 
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
@@ -1208,7 +1209,8 @@ git diff --check
 ### #168 - 검색 API FULLTEXT 검색어별 성능 기준선 수립
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/168
-- 상태: PR 기준 진행 기록
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/169
+- 상태: merged
 - 작업 브랜치: `perf/#168-search-fulltext-term-baseline`
 - 주요 파일:
   - `load-tests/k6/search-fulltext-terms.js`
@@ -1252,6 +1254,59 @@ git diff --check
 - 2026-07-09 로컬 Docker MySQL/Redis와 `bootRun` 서버(`localhost:8080`) 기준으로 검색어별 smoke baseline을 기록했다.
 - p95/failure/result count: `war` 76.63ms/0.00%/100, `korea` 60.38ms/0.00%/40, `economy` 63.24ms/0.00%/39, `technology` 103.41ms/0.00%/82, `대구` 50.14ms/0.00%/0, `AI` 24.78ms/0.00%/0.
 - 이번 PR은 검색어별 기준선 수집을 재현 가능하게 하는 스크립트와 최초 로컬 측정 기록 수립에 집중한다.
+- Reviewer 결과 `MERGE_READY`, Blocking 없음으로 확인 후 2026-07-09 기준 PR #169를 squash merge했고 Issue #168은 closed 상태다.
+
+---
+
+### #170 - 기사 원문 크롤링 동기 외부 호출 응답 지연 기준선 수립
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/170
+- 상태: In Progress
+- 작업 브랜치: `perf/#170-article-crawl-latency-baseline`
+- 주요 파일:
+  - `load-tests/k6/article-crawl-baseline.js`
+  - `docs/backend-improvement/article-crawl-latency-baseline.md`
+  - `docs/backend-improvement/load-test-baseline.md`
+  - `docs/backend-improvement/BACKLOG.md`
+  - `docs/backend-improvement/NEXT_AGENT_BRIEF.md`
+  - `docs/backend-improvement/WORK_PROGRESS.md`
+
+목표:
+
+- #137/#138에서 정리한 기사 원문 크롤링 timeout/fallback 및 외부 I/O 트랜잭션 분리를 API-level p95, 실패율, crawler fallback rate 기준선과 연결한다.
+- 기사 요약 API의 동기 외부 크롤링 경로가 사용자 요청 지연에 주는 영향을 cold/warm/fallback 조건으로 설명 가능하게 한다.
+- 비동기/Kafka/Redis 캐시 도입 여부를 바로 결정하지 않고, 도입 검토 조건만 남긴다.
+- 이력서에서는 `기사 요약 API 동기 외부 크롤링 p95/fallback 기준선 수립`으로 압축 가능하게 한다.
+
+Overengineering 판단:
+
+- 지금 Kafka, async job queue, Redis/local cache를 바로 도입하면 과하다.
+- #137/#138에서 timeout/fallback과 트랜잭션 경계 개선은 이미 완료됐지만, 사용자 요청 경로에서 어느 조건이 느린지 수치 기준선이 부족하다.
+- 운영 코드, API 응답, DB schema, crawler timeout 값을 바꾸지 않고 k6 스크립트와 문서 기준선을 추가하는 범위가 현재 단계에 적절하다.
+
+수정 방향:
+
+- `GET /api/ai/{id}/summary`를 호출하는 `article-crawl-baseline.js` k6 스크립트를 추가한다.
+- `article_crawler_fallback`, `article_summary_success`, `article_summary_payload_size` custom metric으로 summary success/fallback 결과를 분리 기록한다.
+- `article-crawl-latency-baseline.md`에 summary hit, crawled-content hit, crawl cold success, crawl fallback 해석 기준과 결과 기록 템플릿을 정리한다.
+- #168 merge 상태와 #170 진행 상태를 `BACKLOG.md`, `NEXT_AGENT_BRIEF.md`, `WORK_PROGRESS.md`에 함께 반영한다.
+
+검증:
+
+```text
+node --check load-tests/k6/article-crawl-baseline.js
+k6 inspect load-tests/k6/article-crawl-baseline.js
+k6 run load-tests/k6/article-crawl-baseline.js (ARTICLE_IDS=7366, SCENARIO_LABEL=summary_hit_smoke, ARTICLE_CRAWL_DURATION=10s)
+git diff --check
+```
+
+비고:
+
+- 일반 summary API는 저장된 `summary`가 있으면 즉시 반환하고, 없으면 `crawledContent` 확인 후 필요 시 외부 크롤링과 Gemini 요약 호출까지 이어진다.
+- 따라서 이 기준선은 순수 crawler microbenchmark가 아니라 사용자-facing summary path 기준선이다.
+- 2026-07-09 로컬 Docker MySQL/Redis와 `bootRun` 서버 기준 summary hit smoke를 기록했다.
+- `ARTICLE_IDS=7366` summary hit 조건에서 p95 332.6ms, failure 0.00%, crawler fallback 0.00%, summary success 100.00%, payload size 420을 확인했다.
+- 순수 crawler timing이 필요하면 별도 service-level instrumentation 또는 격리 테스트 이슈로 분리한다.
 
 ## 4. 이후 개선 로드맵
 

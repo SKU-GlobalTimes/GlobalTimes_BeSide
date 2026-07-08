@@ -60,7 +60,8 @@ Reviewer 이후 diff 변경을 피하기 위해 merge 후 `WORK_PROGRESS.md`만 
 - #162/#163에서 새 이슈 후보마다 overengineering 여부를 먼저 판단하는 guardrail을 추가했다.
 - #164/#165에서 hybrid ranking query variant를 바로 구현하지 않는 이유와 후속 적용 기준을 docs/ADR로 정리했다.
 - #166/#167에서 PR 단위 문서 기록과 develop 커밋 이력 정리 기준을 문서화했다.
-- #168에서 검색 API FULLTEXT 검색어별 성능 기준선 수립을 진행 중이다.
+- #168/#169에서 검색 API FULLTEXT 검색어별 성능 기준선 수립을 완료했다.
+- #170에서 기사 원문 크롤링 동기 외부 호출 응답 지연 기준선 수립을 진행 중이다.
 
 ## Recent Completed Work
 
@@ -74,6 +75,7 @@ Reviewer 이후 diff 변경을 피하기 위해 merge 후 `WORK_PROGRESS.md`만 
 - #162/#163: 새 후보마다 overengineering 여부를 먼저 판단하는 guardrail을 추가했다.
 - #164/#165: Perspectives ranking policy 도입 보류와 hybrid 후보 적용 기준을 ADR로 정리했다.
 - #166/#167: PR 본 작업 커밋에 docs 기록을 함께 포함하고 merge 후 후처리 커밋을 기본값으로 만들지 않는 기준을 정리했다.
+- #168/#169: 검색 API FULLTEXT 검색어별 p95, 실패율, 결과 수 smoke 기준선을 수립했다.
 
 ## Why #160 Matters
 
@@ -88,19 +90,22 @@ pure relevance-first는 wrong-context 기사를 끌어올릴 수 있어 바로 �
 현재 진행 중:
 
 ```text
-#168 [PERF] 검색 API FULLTEXT 검색어별 성능 기준선 수립
+#170 [PERF] 기사 원문 크롤링 동기 외부 호출 응답 지연 기준선 수립
 ```
 
 목표:
 
-- 검색 API의 MySQL FULLTEXT 경로를 검색어 유형별로 측정할 수 있게 한다.
-- #133/#134 EXPLAIN 기반 쿼리 개선을 API p95, 실패율, 결과 수 기준선과 연결한다.
-- Elasticsearch 도입 여부는 결정하지 않고, 도입 검토 조건만 남긴다.
-- 이력서에 `검색 API MySQL FULLTEXT 실행 계획 분석 및 검색어별 p95/실패율 기준선 수립`으로 압축 가능한 근거를 만든다.
+- 기사 요약 API에서 동기 원문 크롤링이 사용자 요청 지연에 주는 영향을 측정할 수 있게 한다.
+- #137/#138의 timeout/fallback 및 외부 I/O 트랜잭션 분리 작업을 API p95, 실패율, crawler fallback rate 기준선과 연결한다.
+- 비동기/Kafka/Redis 캐시 도입은 바로 결정하지 않고, 도입 검토 조건만 남긴다.
+- 이력서에 `기사 요약 API 동기 외부 크롤링 p95/fallback 기준선 수립`으로 압축 가능한 근거를 만든다.
 
 다음 세션에서 새 후보를 고를 때는 먼저 develop 최신화, 열린 Issue/PR 확인, `WORK_PROGRESS.md`와 `BACKLOG.md` 확인을 다시 수행한다.
 #110은 사용자가 별도로 지시하기 전까지 다루지 않는다.
 #162 guardrail에 따라 "지금 구현하면 과한가?"를 먼저 판단한다.
+#170은 구현 변경보다 측정 기준선 수립이 우선이다.
+다음 단계에서 비동기/Kafka/Redis 캐시를 바로 도입하지 말고, 먼저 `docs/backend-improvement/article-crawl-latency-baseline.md`와 `load-tests/k6/article-crawl-baseline.js`를 기준으로 cold/warm/fallback 측정 가능성을 확인한다.
+
 #164 ADR 기준상 hybrid ranking code experiment는 아래 조건이 준비된 뒤 별도 Issue로 검토한다.
 
 ```text
@@ -120,6 +125,7 @@ pure relevance-first는 wrong-context 기사를 끌어올릴 수 있어 바로 �
 
 - `docs/backend-improvement/search-fulltext-analysis.md`
 - `docs/backend-improvement/search-fulltext-term-baseline.md`
+- `docs/backend-improvement/article-crawl-latency-baseline.md`
 - `docs/backend-improvement/load-test-baseline.md`
 - `docs/backend-improvement/perspectives-fulltext-generic-token-filter-result.md`
 - `docs/backend-improvement/perspectives-fulltext-ordering-comparison.md`

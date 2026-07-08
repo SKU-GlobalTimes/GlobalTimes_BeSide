@@ -76,6 +76,9 @@ Redis cold cache와 warm cache의 성능 차이를 분리 측정할 때는 `load
 검색 API를 검색어 유형별로 분리 측정할 때는 `load-tests/k6/search-fulltext-terms.js`를 사용한다.
 자세한 검색어 세트, 실행 조건, 결과 기록 방식은 `docs/backend-improvement/search-fulltext-term-baseline.md`에 기록한다.
 
+기사 요약 API의 동기 원문 크롤링 경로를 분리 측정할 때는 `load-tests/k6/article-crawl-baseline.js`를 사용한다.
+자세한 cold/warm/fallback 해석 기준과 결과 기록 방식은 `docs/backend-improvement/article-crawl-latency-baseline.md`에 기록한다.
+
 VU와 실행 시간은 환경 변수로 조정한다.
 
 ```powershell
