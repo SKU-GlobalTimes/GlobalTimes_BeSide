@@ -52,6 +52,16 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
   - 연결 지연, 읽기 지연, 본문 없음, 차단 응답의 처리 규칙이 문서화되고 검증된다.
   - 동일 기사 요청 시 불필요한 재크롤링을 줄이는 기준을 확인한다.
 
+## P2-1. 검색 API FULLTEXT 성능 기준선
+
+- 상태: `In Progress` ([#168](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/168))
+- AS-IS: #133/#134에서 검색 API FULLTEXT 실행 계획과 중복 `OR MATCH` 최적화는 확인했지만, 검색어 유형별 API p95, 실패율, 결과 수 기준선은 분리되어 있지 않다.
+- TO-BE: 영어/한국어/짧은 검색어/결과 적은 검색어를 같은 조건에서 측정하고, MySQL FULLTEXT 기반 검색의 안정성을 p95와 실패율로 설명한다.
+- 성공 기준:
+  - 검색어별 측정 스크립트가 있다.
+  - p95, 실패율, 결과 수를 기록할 수 있는 문서 템플릿이 있다.
+  - Elasticsearch 도입 여부는 결정하지 않고, 도입 검토 조건만 남긴다.
+
 ## P3. 다국어 이슈 매칭 품질 개선
 
 - 상태: `Backlog` (최근 완료: [#142](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/142), [#146](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/146), [#148](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/148), [#150](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/150), [#152](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/152), [#154](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/154), [#156](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/156), [#160](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/160), [#164](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/164))
