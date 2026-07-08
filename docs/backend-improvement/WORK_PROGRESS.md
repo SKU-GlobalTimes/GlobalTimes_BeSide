@@ -97,7 +97,8 @@ Blocking 예시:
 - #160/#161에서 Perspectives FULLTEXT 정렬 기준을 latest-first, relevance-first, hybrid ordering으로 비교했다.
 - #162/#163에서 새 이슈 후보마다 overengineering 여부를 먼저 판단하는 docs guardrail을 추가했다.
 - #164/#165에서 #160 측정 결과를 바탕으로 Perspectives ranking policy 도입 보류와 hybrid 후보 적용 기준을 docs/ADR로 정리했다.
-- #166에서 PR 본 작업 커밋에 docs 기록을 함께 포함하고 merge 후 후처리 커밋을 기본값으로 만들지 않는 기준을 정리 중이다.
+- #166/#167에서 PR 본 작업 커밋에 docs 기록을 함께 포함하고 merge 후 후처리 커밋을 기본값으로 만들지 않는 기준을 정리했다.
+- #168에서 검색 API FULLTEXT 검색어별 성능 기준선을 수립 중이다.
 - 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140, #142, #146)와 AI workflow 보강(#144)은 merge 완료 상태다.
 
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
@@ -1201,6 +1202,56 @@ Overengineering 판단:
 ```text
 git diff --check
 ```
+
+---
+
+### #168 - 검색 API FULLTEXT 검색어별 성능 기준선 수립
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/168
+- 상태: PR 기준 진행 기록
+- 작업 브랜치: `perf/#168-search-fulltext-term-baseline`
+- 주요 파일:
+  - `load-tests/k6/search-fulltext-terms.js`
+  - `docs/backend-improvement/search-fulltext-term-baseline.md`
+  - `docs/backend-improvement/load-test-baseline.md`
+  - `docs/backend-improvement/BACKLOG.md`
+  - `docs/backend-improvement/NEXT_AGENT_BRIEF.md`
+  - `docs/backend-improvement/WORK_PROGRESS.md`
+
+목표:
+
+- #133/#134에서 확인한 검색 API FULLTEXT 실행 계획 개선을 API-level p95, 실패율, 결과 수 기준선과 연결한다.
+- 영어/한국어/짧은 검색어/결과 적은 검색어를 같은 k6 조건에서 측정할 수 있게 한다.
+- Elasticsearch 도입 여부를 바로 결정하지 않고, MySQL FULLTEXT 기반 검색이 어떤 조건에서 안정적인지 설명 가능한 기준을 만든다.
+- 이력서에서는 `검색 API MySQL FULLTEXT 실행 계획 분석 및 검색어별 p95/실패율 기준선 수립`으로 압축 가능하게 한다.
+
+Overengineering 판단:
+
+- 지금 Elasticsearch나 query rewrite를 도입하면 과하다.
+- 이미 #133/#134에서 쿼리 개선 근거가 있으므로, 다음 단계는 더 큰 기술 도입이 아니라 API 기준선 수치화다.
+- 코드/API/DB 동작을 바꾸지 않고 k6 스크립트와 문서 기준선을 추가하는 범위가 현재 단계에 적절하다.
+
+수정 방향:
+
+- 검색어 세트를 순회하는 `search-fulltext-terms.js` k6 스크립트를 추가한다.
+- `search_result_count` metric으로 응답의 `data.searchArticles.length`를 기록한다.
+- `search-fulltext-term-baseline.md`에 검색어 유형, 실행 방법, 결과 기록 템플릿, 해석 기준, 이력서 문장 후보를 정리한다.
+- 기존 `load-test-baseline.md`, `BACKLOG.md`, `NEXT_AGENT_BRIEF.md`에 새 기준선 문서를 연결한다.
+
+검증:
+
+```text
+node --check load-tests/k6/search-fulltext-terms.js
+k6 inspect load-tests/k6/search-fulltext-terms.js
+k6 run load-tests/k6/search-fulltext-terms.js (SEARCH_VUS=1, SEARCH_DURATION=10s, term-by-term)
+git diff --check
+```
+
+비고:
+
+- 2026-07-09 로컬 Docker MySQL/Redis와 `bootRun` 서버(`localhost:8080`) 기준으로 검색어별 smoke baseline을 기록했다.
+- p95/failure/result count: `war` 76.63ms/0.00%/100, `korea` 60.38ms/0.00%/40, `economy` 63.24ms/0.00%/39, `technology` 103.41ms/0.00%/82, `대구` 50.14ms/0.00%/0, `AI` 24.78ms/0.00%/0.
+- 이번 PR은 검색어별 기준선 수집을 재현 가능하게 하는 스크립트와 최초 로컬 측정 기록 수립에 집중한다.
 
 ## 4. 이후 개선 로드맵
 
