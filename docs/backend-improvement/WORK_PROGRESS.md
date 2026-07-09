@@ -100,7 +100,8 @@ Blocking 예시:
 - #166/#167에서 PR 본 작업 커밋에 docs 기록을 함께 포함하고 merge 후 후처리 커밋을 기본값으로 만들지 않는 기준을 정리했다.
 - #168/#169에서 검색 API FULLTEXT 검색어별 성능 기준선을 수립했다.
 - #170/#171에서 기사 원문 크롤링 동기 외부 호출 응답 지연 기준선을 수립했다.
-- #172에서 기사 요약 API 외부 호출 단계별 latency 로그를 추가 중이다.
+- #172/#173에서 기사 요약 API 외부 호출 단계별 latency 로그를 추가했다.
+- #174에서 주요 기사 조회 API 고부하 부하 테스트 및 DB 병목 기준선을 수립 중이다.
 - 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140, #142, #146)와 AI workflow 보강(#144)은 merge 완료 상태다.
 
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
@@ -1316,7 +1317,8 @@ git diff --check
 ### #172 - 기사 요약 API 외부 호출 단계별 latency 로그 추가
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/172
-- 상태: In Progress
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/173
+- 상태: merged
 - 작업 브랜치: `perf/#172-ai-summary-latency-log`
 - 주요 파일:
   - `src/main/java/com/example/globalTimes_be/domain/ai/controller/AiController.java`
@@ -1346,7 +1348,7 @@ Overengineering 판단:
 - 로그에는 기사 원문, 요약 전문, URL, 질문 전문, API key, token, `.env` 값을 남기지 않는다.
 - `article-crawl-latency-baseline.md`에 새 로그 필드와 k6 `SCENARIO_LABEL` 연계 해석 기준을 추가한다.
 
-검증 예정:
+검증:
 
 ```text
 ./gradlew.bat test
@@ -1357,6 +1359,61 @@ git diff --check
 
 - 이번 PR은 운영 코드에 로그를 추가하지만 API 응답 구조, DB schema, crawler timeout, Redis 정책, 비동기 처리 방식은 변경하지 않는다.
 - summary hit/crawledContent hit/cold crawl/fallback 구분은 `AiSummary` 로그와 `ArticleCrawlContent` 로그를 함께 보고 판단한다.
+- Reviewer 결과 `MERGE_READY`, Blocking/Non-blocking 없음으로 확인 후 2026-07-09 기준 PR #173을 squash merge했고 Issue #172는 closed 상태다.
+
+---
+
+### #174 - 주요 기사 조회 API 고부하 부하 테스트 및 DB 병목 기준선 수립
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/174
+- 상태: In Progress
+- 작업 브랜치: `perf/#174-articles-high-load-db-baseline`
+- 주요 파일:
+  - `load-tests/k6/articles-read-high-load.js`
+  - `docs/backend-improvement/articles-read-high-load-db-baseline.md`
+  - `docs/backend-improvement/load-test-baseline.md`
+  - `docs/backend-improvement/BACKLOG.md`
+  - `docs/backend-improvement/NEXT_AGENT_BRIEF.md`
+  - `docs/backend-improvement/WORK_PROGRESS.md`
+
+목표:
+
+- 외부 크롤링/Gemini/번역 API가 없는 주요 기사 조회 API를 고부하 조건에서 분리 측정한다.
+- `latest`, `cursor`, `popular`, `explore`, `detail`의 p95/오류율과 서버 로그 `dbQueryMs`를 함께 해석할 기준을 만든다.
+- k6 고부하 결과만으로 인덱스나 쿼리를 바로 변경하지 않고, 후속 EXPLAIN/인덱스 후보 이슈를 고르는 근거를 남긴다.
+- 이력서에서는 `주요 기사 조회 API 고부하 p95/DB 병목 기준선 수립`으로 압축 가능하게 한다.
+
+Overengineering 판단:
+
+- 지금 DB 인덱스 추가나 Repository query 변경을 바로 적용하면 과하다.
+- 기존 `api-baseline.js`는 smoke/baseline 성격이 강해 특정 조회 API가 고부하에서 DB 병목을 만드는지 분리하기 어렵다.
+- 운영 코드, API 응답, DB schema를 바꾸지 않고 k6 스크립트와 DB 병목 해석 문서를 추가하는 범위가 현재 단계에 적절하다.
+
+수정 방향:
+
+- `articles-read-high-load.js` k6 스크립트를 추가해 latest/cursor/popular/explore/detail API를 scenario와 tag로 분리 측정한다.
+- `articles_payload_size` metric으로 응답 크기 변화도 함께 본다.
+- `articles-read-high-load-db-baseline.md`에 API별 repository query, 서버 로그, EXPLAIN 후보, 후속 인덱스/쿼리 분석 이슈를 정리한다.
+- `load-test-baseline.md`, `BACKLOG.md`, `NEXT_AGENT_BRIEF.md`, `WORK_PROGRESS.md`에 #174 기준선을 연결한다.
+
+검증:
+
+```text
+node --check load-tests/k6/articles-read-high-load.js
+k6 inspect load-tests/k6/articles-read-high-load.js
+k6 run load-tests/k6/articles-read-high-load.js (VU 1 per API, duration 8s, smoke)
+SHOW INDEX FROM article
+EXPLAIN latest/cursor/popular/explore/detail recent query shapes
+git diff --check
+```
+
+비고:
+
+- 이번 PR은 DB 병목을 찾기 위한 기준선 수립이며, 실제 DB index/query 변경은 후속 EXPLAIN 이슈로 분리한다.
+- 고부하 p95가 높더라도 서버 로그 `dbQueryMs`가 낮으면 DB 병목이 아닐 수 있으므로, k6 결과와 애플리케이션 로그를 함께 해석한다.
+- 2026-07-09 로컬 smoke에서 전체 tagged article read p95 96.5ms, failure 0.00%를 확인했다.
+- endpoint별 p95는 latest 85.38ms, cursor 59.86ms, popular 88.52ms, explore 109.86ms, detail 95.21ms였다.
+- 초기 EXPLAIN에서 popular query shape는 `idx_article_published_at` range 후 `Using filesort`가 확인되어, 고부하 p95/dbQueryMs가 높아질 경우 후속 인덱스 후보로 검토할 수 있다.
 
 ## 4. 이후 개선 로드맵
 
