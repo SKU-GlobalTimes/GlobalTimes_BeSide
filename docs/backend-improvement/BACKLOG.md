@@ -45,22 +45,24 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## P2. 기사 원문 크롤링 안정성 개선
 
-- 상태: `Backlog`
+- 상태: `In Progress` ([#170](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/170))
 - AS-IS: 기사 상세의 요약·질의응답 요청 중 외부 언론사 페이지를 동기 크롤링하며, 외부 사이트의 지연과 실패가 사용자 요청에 직접 영향을 준다.
 - TO-BE: timeout, 실패 분류, 재시도 정책, 크롤링 결과 저장 정책을 정의하고 장애 상황에서도 예측 가능한 응답을 제공한다.
 - 성공 기준:
   - 연결 지연, 읽기 지연, 본문 없음, 차단 응답의 처리 규칙이 문서화되고 검증된다.
   - 동일 기사 요청 시 불필요한 재크롤링을 줄이는 기준을 확인한다.
+  - #170에서 요약 API의 동기 원문 크롤링 경로를 cold/warm/fallback 조건으로 측정할 수 있는 기준선을 수립한다.
 
 ## P2-1. 검색 API FULLTEXT 성능 기준선
 
-- 상태: `In Progress` ([#168](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/168))
+- 상태: `Done` ([#168](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/168), [PR #169](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/169))
 - AS-IS: #133/#134에서 검색 API FULLTEXT 실행 계획과 중복 `OR MATCH` 최적화는 확인했지만, 검색어 유형별 API p95, 실패율, 결과 수 기준선은 분리되어 있지 않다.
 - TO-BE: 영어/한국어/짧은 검색어/결과 적은 검색어를 같은 조건에서 측정하고, MySQL FULLTEXT 기반 검색의 안정성을 p95와 실패율로 설명한다.
 - 성공 기준:
   - 검색어별 측정 스크립트가 있다.
   - p95, 실패율, 결과 수를 기록할 수 있는 문서 템플릿이 있다.
   - Elasticsearch 도입 여부는 결정하지 않고, 도입 검토 조건만 남긴다.
+  - #168/#169에서 검색어별 smoke baseline을 기록했다.
 
 ## P3. 다국어 이슈 매칭 품질 개선
 
