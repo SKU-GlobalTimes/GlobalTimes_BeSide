@@ -185,7 +185,7 @@ Initial local `EXPLAIN` notes from 2026-07-09:
 
 Potential follow-up issues:
 
-- `[DB] articles popular 조회 EXPLAIN 분석 및 인덱스 후보 정리`
+- `[DB] articles popular 조회 EXPLAIN ANALYZE 및 인덱스 후보 판단` - completed as #176; see `articles-popular-filesort-analysis.md`
 - `[DB] articles explore 필터 조회 EXPLAIN 분석 및 복합 인덱스 후보 정리`
 - `[PERF] latest offset paging과 cursor paging 고부하 비교`
 - `[OBS] news detail DB 조회 단계별 latency 로그 추가`
@@ -211,3 +211,25 @@ It intentionally avoids:
 - adding async processing
 
 The next step after collecting high-load data is to choose the slowest DB-backed path and open a focused EXPLAIN/index candidate issue.
+
+## Follow-up: Popular Filesort Analysis
+
+#176 followed the `popular` query because #174 found `Using filesort`.
+
+Result summary:
+
+- local data: 9,853 total article rows, 2,070 rows in the recent 30-day filter
+- k6 popular-focused run: `20 -> 50 -> 100` VUs, p95 `134.87ms -> 423.79ms -> 902.51ms`, failure rate `0.00%`
+- RPS plateau: `106.29/s -> 114.33/s -> 123.61/s`, so local/application saturation should be checked before DB index changes
+- `EXPLAIN ANALYZE` page 0 content query: about `6.44ms`
+- `EXPLAIN ANALYZE` page 5 content query: about `11.5ms`
+- count query: about `0.696ms`
+
+Decision:
+
+- keep the current query/index for now
+- treat `Using filesort` as a watch item, not an immediate DB index change trigger
+- first make `[ArticlesPopular] dbQueryMs`, `totalMs`, and local resource capture reliable for the same run window
+- revisit index experiments only if `popular` p95 and captured DB query time rise together
+
+Detailed notes: `docs/backend-improvement/articles-popular-filesort-analysis.md`

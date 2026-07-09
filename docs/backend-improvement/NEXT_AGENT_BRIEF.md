@@ -23,8 +23,8 @@ Issue
 → 구현
 → 테스트
 → PR
-→ AI Reviewer comment
-→ Blocking 확인
+→ AI Reviewer comment 또는 사용자 직접 확인
+→ Blocking 확인 또는 사용자 확인
 → merge
 → GitHub PR/Issue 상태 확인
 ```
@@ -33,6 +33,8 @@ Issue
 새 Issue/PR 본문은 repository template을 읽고 반드시 `--body-file` 방식으로 작성한다.
 작업 내용과 관련 docs 기록은 가능한 한 PR 본 작업 커밋에 함께 포함한다.
 Reviewer 이후 diff 변경을 피하기 위해 merge 후 `WORK_PROGRESS.md`만 갱신하는 후처리 커밋은 기본값으로 만들지 않는다.
+운영 코드, DB schema/index, API 응답, Repository query, Redis/cache 정책, k6/script 변경이 없는 순수 측정 결과/판단 문서 PR은 Reviewer를 생략하고 사용자 직접 확인 후 merge할 수 있다.
+반대로 코드, 스크립트, DB, cache 정책 변경이 있거나 민감 정보 노출 위험이 있으면 Reviewer 검토를 받는다.
 
 ## Overengineering Guardrail
 
@@ -63,7 +65,8 @@ Reviewer 이후 diff 변경을 피하기 위해 merge 후 `WORK_PROGRESS.md`만 
 - #168/#169에서 검색 API FULLTEXT 검색어별 성능 기준선 수립을 완료했다.
 - #170/#171에서 기사 원문 크롤링 동기 외부 호출 응답 지연 기준선 수립을 완료했다.
 - #172/#173에서 기사 요약 API 외부 호출 단계별 latency 로그 추가를 완료했다.
-- #174에서 주요 기사 조회 API 고부하 부하 테스트 및 DB 병목 기준선 수립을 진행 중이다.
+- #174/#175에서 주요 기사 조회 API 고부하 부하 테스트 및 DB 병목 기준선 수립을 완료했다.
+- #176에서 `articles popular` 조회의 `Using filesort`를 k6 고부하 지표와 MySQL `EXPLAIN ANALYZE`로 확인하고, 현재 데이터 규모에서는 인덱스 추가를 보류하는 판단을 진행 중이다.
 
 ## Recent Completed Work
 
@@ -80,6 +83,7 @@ Reviewer 이후 diff 변경을 피하기 위해 merge 후 `WORK_PROGRESS.md`만 
 - #168/#169: 검색 API FULLTEXT 검색어별 p95, 실패율, 결과 수 smoke 기준선을 수립했다.
 - #170/#171: 기사 요약 API 동기 원문 크롤링 경로의 summary-hit p95/fallback 기준선을 수립했다.
 - #172/#173: 기사 요약 API의 summary hit, crawledContent hit, cold crawl, crawler fallback, AI summary 단계별 latency 로그를 추가했다.
+- #174/#175: 주요 기사 조회 API의 고부하 p95/오류율과 DB 병목 후보를 분리 측정하는 k6 기준선을 수립했다.
 
 ## Why #160 Matters
 
@@ -94,21 +98,24 @@ pure relevance-first는 wrong-context 기사를 끌어올릴 수 있어 바로 �
 현재 진행 중:
 
 ```text
-#174 [PERF] 주요 기사 조회 API 고부하 부하 테스트 및 DB 병목 기준선 수립
+#176 [DB] articles popular 조회 고부하 지표 및 EXPLAIN ANALYZE로 인덱스 개선 필요성 판단
 ```
 
 목표:
 
-- 외부 크롤링/Gemini/번역 API가 없는 주요 기사 조회 API를 고부하 조건에서 분리 측정한다.
-- `latest`, `cursor`, `popular`, `explore`, `detail`의 p95/오류율과 서버 로그 `dbQueryMs`를 함께 해석할 기준을 만든다.
-- 바로 인덱스나 쿼리를 변경하지 않고, 후속 EXPLAIN/인덱스 후보 이슈를 고르는 근거를 남긴다.
-- 이력서에 `주요 기사 조회 API 고부하 p95/DB 병목 기준선 수립`으로 압축 가능한 근거를 만든다.
+- #174에서 발견한 `popular` query의 `Using filesort`가 실제 병목인지 확인한다.
+- 기존 k6 script로 `popular`에 부하를 집중해 p95/오류율을 확인한다.
+- MySQL `EXPLAIN ANALYZE`로 page 0/page 5/count query의 actual time을 기록한다.
+- 현재 데이터 규모에서 인덱스 추가가 필요한지, 아니면 보류해야 하는지 판단한다.
+- 이력서에 `popular 기사 조회 filesort 병목 검증`으로 압축 가능한 근거를 만든다.
 
 다음 세션에서 새 후보를 고를 때는 먼저 develop 최신화, 열린 Issue/PR 확인, `WORK_PROGRESS.md`와 `BACKLOG.md` 확인을 다시 수행한다.
 #110은 사용자가 별도로 지시하기 전까지 다루지 않는다.
 #162 guardrail에 따라 "지금 구현하면 과한가?"를 먼저 판단한다.
-#174는 고부하 측정과 DB 병목 후보 도출이 우선이다.
-다음 단계에서 DB index/query 변경을 바로 적용하지 말고, 먼저 `load-tests/k6/articles-read-high-load.js`와 `docs/backend-improvement/articles-read-high-load-db-baseline.md`를 기준으로 slow path를 확인한다.
+#176은 DB index/query 변경 없이 측정과 판단만 남기는 범위다.
+Reviewer는 생략 가능하며, PR 생성 후 사용자가 diff와 결과를 확인한 뒤 merge한다.
+#176 점진 부하에서 `popular` p95는 VU 증가에 따라 상승했지만 RPS가 비례해 늘지 않았고, DB-side `EXPLAIN ANALYZE` actual time은 낮았다.
+다음 단계에서 DB index/query 변경을 바로 적용하지 말고, 먼저 `docs/backend-improvement/articles-popular-filesort-analysis.md`의 follow-up criteria와 애플리케이션 로그/로컬 리소스 지표 캡처 필요성을 기준으로 판단한다.
 
 #164 ADR 기준상 hybrid ranking code experiment는 아래 조건이 준비된 뒤 별도 Issue로 검토한다.
 
