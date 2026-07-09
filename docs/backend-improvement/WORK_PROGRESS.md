@@ -99,7 +99,8 @@ Blocking 예시:
 - #164/#165에서 #160 측정 결과를 바탕으로 Perspectives ranking policy 도입 보류와 hybrid 후보 적용 기준을 docs/ADR로 정리했다.
 - #166/#167에서 PR 본 작업 커밋에 docs 기록을 함께 포함하고 merge 후 후처리 커밋을 기본값으로 만들지 않는 기준을 정리했다.
 - #168/#169에서 검색 API FULLTEXT 검색어별 성능 기준선을 수립했다.
-- #170에서 기사 원문 크롤링 동기 외부 호출 응답 지연 기준선을 수립 중이다.
+- #170/#171에서 기사 원문 크롤링 동기 외부 호출 응답 지연 기준선을 수립했다.
+- #172에서 기사 요약 API 외부 호출 단계별 latency 로그를 추가 중이다.
 - 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140, #142, #146)와 AI workflow 보강(#144)은 merge 완료 상태다.
 
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
@@ -1261,7 +1262,8 @@ git diff --check
 ### #170 - 기사 원문 크롤링 동기 외부 호출 응답 지연 기준선 수립
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/170
-- 상태: In Progress
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/171
+- 상태: merged
 - 작업 브랜치: `perf/#170-article-crawl-latency-baseline`
 - 주요 파일:
   - `load-tests/k6/article-crawl-baseline.js`
@@ -1307,6 +1309,54 @@ git diff --check
 - 2026-07-09 로컬 Docker MySQL/Redis와 `bootRun` 서버 기준 summary hit smoke를 기록했다.
 - `ARTICLE_IDS=7366` summary hit 조건에서 p95 332.6ms, failure 0.00%, crawler fallback 0.00%, summary success 100.00%, payload size 420을 확인했다.
 - 순수 crawler timing이 필요하면 별도 service-level instrumentation 또는 격리 테스트 이슈로 분리한다.
+- Reviewer 결과 `MERGE_READY`, Blocking 없음으로 확인 후 2026-07-09 기준 PR #171을 squash merge했고 Issue #170은 closed 상태다.
+
+---
+
+### #172 - 기사 요약 API 외부 호출 단계별 latency 로그 추가
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/172
+- 상태: In Progress
+- 작업 브랜치: `perf/#172-ai-summary-latency-log`
+- 주요 파일:
+  - `src/main/java/com/example/globalTimes_be/domain/ai/controller/AiController.java`
+  - `src/main/java/com/example/globalTimes_be/domain/detail/service/DetailService.java`
+  - `docs/backend-improvement/article-crawl-latency-baseline.md`
+  - `docs/backend-improvement/BACKLOG.md`
+  - `docs/backend-improvement/NEXT_AGENT_BRIEF.md`
+  - `docs/backend-improvement/WORK_PROGRESS.md`
+
+목표:
+
+- #170/#171에서 만든 user-facing summary path k6 기준선을 내부 단계별 latency 로그와 연결한다.
+- summary hit, crawledContent hit, cold crawl, crawler fallback, AI summary, summary save 시간을 민감 정보 없이 구분 가능하게 한다.
+- Kafka, async job, Redis/local cache 도입 전 실제 병목 구간을 확인할 근거를 남긴다.
+- 이력서에서는 `기사 요약 API 동기 외부 호출 단계별 latency 로깅으로 cache/비동기 처리 판단 기준 수립`으로 압축 가능하게 한다.
+
+Overengineering 판단:
+
+- 지금 비동기 큐, Kafka, Redis/local cache를 바로 추가하면 과하다.
+- #170 k6 응답 파싱만으로는 summary hit/crawledContent hit/cold crawl/Gemini 지연을 자동 분리하기 어렵다는 Non-blocking이 있었다.
+- API 응답과 저장 정책은 유지하고, 로그에 단계별 latency와 boolean 상태만 남기는 범위가 현재 단계에 적절하다.
+
+수정 방향:
+
+- `AiController#summarizeArticle()`에 `summaryLookupMs`, `crawlContentMs`, `fallbackContentMs`, `aiSummaryMs`, `summarySaveMs`, `totalMs` 로그를 추가한다.
+- `DetailService#getArticleCrawledContent()`에 `crawledContentHit`, `crawlAttempted`, `crawlSuccess`, `crawlTargetLookupMs`, `crawlMs`, `saveMs`, `totalMs` 로그를 추가한다.
+- 로그에는 기사 원문, 요약 전문, URL, 질문 전문, API key, token, `.env` 값을 남기지 않는다.
+- `article-crawl-latency-baseline.md`에 새 로그 필드와 k6 `SCENARIO_LABEL` 연계 해석 기준을 추가한다.
+
+검증 예정:
+
+```text
+./gradlew.bat test
+git diff --check
+```
+
+비고:
+
+- 이번 PR은 운영 코드에 로그를 추가하지만 API 응답 구조, DB schema, crawler timeout, Redis 정책, 비동기 처리 방식은 변경하지 않는다.
+- summary hit/crawledContent hit/cold crawl/fallback 구분은 `AiSummary` 로그와 `ArticleCrawlContent` 로그를 함께 보고 판단한다.
 
 ## 4. 이후 개선 로드맵
 
