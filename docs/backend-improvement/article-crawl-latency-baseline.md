@@ -131,6 +131,25 @@ It does not measure cold external crawling.
 - If the goal is pure crawler timing, add service-level instrumentation or an isolated test in a later issue.
 - Kafka, async jobs, Redis cache changes, or crawler timeout changes should be considered only after repeated evidence that the synchronous path is unstable or too slow.
 
+## Stage-Level Log Fields
+
+#172 adds stage-level latency logs so the k6 summary path can be interpreted without guessing from the response body alone.
+
+`AiController#summarizeArticle()` logs the user-facing summary path:
+
+```text
+[AiSummary] articleId={} summaryHit={} crawledContentRequested={} crawlerFallback={} aiRequested={} summaryLookupMs={} crawlContentMs={} fallbackContentMs={} aiSummaryMs={} summarySaveMs={} totalMs={}
+```
+
+`DetailService#getArticleCrawledContent()` logs the crawled-content lookup and external crawling path:
+
+```text
+[ArticleCrawlContent] articleId={} crawledContentHit={} crawlAttempted={} crawlSuccess={} crawlTargetLookupMs={} crawlMs={} saveMs={} totalMs={}
+```
+
+The logs intentionally avoid article body, summary text, URL, question text, API keys, tokens, and `.env` values.
+Use them with `SCENARIO_LABEL` in k6 to identify whether a run was summary hit, crawled-content hit, crawl cold success, or crawl fallback.
+
 ## Current Scope Decision
 
 This issue establishes a measurement script and baseline document for the user-facing article summary path.
