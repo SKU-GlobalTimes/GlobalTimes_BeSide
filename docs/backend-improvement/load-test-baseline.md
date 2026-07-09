@@ -79,6 +79,9 @@ Redis cold cache와 warm cache의 성능 차이를 분리 측정할 때는 `load
 기사 요약 API의 동기 원문 크롤링 경로를 분리 측정할 때는 `load-tests/k6/article-crawl-baseline.js`를 사용한다.
 자세한 cold/warm/fallback 해석 기준과 결과 기록 방식은 `docs/backend-improvement/article-crawl-latency-baseline.md`에 기록한다.
 
+주요 기사 조회 API에 호출이 몰리는 고부하 조건을 분리 측정할 때는 `load-tests/k6/articles-read-high-load.js`를 사용한다.
+자세한 API별 p95/오류율, DB 로그 해석 기준, 후속 EXPLAIN 후보는 `docs/backend-improvement/articles-read-high-load-db-baseline.md`에 기록한다.
+
 VU와 실행 시간은 환경 변수로 조정한다.
 
 ```powershell

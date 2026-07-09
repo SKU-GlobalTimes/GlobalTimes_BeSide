@@ -35,24 +35,25 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## P1. Perspectives API 관측성 및 성능 기준선 확보
 
-- 상태: `In Progress` ([#121](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/121))
+- 상태: `In Progress` ([#121](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/121), [#174](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/174))
 - AS-IS: 캐시 미스 시 기사 조회, 키워드 추출, 번역 API 호출, FULLTEXT 검색이 요청 경로에서 수행되지만 단계별 지연 시간과 캐시 효과를 수치로 설명할 수 없다.
 - TO-BE: 캐시 히트율, 단계별 처리 시간, 외부 번역 API 호출량, p95 응답 시간을 측정하고 부하 테스트 기준선을 만든다.
 - 성공 기준:
   - 캐시 히트/미스 시나리오별 p50, p95, 오류율을 기록한다.
   - 번역 API 호출 횟수와 캐시 히트율을 확인할 수 있다.
   - 측정 결과를 후속 개선 PR에 비교 기준으로 남긴다.
+  - #174에서 외부 호출 없는 주요 기사 조회 API의 고부하 p95/오류율과 DB 병목 후보를 분리 측정한다.
 
 ## P2. 기사 원문 크롤링 안정성 개선
 
-- 상태: `In Progress` ([#170](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/170), [#172](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/172))
+- 상태: `Done` ([#170](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/170), [PR #171](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/171), [#172](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/172), [PR #173](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/173))
 - AS-IS: 기사 상세의 요약·질의응답 요청 중 외부 언론사 페이지를 동기 크롤링하며, 외부 사이트의 지연과 실패가 사용자 요청에 직접 영향을 준다.
 - TO-BE: timeout, 실패 분류, 재시도 정책, 크롤링 결과 저장 정책을 정의하고 장애 상황에서도 예측 가능한 응답을 제공한다.
 - 성공 기준:
   - 연결 지연, 읽기 지연, 본문 없음, 차단 응답의 처리 규칙이 문서화되고 검증된다.
   - 동일 기사 요청 시 불필요한 재크롤링을 줄이는 기준을 확인한다.
   - #170/#171에서 요약 API의 동기 원문 크롤링 경로를 cold/warm/fallback 조건으로 측정할 수 있는 기준선을 수립했다.
-  - #172에서 summary hit, crawledContent hit, cold crawl, crawler fallback, AI summary 호출 시간을 단계별 로그로 분리 관측할 수 있게 한다.
+  - #172/#173에서 summary hit, crawledContent hit, cold crawl, crawler fallback, AI summary 호출 시간을 단계별 로그로 분리 관측할 수 있게 했다.
 
 ## P2-1. 검색 API FULLTEXT 성능 기준선
 
