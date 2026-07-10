@@ -105,7 +105,8 @@ Blocking 예시:
 - #172/#173에서 기사 요약 API 외부 호출 단계별 latency 로그를 추가했다.
 - #174/#175에서 주요 기사 조회 API 고부하 부하 테스트 및 DB 병목 기준선을 수립했다.
 - #176/#177에서 `popular` 기사 조회의 `Using filesort`가 현재 데이터 규모에서 인덱스 추가가 필요한 병목인지 k6와 `EXPLAIN ANALYZE`로 판단했다.
-- #178에서 로컬 부하 테스트 시 애플리케이션 latency 로그와 Docker/local resource 지표를 같은 실행 구간에 캡처하는 관측 runbook을 정리 중이다.
+- #178/#179에서 로컬 부하 테스트 시 애플리케이션 latency 로그와 Docker/local resource 지표를 같은 실행 구간에 캡처하는 관측 runbook을 정리했다.
+- #180에서 주요 조회 API 단일 인스턴스 TPS 한계와 포화 신호 구간을 정리 중이다.
 - 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140, #142, #146)와 AI workflow 보강(#144)은 merge 완료 상태다.
 
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
@@ -1489,7 +1490,8 @@ git diff --check
 ### #178 - 로컬 부하 테스트 latency 로그와 리소스 지표 캡처 안정화
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/178
-- 상태: In Progress
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/179
+- 상태: merged
 - 작업 브랜치: `obs/#178-local-load-log-resource-capture`
 - 주요 파일:
   - `docs/backend-improvement/local-load-observability-runbook.md`
@@ -1532,6 +1534,77 @@ Reviewer 결과:
 - `## AI Reviewer 검토 결과` 제목의 Reviewer comment 기준 `MERGE_READY`, Blocking 없음.
 - Non-blocking: `BACKLOG.md` P1 상태 줄에서 진행 중 이슈와 완료 근거를 분리하면 더 읽기 쉽다는 제안이 있었고, merge 전 반영했다.
 - Non-blocking: PR 본문과 작업 기록의 "AI Reviewer 생략 가능" 표현은 이번처럼 실제 리뷰를 받은 경우 혼선을 줄 수 있어, 작업 기록은 실제 Reviewer 결과로 정리했다.
+
+---
+
+### #180 - 주요 조회 API 단일 인스턴스 TPS 한계와 병목 지점 정리
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/180
+- 상태: In Progress
+- 작업 브랜치: `perf/#180-single-instance-tps-baseline`
+- 주요 파일:
+  - `.gitignore`
+  - `docs/backend-improvement/single-instance-tps-baseline.md`
+  - `docs/backend-improvement/articles-read-high-load-db-baseline.md`
+  - `docs/backend-improvement/load-test-baseline.md`
+  - `docs/backend-improvement/BACKLOG.md`
+  - `docs/backend-improvement/NEXT_AGENT_BRIEF.md`
+  - `docs/backend-improvement/WORK_PROGRESS.md`
+
+목표:
+
+- 로컬 Docker MySQL/Redis와 단일 `bootRun` Spring Boot 인스턴스 기준으로 `popular` 조회가 어느 정도 RPS까지 안정적인지 측정한다.
+- p95, failure rate, RPS, 애플리케이션 `dbQueryMs`/`totalMs`, Docker/local resource 신호를 같은 실행 구간으로 해석한다.
+- 멀티 Pod/Kubernetes/클라우드 부하 테스트 없이도 단일 인스턴스 처리량과 포화 구간을 이력서에 설명 가능한 수준으로 남긴다.
+
+Overengineering 판단:
+
+- 지금 Kubernetes, multi Pod, cloud load test, Prometheus/Grafana/APM까지 도입하면 8GB 로컬 환경과 현재 프로젝트 단계에 과하다.
+- 이번 이슈는 운영 코드, API 응답, Repository query, DB schema/index, Redis/cache policy, 비동기 처리를 변경하지 않고 측정/판단만 남긴다.
+- 100 VU 이상을 무리하게 반복하기보다, 50 VU에서 이미 RPS plateau와 p95 상승이 보여 안전하게 중단했다.
+
+실행 조건:
+
+```text
+Run ID: 20260710-1530-single-instance-popular
+Server: local bootRun, localhost:8080
+DB/cache: Docker MySQL/Redis
+k6 script: load-tests/k6/articles-read-high-load.js
+Target: popular scenario
+Noise scenarios: latest/cursor/explore/detail each 1 VU / 1s
+Popular pages: 0,1,5
+Sleep: 0.1s
+```
+
+측정 결과:
+
+| Popular VUs | Duration | Requests | RPS | Popular avg | Popular p95 | Failure rate |
+| ---: | --- | ---: | ---: | ---: | ---: | ---: |
+| 5 | 30s | 970 | 24.19/s | 57.61ms | 105.05ms | 0.00% |
+| 10 | 30s | 1,841 | 45.91/s | 65.16ms | 94.62ms | 0.00% |
+| 20 | 30s | 3,505 | 87.29/s | 71.84ms | 105.48ms | 0.00% |
+| 50 | 30s | 3,474 | 86.15/s | 334.86ms | 456.72ms | 0.00% |
+
+판단:
+
+- 20 VU까지는 RPS가 증가하면서 `popular` p95가 약 105ms 수준으로 유지되어 이 로컬 환경의 안정 baseline으로 볼 수 있다.
+- 50 VU에서는 RPS가 20 VU 대비 증가하지 않았고 p95가 456.72ms로 상승해 단일 인스턴스 포화 신호로 해석한다.
+- failure rate는 모든 단계에서 0.00%였으므로 availability failure가 아니라 latency saturation으로 기록한다.
+- 50 VU 말미의 `[ArticlesPopular]` 샘플 로그는 `dbQueryMs` 약 19~51ms, `totalMs` 약 31~74ms 수준이라, k6 p95 상승을 DB index 문제로 바로 해석하기 어렵다.
+- 다음 개선은 DB index보다 peak app/thread/CPU 관측 보강 또는 Gemini mock 외부 호출 병목 기준선 쪽이 더 적절하다.
+
+검증:
+
+```text
+docker ps
+k6 version
+Test-NetConnection 127.0.0.1 -Port 8080
+k6 run articles-read-high-load.js (popular 5 VUs, 30s)
+k6 run articles-read-high-load.js (popular 10 VUs, 30s)
+k6 run articles-read-high-load.js (popular 20 VUs, 30s)
+k6 run articles-read-high-load.js (popular 50 VUs, 30s)
+docker stats --no-stream
+```
 
 ## 4. 이후 개선 로드맵
 
