@@ -229,7 +229,7 @@ Decision:
 
 - keep the current query/index for now
 - treat `Using filesort` as a watch item, not an immediate DB index change trigger
-- first make `[ArticlesPopular] dbQueryMs`, `totalMs`, and local resource capture reliable for the same run window
+- first make `[ArticlesPopular] dbQueryMs`, `totalMs`, and local resource capture reliable for the same run window; see `local-load-observability-runbook.md`
 - revisit index experiments only if `popular` p95 and captured DB query time rise together
 
 Detailed notes: `docs/backend-improvement/articles-popular-filesort-analysis.md`

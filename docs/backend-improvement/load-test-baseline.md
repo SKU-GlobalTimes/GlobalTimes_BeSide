@@ -82,6 +82,9 @@ Redis cold cache와 warm cache의 성능 차이를 분리 측정할 때는 `load
 주요 기사 조회 API에 호출이 몰리는 고부하 조건을 분리 측정할 때는 `load-tests/k6/articles-read-high-load.js`를 사용한다.
 자세한 API별 p95/오류율, DB 로그 해석 기준, 후속 EXPLAIN 후보는 `docs/backend-improvement/articles-read-high-load-db-baseline.md`에 기록한다.
 
+로컬 부하 테스트에서 k6 결과, 애플리케이션 latency 로그, Docker 리소스 지표를 같은 실행 구간에 묶어 해석할 때는 `docs/backend-improvement/local-load-observability-runbook.md`를 따른다.
+특히 p95가 상승했지만 DB-side `EXPLAIN ANALYZE` 시간이 낮은 경우, 인덱스 변경 전에 `[ArticlesPopular] dbQueryMs`, `totalMs`, 로컬 CPU/MEM, Docker MySQL/Redis 지표를 함께 확인한다.
+
 VU와 실행 시간은 환경 변수로 조정한다.
 
 ```powershell
