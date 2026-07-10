@@ -11,6 +11,7 @@ import com.example.globalTimes_be.global.apiPayload.code.status.GlobalSuccessSta
 import com.example.globalTimes_be.global.exception.BaseException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -28,6 +29,9 @@ public class AiController implements AiControllerDocs {
     public final AiSseService aiSseService;
     public final DetailService detailService;
     public final AnonymousChatSessionService anonymousChatSessionService;
+
+    @Value("${ai.summary-save-enabled:true}")
+    private boolean summarySaveEnabled;
 
     @Override
     @GetMapping(value = "/{id}/summary")
@@ -68,10 +72,12 @@ public class AiController implements AiControllerDocs {
         String summary = aiService.summarizeArticle(crawledContent, language);
         long aiSummaryMs = elapsedMs(aiSummaryStartedAt);
 
-        // 요약 결과 DB 저장 (이후 재요청 시 GPT 스킵)
-        long summarySaveStartedAt = System.nanoTime();
-        detailService.saveArticleSummary(id, summary);
-        long summarySaveMs = elapsedMs(summarySaveStartedAt);
+        long summarySaveMs = 0;
+        if (summarySaveEnabled) {
+            long summarySaveStartedAt = System.nanoTime();
+            detailService.saveArticleSummary(id, summary);
+            summarySaveMs = elapsedMs(summarySaveStartedAt);
+        }
 
         log.info("[AiSummary] articleId={} summaryHit=false crawledContentRequested=true crawlerFallback=false aiRequested=true summaryLookupMs={} crawlContentMs={} fallbackContentMs=0 aiSummaryMs={} summarySaveMs={} totalMs={}",
                 id,

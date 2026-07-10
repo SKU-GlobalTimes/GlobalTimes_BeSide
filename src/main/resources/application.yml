@@ -45,6 +45,7 @@ spring:
 # Gemini API (GPT 대체, 무료 티어: 일 1,500회 / 분 15회)
 gemini:
   api-key: ${GEMINI_API_KEY}
+  base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com}
 
 # JWT 설정
 jwt:
@@ -72,3 +73,4 @@ trend:
 # AI 컨텍스트 대화 슬라이딩 윈도우 크기 (최근 N턴만 Gemini에 전달, 토큰 비용 제어)
 ai:
   context-window-size: 10
+  summary-save-enabled: ${AI_SUMMARY_SAVE_ENABLED:true}
