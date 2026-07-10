@@ -18,8 +18,8 @@ Issue 생성
 → 구현
 → 테스트/검증
 → PR 생성
-→ AI Reviewer 검토
-→ Blocking 반영
+→ AI Reviewer 검토 또는 사용자 직접 확인
+→ Blocking 반영 또는 사용자 확인
 → 최종 Blocking 없음 확인
 → 사용자 승인 후 merge
 → GitHub PR/Issue 상태 확인
@@ -42,6 +42,8 @@ Implementer는 새 Issue/PR을 만든 뒤 Reviewer Agent에게 전달할 검토 
 다만 develop commit history를 이슈별 핵심 변경 중심으로 유지하기 위해, 작업 내용과 관련 docs 기록은 가능한 한 PR 본 작업 커밋에 함께 포함한다.
 merge 후 `WORK_PROGRESS.md`만 갱신하는 후처리 커밋은 기본값으로 만들지 않고, GitHub PR/Issue 상태로 merge 결과를 확인한다.
 후처리 커밋은 PR에 포함된 문서가 다음 세션을 잘못 안내하거나 Reviewer가 명시적으로 요구한 경우처럼 필요한 때에만 만든다.
+운영 코드, DB schema/index, API 응답, Repository query, Redis/cache 정책, k6/script 변경이 없는 순수 측정 결과/판단 문서 PR은 Reviewer를 생략하고 사용자 직접 확인 후 merge할 수 있다.
+코드, 스크립트, DB, cache 정책 변경이 있거나 민감 정보 노출 위험이 있으면 Reviewer 검토를 받는다.
 
 ### 커밋 메시지 규칙
 
@@ -101,7 +103,8 @@ Blocking 예시:
 - #168/#169에서 검색 API FULLTEXT 검색어별 성능 기준선을 수립했다.
 - #170/#171에서 기사 원문 크롤링 동기 외부 호출 응답 지연 기준선을 수립했다.
 - #172/#173에서 기사 요약 API 외부 호출 단계별 latency 로그를 추가했다.
-- #174에서 주요 기사 조회 API 고부하 부하 테스트 및 DB 병목 기준선을 수립 중이다.
+- #174/#175에서 주요 기사 조회 API 고부하 부하 테스트 및 DB 병목 기준선을 수립했다.
+- #176에서 `popular` 기사 조회의 `Using filesort`가 현재 데이터 규모에서 인덱스 추가가 필요한 병목인지 k6와 `EXPLAIN ANALYZE`로 판단 중이다.
 - 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140, #142, #146)와 AI workflow 보강(#144)은 merge 완료 상태다.
 
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
@@ -1366,7 +1369,8 @@ git diff --check
 ### #174 - 주요 기사 조회 API 고부하 부하 테스트 및 DB 병목 기준선 수립
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/174
-- 상태: In Progress
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/175
+- 상태: merged
 - 작업 브랜치: `perf/#174-articles-high-load-db-baseline`
 - 주요 파일:
   - `load-tests/k6/articles-read-high-load.js`
@@ -1414,6 +1418,69 @@ git diff --check
 - 2026-07-09 로컬 smoke에서 전체 tagged article read p95 96.5ms, failure 0.00%를 확인했다.
 - endpoint별 p95는 latest 85.38ms, cursor 59.86ms, popular 88.52ms, explore 109.86ms, detail 95.21ms였다.
 - 초기 EXPLAIN에서 popular query shape는 `idx_article_published_at` range 후 `Using filesort`가 확인되어, 고부하 p95/dbQueryMs가 높아질 경우 후속 인덱스 후보로 검토할 수 있다.
+- Reviewer 결과 `MERGE_READY`, Blocking 없음으로 확인 후 2026-07-09 기준 PR #175를 squash merge했고 Issue #174는 closed 상태다.
+
+---
+
+### #176 - articles popular 조회 고부하 지표 및 EXPLAIN ANALYZE로 인덱스 개선 필요성 판단
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/176
+- 상태: In Progress
+- 작업 브랜치: `db/#176-popular-filesort-analysis`
+- 주요 파일:
+  - `docs/backend-improvement/articles-popular-filesort-analysis.md`
+  - `docs/backend-improvement/articles-read-high-load-db-baseline.md`
+  - `docs/backend-improvement/BACKLOG.md`
+  - `docs/backend-improvement/NEXT_AGENT_BRIEF.md`
+  - `docs/backend-improvement/WORK_PROGRESS.md`
+
+목표:
+
+- #174에서 발견한 `popular` 조회의 `Using filesort`가 현재 데이터 규모에서 실제 병목인지 확인한다.
+- 기준선 정리만 반복하지 않고, 기존 k6 스크립트로 바로 고부하 지표를 확인한다.
+- MySQL `EXPLAIN ANALYZE`로 content query와 count query의 actual time을 기록한다.
+- 인덱스 추가 여부를 수치 기반으로 판단하되, 근거가 약하면 보류한다.
+- 이력서에서는 `popular 기사 조회 filesort 병목 검증`으로 압축 가능하게 한다.
+
+Overengineering 판단:
+
+- `Using filesort`가 보인다는 이유만으로 DB 인덱스를 바로 추가하면 과하다.
+- 현재 로컬 데이터는 article 9,853건, 최근 30일 조건 2,070건 수준이다.
+- #174 smoke에서 `popular` p95가 88.52ms였고, #176의 20 VU 측정에서도 134.87ms였다.
+- 50/100 VU 점진 부하에서는 p95가 상승했지만 RPS가 비례해 증가하지 않아 DB index 변경보다 로컬/애플리케이션 처리 한계 확인이 먼저다.
+- 따라서 이번 범위는 운영 코드, Repository query, DB schema/index 변경 없이 측정과 판단 기록만 남긴다.
+
+검증:
+
+```text
+k6 run load-tests/k6/articles-read-high-load.js (popular 20 VUs, 60s)
+k6 run load-tests/k6/articles-read-high-load.js (popular 50 VUs, 30s)
+k6 run load-tests/k6/articles-read-high-load.js (popular 100 VUs, 20s)
+EXPLAIN popular page 0/page 5 query shape
+EXPLAIN ANALYZE popular page 0/page 5 query shape
+EXPLAIN ANALYZE popular count query
+git diff --check
+```
+
+측정 결과:
+
+- k6 조건: `popular` 20 VUs, 60s, `POPULAR_PAGES=0,1,5`, 다른 article read scenario는 1 VU/1s로 최소화
+- 전체 tagged article reads: 6,396 requests, p95 135.17ms, failure 0.00%
+- `popular`: p95 134.87ms, failure 0.00%
+- 50 VUs, 30s: 3,474 requests, RPS 114.33/s, `popular` p95 423.79ms, failure 0.00%
+- 100 VUs, 20s: 2,561 requests, RPS 123.61/s, `popular` p95 902.51ms, failure 0.00%
+- VUs가 20에서 100으로 늘어도 RPS는 106.29/s에서 123.61/s로만 증가해 로컬 실행환경 또는 애플리케이션 처리 한계가 섞였을 가능성이 있다.
+- MySQL page 0 content query: `idx_article_published_at` range scan 2,070 rows 후 `Using filesort`, actual time 약 6.44ms
+- MySQL page 5 content query: offset 100 기준 actual time 약 11.5ms
+- count query: covering index range scan, actual time 약 0.696ms
+
+판단:
+
+- 현재 데이터 규모와 로컬 고부하 조건에서는 `Using filesort`만으로 즉시 인덱스 추가를 정당화하기 어렵다.
+- `popular` p95는 50/100 VU에서 상승했지만, DB-side `EXPLAIN ANALYZE`는 여전히 낮고 RPS가 거의 plateau되어 애플리케이션 로그와 로컬 리소스 지표를 먼저 연결해야 한다.
+- `popular` 조회는 watch item으로 남기고, p95와 `[ArticlesPopular] dbQueryMs`가 함께 반복적으로 높아질 때 별도 인덱스 실험 이슈를 연다.
+- 이번 실행에서는 `bootRun` stdout 로그 캡처가 안정적으로 되지 않아 `[ArticlesPopular] dbQueryMs`는 기록하지 못했다. 대신 MySQL `EXPLAIN ANALYZE` actual time을 DB-side 근거로 남겼다.
+- 다음 후보는 인덱스 구현보다 로컬 성능 측정 시 애플리케이션 latency 로그와 리소스 지표 캡처를 안정화하는 작은 관측성 작업이 더 적절하다.
 
 ## 4. 이후 개선 로드맵
 

@@ -33,16 +33,17 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
   - 최소 1개의 후속 개선 작업이 문서화된 흐름을 따라 Issue부터 PR까지 진행된다.
   - 계획, 승인 범위, 검증 결과를 GitHub에서 확인할 수 있다.
 
-## P1. Perspectives API 관측성 및 성능 기준선 확보
+## P1. 주요 조회 API 관측성 및 성능 기준선 확보
 
-- 상태: `In Progress` ([#121](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/121), [#174](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/174))
+- 상태: `In Progress` ([#121](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/121), [#174](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/174), [#176](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/176))
 - AS-IS: 캐시 미스 시 기사 조회, 키워드 추출, 번역 API 호출, FULLTEXT 검색이 요청 경로에서 수행되지만 단계별 지연 시간과 캐시 효과를 수치로 설명할 수 없다.
 - TO-BE: 캐시 히트율, 단계별 처리 시간, 외부 번역 API 호출량, p95 응답 시간을 측정하고 부하 테스트 기준선을 만든다.
 - 성공 기준:
   - 캐시 히트/미스 시나리오별 p50, p95, 오류율을 기록한다.
   - 번역 API 호출 횟수와 캐시 히트율을 확인할 수 있다.
   - 측정 결과를 후속 개선 PR에 비교 기준으로 남긴다.
-  - #174에서 외부 호출 없는 주요 기사 조회 API의 고부하 p95/오류율과 DB 병목 후보를 분리 측정한다.
+  - #174에서 외부 호출 없는 주요 기사 조회 API의 고부하 p95/오류율과 DB 병목 후보를 분리 측정했다.
+  - #176에서 `popular` 조회의 `Using filesort`를 k6와 `EXPLAIN ANALYZE`로 확인하고, 현재 규모에서는 인덱스 추가를 보류하는 판단 기준을 남긴다.
 
 ## P2. 기사 원문 크롤링 안정성 개선
 
