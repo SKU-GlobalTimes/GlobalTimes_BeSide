@@ -46,3 +46,6 @@ out/
 application*.yml
 
 frontend/
+
+### local load-test artifacts ###
+.codex-tmp/

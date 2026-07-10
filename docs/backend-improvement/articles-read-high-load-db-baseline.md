@@ -233,3 +233,24 @@ Decision:
 - revisit index experiments only if `popular` p95 and captured DB query time rise together
 
 Detailed notes: `docs/backend-improvement/articles-popular-filesort-analysis.md`
+
+## Follow-up: Single Instance TPS Baseline
+
+#180 reused the `popular`-focused high-load scenario to summarize a local single-instance capacity shape.
+
+Result summary:
+
+- local Docker MySQL/Redis plus one local `bootRun` Spring Boot instance
+- `popular` VUs: `5 -> 10 -> 20 -> 50`
+- RPS: `24.19/s -> 45.91/s -> 87.29/s -> 86.15/s`
+- `popular` p95: `105.05ms -> 94.62ms -> 105.48ms -> 456.72ms`
+- failure rate: `0.00%` for all measured steps
+- RPS is from the k6 whole-run summary, including scenario start offsets and short noise scenarios, so use it for same-script relative saturation judgment rather than pure 30-second popular-only TPS.
+
+Decision:
+
+- treat the 20 VU run as the stable local single-instance baseline for this machine
+- treat the 50 VU run as a saturation signal because throughput did not increase while p95 rose sharply
+- do not open a DB index issue from this result alone; sampled application `dbQueryMs` remained much lower than k6 p95
+
+Detailed notes: `docs/backend-improvement/single-instance-tps-baseline.md`

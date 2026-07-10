@@ -67,7 +67,8 @@ Reviewer 이후 diff 변경을 피하기 위해 merge 후 `WORK_PROGRESS.md`만 
 - #172/#173에서 기사 요약 API 외부 호출 단계별 latency 로그 추가를 완료했다.
 - #174/#175에서 주요 기사 조회 API 고부하 부하 테스트 및 DB 병목 기준선 수립을 완료했다.
 - #176/#177에서 `articles popular` 조회의 `Using filesort`를 k6 고부하 지표와 MySQL `EXPLAIN ANALYZE`로 확인하고, 현재 데이터 규모에서는 인덱스 추가를 보류했다.
-- #178에서 로컬 부하 테스트 시 k6 결과, 애플리케이션 latency 로그, Docker 리소스 지표를 같은 실행 구간에 묶어 해석하는 runbook을 진행 중이다.
+- #178/#179에서 로컬 부하 테스트 시 k6 결과, 애플리케이션 latency 로그, Docker 리소스 지표를 같은 실행 구간에 묶어 해석하는 runbook을 완료했다.
+- #180에서 주요 조회 API 단일 인스턴스 TPS 한계와 병목 지점을 정리 중이다.
 
 ## Recent Completed Work
 
@@ -86,6 +87,7 @@ Reviewer 이후 diff 변경을 피하기 위해 merge 후 `WORK_PROGRESS.md`만 
 - #172/#173: 기사 요약 API의 summary hit, crawledContent hit, cold crawl, crawler fallback, AI summary 단계별 latency 로그를 추가했다.
 - #174/#175: 주요 기사 조회 API의 고부하 p95/오류율과 DB 병목 후보를 분리 측정하는 k6 기준선을 수립했다.
 - #176/#177: `popular` 조회의 20/50/100 VU p95와 MySQL `EXPLAIN ANALYZE`를 비교해 인덱스 추가를 보류하고 관측성 보강 필요성을 남겼다.
+- #178/#179: 로컬 부하 테스트의 k6 결과, 애플리케이션 latency 로그, Docker/local resource 지표를 같은 실행 구간에 묶는 runbook을 정리했다.
 
 ## Why #160 Matters
 
@@ -100,25 +102,24 @@ pure relevance-first는 wrong-context 기사를 끌어올릴 수 있어 바로 �
 현재 진행 중:
 
 ```text
-#178 [OBS] 로컬 부하 테스트 latency 로그와 리소스 지표 캡처 안정화
+#180 [PERF] 주요 조회 API 단일 인스턴스 TPS 한계와 병목 지점 정리
 ```
 
 목표:
 
-- k6 p95/RPS, 애플리케이션 `dbQueryMs`/`totalMs` 로그, Docker 리소스 지표를 같은 run id/time window로 묶는 로컬 runbook을 만든다.
-- #176에서 보인 p95 상승이 DB 병목인지, 애플리케이션 처리 한계인지, 로컬 자원 한계인지 구분할 판단 기준을 정리한다.
-- Gemini mock latency 부하 테스트를 후속 후보로 명시한다.
+- 로컬 Docker 기반 단일 Spring Boot 인스턴스에서 `popular` 조회의 안정 처리량과 포화 신호 구간을 정리한다.
+- #178 runbook 기준으로 k6 RPS/p95/failure, 애플리케이션 `dbQueryMs`/`totalMs`, Docker/local resource 신호를 같은 실행 구간으로 해석한다.
+- 8GB 로컬 환경을 고려해 무리한 장시간/고 VU 테스트보다 `5 -> 10 -> 20 -> 50 VU` 점진 부하 결과를 우선 기록한다.
 - 운영 코드, DB schema/index, API 응답, Repository query, Redis/cache 정책, k6 script는 변경하지 않는다.
-- 이력서에 `부하 테스트 로그/리소스 관측 기준 수립`으로 압축 가능한 근거를 만든다.
+- 이력서에 `단일 인스턴스 조회 API TPS 한계/포화 구간 측정`으로 압축 가능한 근거를 만든다.
 
 다음 세션에서 새 후보를 고를 때는 먼저 develop 최신화, 열린 Issue/PR 확인, `WORK_PROGRESS.md`와 `BACKLOG.md` 확인을 다시 수행한다.
 #110은 사용자가 별도로 지시하기 전까지 다루지 않는다.
 #162 guardrail에 따라 "지금 구현하면 과한가?"를 먼저 판단한다.
-#178은 운영 코드 변경 없이 측정 runbook과 후속 판단 기준만 남기는 범위다.
-Reviewer는 생략 가능하며, PR 생성 후 사용자가 diff와 결과를 확인한 뒤 merge한다.
-#176 점진 부하에서 `popular` p95는 VU 증가에 따라 상승했지만 RPS가 비례해 늘지 않았고, DB-side `EXPLAIN ANALYZE` actual time은 낮았다.
-다음 단계에서 DB index/query 변경을 바로 적용하지 말고, 먼저 `docs/backend-improvement/local-load-observability-runbook.md` 기준으로 애플리케이션 로그/로컬 리소스 지표를 캡처할 수 있게 한다.
-그 다음 후속 후보로 `[PERF] AI 질의응답 Gemini 외부 호출 mock latency 부하 테스트`를 검토한다.
+#180은 운영 코드 변경 없이 측정 결과와 판단 기준을 남기는 범위다.
+현재 측정에서는 `popular` 20 VU에서 약 87 RPS, p95 약 105ms, failure 0.00%였고, 50 VU에서는 약 86 RPS로 처리량이 늘지 않은 채 p95가 약 456ms로 상승했다.
+따라서 20 VU 구간을 이 로컬 환경의 안정 baseline으로 보고, 50 VU 구간은 단일 인스턴스 포화 신호로 해석한다.
+다음 후속 후보로 `[PERF] AI 질의응답 Gemini 외부 호출 mock latency 부하 테스트`를 검토한다.
 
 #164 ADR 기준상 hybrid ranking code experiment는 아래 조건이 준비된 뒤 별도 Issue로 검토한다.
 
@@ -143,6 +144,7 @@ Reviewer는 생략 가능하며, PR 생성 후 사용자가 diff와 결과를 �
 - `docs/backend-improvement/articles-read-high-load-db-baseline.md`
 - `docs/backend-improvement/articles-popular-filesort-analysis.md`
 - `docs/backend-improvement/local-load-observability-runbook.md`
+- `docs/backend-improvement/single-instance-tps-baseline.md`
 - `docs/backend-improvement/load-test-baseline.md`
 - `docs/backend-improvement/perspectives-fulltext-generic-token-filter-result.md`
 - `docs/backend-improvement/perspectives-fulltext-ordering-comparison.md`

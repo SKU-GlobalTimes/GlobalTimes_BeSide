@@ -85,6 +85,9 @@ Redis cold cache와 warm cache의 성능 차이를 분리 측정할 때는 `load
 로컬 부하 테스트에서 k6 결과, 애플리케이션 latency 로그, Docker 리소스 지표를 같은 실행 구간에 묶어 해석할 때는 `docs/backend-improvement/local-load-observability-runbook.md`를 따른다.
 특히 p95가 상승했지만 DB-side `EXPLAIN ANALYZE` 시간이 낮은 경우, 인덱스 변경 전에 `[ArticlesPopular] dbQueryMs`, `totalMs`, 로컬 CPU/MEM, Docker MySQL/Redis 지표를 함께 확인한다.
 
+로컬 Docker 기반 단일 인스턴스가 어느 정도 처리량까지 안정적인지 설명할 때는 `docs/backend-improvement/single-instance-tps-baseline.md`를 기준으로 한다.
+2026-07-10 `popular` 중심 점진 부하에서는 20 VU 구간 약 87 RPS까지 p95 약 105ms, failure 0.00%로 안정적이었고, 50 VU에서는 RPS가 늘지 않은 채 p95가 약 456ms로 상승하는 포화 신호를 확인했다.
+
 VU와 실행 시간은 환경 변수로 조정한다.
 
 ```powershell

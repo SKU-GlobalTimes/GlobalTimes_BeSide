@@ -35,8 +35,8 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## P1. 주요 조회 API 관측성 및 성능 기준선 확보
 
-- 상태: `In Progress` ([#178](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/178))
-- 완료 근거: [#121](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/121), [#174](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/174), [#176](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/176)
+- 상태: `In Progress` ([#180](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/180))
+- 완료 근거: [#121](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/121), [#174](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/174), [#176](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/176), [#178](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/178)
 - AS-IS: 캐시 미스 시 기사 조회, 키워드 추출, 번역 API 호출, FULLTEXT 검색이 요청 경로에서 수행되지만 단계별 지연 시간과 캐시 효과를 수치로 설명할 수 없다.
 - TO-BE: 캐시 히트율, 단계별 처리 시간, 외부 번역 API 호출량, p95 응답 시간을 측정하고 부하 테스트 기준선을 만든다.
 - 성공 기준:
@@ -46,6 +46,7 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
   - #174에서 외부 호출 없는 주요 기사 조회 API의 고부하 p95/오류율과 DB 병목 후보를 분리 측정했다.
   - #176에서 `popular` 조회의 `Using filesort`를 k6와 `EXPLAIN ANALYZE`로 확인하고, 현재 규모에서는 인덱스 추가를 보류하는 판단 기준을 남긴다.
   - #178에서 로컬 부하 테스트 시 k6 결과, 애플리케이션 latency 로그, Docker 리소스 지표를 같은 실행 구간에 맞춰 해석하는 runbook을 정리한다.
+  - #180에서 로컬 Docker 단일 인스턴스 기준 `popular` 조회의 안정 처리량과 포화 신호 구간을 RPS/p95/failure로 정리한다.
 
 ## P2. 기사 원문 크롤링 안정성 개선
 
