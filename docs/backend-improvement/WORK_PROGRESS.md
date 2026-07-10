@@ -1526,10 +1526,12 @@ Overengineering 판단:
 git diff --check
 ```
 
-Reviewer 판단:
+Reviewer 결과:
 
 - 이번 PR은 문서/runbook-only 변경이며 운영 코드, DB schema/index, Repository query, Redis/cache policy, k6 script 변경이 없다.
-- 따라서 AI Reviewer 검토는 생략하고 사용자 직접 확인 후 merge할 수 있는 범위다.
+- `## AI Reviewer 검토 결과` 제목의 Reviewer comment 기준 `MERGE_READY`, Blocking 없음.
+- Non-blocking: `BACKLOG.md` P1 상태 줄에서 진행 중 이슈와 완료 근거를 분리하면 더 읽기 쉽다는 제안이 있었고, merge 전 반영했다.
+- Non-blocking: PR 본문과 작업 기록의 "AI Reviewer 생략 가능" 표현은 이번처럼 실제 리뷰를 받은 경우 혼선을 줄 수 있어, 작업 기록은 실제 Reviewer 결과로 정리했다.
 
 ## 4. 이후 개선 로드맵
 
