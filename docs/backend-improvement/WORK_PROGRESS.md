@@ -1585,6 +1585,11 @@ Sleep: 0.1s
 | 20 | 30s | 3,505 | 87.29/s | 71.84ms | 105.48ms | 0.00% |
 | 50 | 30s | 3,474 | 86.15/s | 334.86ms | 456.72ms | 0.00% |
 
+비고:
+
+- `Duration`은 `popular` scenario의 active duration이고, `Requests/RPS`는 scenario start offset과 짧은 noise scenario를 포함한 k6 전체 run window 기준 summary 값이다.
+- 모든 단계가 같은 script shape로 실행되었으므로 같은 기준의 상대 비교와 포화 판단에는 사용할 수 있지만, 순수 30초 `popular` 단독 TPS로 해석하지 않는다.
+
 판단:
 
 - 20 VU까지는 RPS가 증가하면서 `popular` p95가 약 105ms 수준으로 유지되어 이 로컬 환경의 안정 baseline으로 볼 수 있다.

@@ -245,6 +245,7 @@ Result summary:
 - RPS: `24.19/s -> 45.91/s -> 87.29/s -> 86.15/s`
 - `popular` p95: `105.05ms -> 94.62ms -> 105.48ms -> 456.72ms`
 - failure rate: `0.00%` for all measured steps
+- RPS is from the k6 whole-run summary, including scenario start offsets and short noise scenarios, so use it for same-script relative saturation judgment rather than pure 30-second popular-only TPS.
 
 Decision:
 

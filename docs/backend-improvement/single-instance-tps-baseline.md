@@ -103,6 +103,10 @@ The planned 100 VU step was skipped for this run because 50 VU already showed a 
 | 20 | 30s | 3,505 | 87.29/s | 71.84ms | 105.48ms | 0.00% |
 | 50 | 30s | 3,474 | 86.15/s | 334.86ms | 456.72ms | 0.00% |
 
+`Duration` is the active `popular` scenario duration.
+`Requests` and `RPS` are from the k6 summary and use the whole local run window, including scenario start offsets and short noise scenarios.
+Because every measured step used the same script shape, the RPS values are comparable for saturation judgment, but they are not a pure 30-second popular-only TPS calculation.
+
 Interpretation:
 
 - 5 -> 10 -> 20 VUs increased throughput from `24.19/s` to `87.29/s` while p95 stayed around `95ms ~ 105ms`.
