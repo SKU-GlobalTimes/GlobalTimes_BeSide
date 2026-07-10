@@ -35,7 +35,8 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## P1. 주요 조회 API 관측성 및 성능 기준선 확보
 
-- 상태: `In Progress` ([#121](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/121), [#174](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/174), [#176](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/176))
+- 상태: `In Progress` ([#178](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/178))
+- 완료 근거: [#121](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/121), [#174](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/174), [#176](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/176)
 - AS-IS: 캐시 미스 시 기사 조회, 키워드 추출, 번역 API 호출, FULLTEXT 검색이 요청 경로에서 수행되지만 단계별 지연 시간과 캐시 효과를 수치로 설명할 수 없다.
 - TO-BE: 캐시 히트율, 단계별 처리 시간, 외부 번역 API 호출량, p95 응답 시간을 측정하고 부하 테스트 기준선을 만든다.
 - 성공 기준:
@@ -44,6 +45,7 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
   - 측정 결과를 후속 개선 PR에 비교 기준으로 남긴다.
   - #174에서 외부 호출 없는 주요 기사 조회 API의 고부하 p95/오류율과 DB 병목 후보를 분리 측정했다.
   - #176에서 `popular` 조회의 `Using filesort`를 k6와 `EXPLAIN ANALYZE`로 확인하고, 현재 규모에서는 인덱스 추가를 보류하는 판단 기준을 남긴다.
+  - #178에서 로컬 부하 테스트 시 k6 결과, 애플리케이션 latency 로그, Docker 리소스 지표를 같은 실행 구간에 맞춰 해석하는 runbook을 정리한다.
 
 ## P2. 기사 원문 크롤링 안정성 개선
 
@@ -55,6 +57,17 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
   - 동일 기사 요청 시 불필요한 재크롤링을 줄이는 기준을 확인한다.
   - #170/#171에서 요약 API의 동기 원문 크롤링 경로를 cold/warm/fallback 조건으로 측정할 수 있는 기준선을 수립했다.
   - #172/#173에서 summary hit, crawledContent hit, cold crawl, crawler fallback, AI summary 호출 시간을 단계별 로그로 분리 관측할 수 있게 했다.
+
+### P2 후속 후보. Gemini mock latency 부하 테스트
+
+- 상태: `Backlog`
+- AS-IS: 기사 상세의 AI 요약/질의응답 경로에는 Gemini 외부 호출이 포함될 수 있지만, 실제 Gemini API로 부하 테스트를 반복하면 비용, quota, rate limit, 응답 편차 문제가 생긴다.
+- TO-BE: mock AI 서버로 latency `200ms`, `1s`, `3s`, `timeout/5xx` 조건을 통제하고, 사용자 요청 경로의 p95/오류율/fallback 동작을 측정한다.
+- 진행 조건:
+  - #178의 로컬 부하 테스트 로그/리소스 캡처 기준을 먼저 적용한다.
+  - mock 서버는 테스트/로컬 설정에만 사용하고 운영 API key, prompt 전문, 사용자 질문 전문은 문서/로그에 남기지 않는다.
+- 예상 이슈:
+  - `[PERF] AI 질의응답 Gemini 외부 호출 mock latency 부하 테스트`
 
 ## P2-1. 검색 API FULLTEXT 성능 기준선
 

@@ -245,4 +245,7 @@ Candidate next issue:
 [OBS] 로컬 부하 테스트 시 애플리케이션 latency 로그와 리소스 지표 캡처 안정화
 ```
 
+This was started as #178.
+The runbook is `docs/backend-improvement/local-load-observability-runbook.md`.
+
 After that, rerun the same 20/50/100 VU test and decide whether the p95 growth is DB query time, application thread/connection pool pressure, or local machine saturation.

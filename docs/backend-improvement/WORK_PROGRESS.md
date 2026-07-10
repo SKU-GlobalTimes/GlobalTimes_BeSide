@@ -104,7 +104,8 @@ Blocking 예시:
 - #170/#171에서 기사 원문 크롤링 동기 외부 호출 응답 지연 기준선을 수립했다.
 - #172/#173에서 기사 요약 API 외부 호출 단계별 latency 로그를 추가했다.
 - #174/#175에서 주요 기사 조회 API 고부하 부하 테스트 및 DB 병목 기준선을 수립했다.
-- #176에서 `popular` 기사 조회의 `Using filesort`가 현재 데이터 규모에서 인덱스 추가가 필요한 병목인지 k6와 `EXPLAIN ANALYZE`로 판단 중이다.
+- #176/#177에서 `popular` 기사 조회의 `Using filesort`가 현재 데이터 규모에서 인덱스 추가가 필요한 병목인지 k6와 `EXPLAIN ANALYZE`로 판단했다.
+- #178에서 로컬 부하 테스트 시 애플리케이션 latency 로그와 Docker/local resource 지표를 같은 실행 구간에 캡처하는 관측 runbook을 정리 중이다.
 - 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140, #142, #146)와 AI workflow 보강(#144)은 merge 완료 상태다.
 
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
@@ -1425,7 +1426,8 @@ git diff --check
 ### #176 - articles popular 조회 고부하 지표 및 EXPLAIN ANALYZE로 인덱스 개선 필요성 판단
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/176
-- 상태: In Progress
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/177
+- 상태: merged
 - 작업 브랜치: `db/#176-popular-filesort-analysis`
 - 주요 파일:
   - `docs/backend-improvement/articles-popular-filesort-analysis.md`
@@ -1481,6 +1483,55 @@ git diff --check
 - `popular` 조회는 watch item으로 남기고, p95와 `[ArticlesPopular] dbQueryMs`가 함께 반복적으로 높아질 때 별도 인덱스 실험 이슈를 연다.
 - 이번 실행에서는 `bootRun` stdout 로그 캡처가 안정적으로 되지 않아 `[ArticlesPopular] dbQueryMs`는 기록하지 못했다. 대신 MySQL `EXPLAIN ANALYZE` actual time을 DB-side 근거로 남겼다.
 - 다음 후보는 인덱스 구현보다 로컬 성능 측정 시 애플리케이션 latency 로그와 리소스 지표 캡처를 안정화하는 작은 관측성 작업이 더 적절하다.
+
+---
+
+### #178 - 로컬 부하 테스트 latency 로그와 리소스 지표 캡처 안정화
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/178
+- 상태: In Progress
+- 작업 브랜치: `obs/#178-local-load-log-resource-capture`
+- 주요 파일:
+  - `docs/backend-improvement/local-load-observability-runbook.md`
+  - `docs/backend-improvement/load-test-baseline.md`
+  - `docs/backend-improvement/articles-popular-filesort-analysis.md`
+  - `docs/backend-improvement/articles-read-high-load-db-baseline.md`
+  - `docs/backend-improvement/BACKLOG.md`
+  - `docs/backend-improvement/NEXT_AGENT_BRIEF.md`
+  - `docs/backend-improvement/WORK_PROGRESS.md`
+
+목표:
+
+- #176에서 확인한 p95 상승과 DB-side `EXPLAIN ANALYZE` actual time 간 차이를 해석할 수 있도록 같은 실행 구간의 관측 절차를 고정한다.
+- k6 p95/RPS/failure, Spring application latency log, Docker MySQL/Redis resource 지표, 로컬 CPU/MEM 상태를 같은 run id로 묶어 기록한다.
+- 이후 Gemini/mock 외부 호출 부하 테스트에서 mock latency, Spring 처리 시간, DB/connection/local resource 병목을 구분할 수 있는 최소 관측 기준을 만든다.
+- 이력서에서는 `부하 테스트 로그/리소스 관측 기준 수립`으로 압축 가능하게 한다.
+
+Overengineering 판단:
+
+- 현재 단계에서 별도 APM, Prometheus/Grafana, tracing stack을 도입하면 프로젝트 규모와 포트폴리오 설명 난이도 대비 과하다.
+- #176의 병목 후보는 DB index 변경보다 관측 데이터 부족이 먼저였으므로, 운영 코드나 스크립트를 바꾸기 전에 문서화된 실행 절차를 고정하는 편이 적절하다.
+- 이번 범위는 운영 코드, API 응답, Repository query, DB schema/index, Redis/cache policy, k6 script 변경 없이 runbook과 판단 기준만 남긴다.
+
+작업 내용:
+
+- `local-load-observability-runbook.md`를 추가해 run id, 로그 저장 위치, Spring file logging 실행 방식, k6 결과 캡처 항목, `docker stats --no-stream` 기준, 로컬 리소스 기록 항목을 정리했다.
+- high p95가 나타났을 때 `dbQueryMs`, `totalMs`, Docker/local resource 신호 조합별 해석 규칙을 표로 정리했다.
+- #176 결과를 runbook 관점에서 재해석해 `popular` p95 상승이 곧바로 DB index 추가 근거가 아니라는 판단을 이어가도록 기록했다.
+- 다음 후보로 Gemini 외부 호출 mock latency 부하 테스트를 남기되, 실제 Gemini API 비용을 쓰지 않고 mock 조건별 latency와 failure/timeout을 분리 측정하는 방향을 명시했다.
+
+검증:
+
+```text
+git diff --check
+```
+
+Reviewer 결과:
+
+- 이번 PR은 문서/runbook-only 변경이며 운영 코드, DB schema/index, Repository query, Redis/cache policy, k6 script 변경이 없다.
+- `## AI Reviewer 검토 결과` 제목의 Reviewer comment 기준 `MERGE_READY`, Blocking 없음.
+- Non-blocking: `BACKLOG.md` P1 상태 줄에서 진행 중 이슈와 완료 근거를 분리하면 더 읽기 쉽다는 제안이 있었고, merge 전 반영했다.
+- Non-blocking: PR 본문과 작업 기록의 "AI Reviewer 생략 가능" 표현은 이번처럼 실제 리뷰를 받은 경우 혼선을 줄 수 있어, 작업 기록은 실제 Reviewer 결과로 정리했다.
 
 ## 4. 이후 개선 로드맵
 
