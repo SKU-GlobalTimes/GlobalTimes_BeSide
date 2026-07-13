@@ -55,11 +55,11 @@ Reviewer 이후 diff 변경을 피하기 위해 merge 후 `WORK_PROGRESS.md`만 
 
 - Active work override, 2026-07-13:
   - #180/#181 is merged and closed. The single-instance popular baseline concluded that 20 VU was stable at about 87 RPS and 50 VU was a saturation signal.
-  - Current active work is #182 `[PERF] Gemini mock latency 기반 외부 호출 병목 기준선 수립` on branch `perf/#182-gemini-mock-latency-baseline`, PR #183.
-  - #182 changes runtime testability only: configurable `gemini.base-url`, local test flag `AI_SUMMARY_SAVE_ENABLED=false`, lightweight mock Gemini server, and `gemini-mock-latency-baseline.md`.
-  - #182 is Verified after controlled 200ms/1s/3s and 500-response measurements; PR #183 awaits Reviewer re-check and merge approval.
-  - Normal-path p95 followed mock latency, 200ms/20 VU reached 57.80 RPS with 0% failures, and mock 500 propagated as backend 5xx for 43/43 requests.
-  - Do not generalize this local mock result to real Gemini capacity; timeout/fallback/async changes remain a separate follow-up decision.
+  - #182/#183 is merged and closed. Controlled 200ms/1s/3s and 500-response measurements established the Gemini mock baseline without real API cost.
+  - Current active work is #184 `[FIX] Gemini 요약 API timeout 상한 및 upstream 오류 분리` on branch `fix/#184-gemini-timeout-upstream-errors`.
+  - #184 replaces the fixed 90-second summary timeout with configurable 10 seconds and separates Gemini non-2xx as 502, timeout as 504, and internal parsing errors as 500.
+  - In the same 15-second mock condition, p95 changed from 16.08 seconds before to 10.42 seconds after; 3-second normal response remained 200 and mock 500 returned 502.
+  - Retry, circuit breaker, async queue, and SSE/Trend Gemini policy changes remain out of scope.
 
 - Repo: `SKU-GlobalTimes/GlobalTimes_BeSide`
 - Base branch: `develop`
