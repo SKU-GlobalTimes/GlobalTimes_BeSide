@@ -112,6 +112,21 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 - 범위 경계:
   - 전면 WebFlux, Kafka, retry/circuit breaker, SSE/ask/Trend 변경은 현재 근거 대비 과해 제외한다.
 
+### P2 후속 후보. Gemini async executor 포화 503 및 queue 보호 검증
+
+- 상태: `Done` ([#190](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/190), [PR #191](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/191))
+- AS-IS: #188의 50 VU에서 executor active 20/queued 30까지 관측했지만 queue capacity 100 포화와 실제 HTTP 503 rejection/recovery 경로는 검증하지 않았다.
+- TO-BE: 로컬 executor를 5 workers/queue 10으로 축소하고 점진 부하를 적용해 200/503, queue 상한, popular API 보호, 부하 종료 후 회복을 같은 실행 흐름에서 검증한다.
+- 범위 경계:
+  - 기본 executor 20/100 변경, rate limiter, retry/circuit breaker, Kafka/WebFlux, EC2 capacity 추정은 측정 결과 없이 진행하지 않는다.
+  - 결과는 제한된 로컬 단일 인스턴스의 overload protection 검증으로 한정한다.
+- 검증 결과:
+  - 15 VU에서 active 5/queued 10으로 executor를 모두 사용하면서 55/55건이 200이었다.
+  - 20 VU부터 실제 503이 발생했고, 20/30 VU 모두 queue는 설정 상한 10을 넘지 않았다.
+  - 20 VU는 200 55건/503 1,158건, accepted p95 9.41초/rejected p95 49.55ms, popular p95 254.51ms였다.
+  - 30 VU는 200 55건/503 3,720건, accepted p95 9.34초/rejected p95 34.25ms, popular p95 256.03ms였다.
+  - 부하 종료 후 active/queued 0/0과 recovery 5 VU의 25/25 HTTP 200을 확인했다.
+
 ## P2-1. 검색 API FULLTEXT 성능 기준선
 
 - 상태: `Done` ([#168](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/168), [PR #169](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/169))
