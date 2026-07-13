@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
+import org.springframework.core.task.TaskRejectedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -98,12 +99,33 @@ public class GlobalErrorHandler {
         return ApiResponse.fail(e.getMessage(), e.getHttpStatus());
     }
 
+    @ExceptionHandler(TaskRejectedException.class)
+    public ResponseEntity<ApiResponse> handleTaskRejectedException(TaskRejectedException e) {
+        log.warn("Async task rejected: {}", e.getClass().getSimpleName());
+        return ApiResponse.fail(GlobalErrorStatus._SERVICE_UNAVAILABLE.getResponse());
+    }
+
     //500 나머지 에러
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse> handleNullPointerException(Exception e, HttpServletRequest request){
+        if (hasCause(e, InterruptedException.class)) {
+            log.warn("Async task interrupted: {}", e.getClass().getSimpleName());
+            return ApiResponse.fail(GlobalErrorStatus._SERVICE_UNAVAILABLE.getResponse());
+        }
         log.error("발생한 예외 타입: {}", e.getClass().getSimpleName());
         log.error("Exception Error", e);
         return ApiResponse.fail(GlobalErrorStatus._INTERNAL_SERVER_ERROR.getResponse());
+    }
+
+    private boolean hasCause(Throwable throwable, Class<? extends Throwable> causeType) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (causeType.isInstance(current)) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 }
 

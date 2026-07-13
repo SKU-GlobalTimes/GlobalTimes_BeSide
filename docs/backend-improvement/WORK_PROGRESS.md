@@ -1909,8 +1909,9 @@ Reviewer 필요성:
 ### #186 - Gemini 동기 호출 servlet thread 포화 및 API 영향 측정
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/186
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/187
 - 작업 브랜치: `perf/#186-gemini-thread-saturation`
-- 상태: In Progress
+- 상태: Merged
 - 주요 파일:
   - `build.gradle`
   - `src/main/resources/application.yml`
@@ -1961,6 +1962,58 @@ Overengineering 판단:
 Reviewer 필요성:
 
 - runtime dependency, metrics 노출 설정, k6 스크립트가 변경되므로 Reviewer 검토가 필요하다.
+
+### #188 - Gemini summary Servlet async 전환 전후 thread 점유 비교
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/188
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/189
+- 작업 브랜치: `perf/#188-gemini-servlet-async-comparison`
+- 상태: Merged
+- 주요 파일:
+  - `src/main/java/com/example/globalTimes_be/global/config/AiSummaryAsyncConfig.java`
+  - `src/main/java/com/example/globalTimes_be/domain/ai/controller/AiController.java`
+  - `src/main/java/com/example/globalTimes_be/global/exception/GlobalErrorHandler.java`
+  - `load-tests/k6/gemini-thread-saturation.js`
+  - `docs/backend-improvement/gemini-servlet-async-comparison.md`
+
+목표:
+
+- #186의 20/20 Tomcat thread ceiling과 popular queueing 근거를 실제 async before/after 결과로 연결한다.
+- async가 Gemini 자체 latency를 줄이는지보다 unrelated API의 request-thread availability를 보호하는지 검증한다.
+
+Overengineering 판단:
+
+- 전면 WebFlux나 Kafka보다 기존 MVC/JPA 흐름을 유지하는 `WebAsyncTask + bounded executor`를 최소 변경으로 선택한다.
+- blocking work는 제거되지 않고 전용 worker로 이동하므로 executor active/queued metric을 함께 기록한다.
+- 50 VU는 20-thread ceiling 이후 처리량 shape와 async 격리 효과를 비교하는 근거로만 사용한다.
+
+구현:
+
+- summary API는 기존 orchestration을 `aiSummaryExecutor`에서 실행하는 `WebAsyncTask`를 반환한다.
+- executor 기본값은 core/max 20, queue 100이며 모두 환경변수로 조정 가능하다.
+- MVC async timeout 기본값은 15초다.
+- executor rejection과 timeout interruption은 503, Gemini non-2xx는 502, Gemini timeout은 504, 내부 오류는 500을 유지한다.
+- k6는 `executor.active`, `executor.queued`, `executor.pool.size`를 Tomcat metric과 함께 수집한다.
+
+검증:
+
+- 동기 50 VU는 summary 220건/6.28 RPS/p95 8.98초, popular 32건/0.91 RPS/p95 5.97초, Tomcat busy 20/20이었다.
+- async 20 VU는 summary 6.12 RPS/p95 3.39초, popular 23.38 RPS/p95 160.99ms, Tomcat busy peak 6, executor active 20/queued 0이었다.
+- async 50 VU는 summary 220건/6.29 RPS/p95 9.15초, popular 784건/22.40 RPS/p95 172.98ms, Tomcat busy peak 8이었다.
+- async 50 VU executor는 active 20/queued 30으로, 병목이 제거되지 않고 bounded pool로 격리됐음을 확인했다.
+- mock 500은 async dispatch에서도 502를 유지했고, local 1초 MVC async timeout은 약 1.81초에 503을 반환했다.
+- 전체 Gradle test에 controller defer, task rejection 503, interruption 503, unexpected 500 회귀 테스트를 포함한다.
+- 테스트 기사 summary는 기존 길이 420으로 복원했고 임시 table 및 backend/mock 프로세스를 제거했다.
+
+판단:
+
+- 50 VU에서 popular p95가 약 97.1% 감소하고 RPS가 약 24.5배로 회복해 Servlet request-thread 격리 효과가 확인됐다.
+- summary 자체 capacity/latency는 개선되지 않았으므로 외부 API 성능 개선 또는 완전한 non-blocking 처리로 표현하지 않는다.
+- queue peak 30과 503 overload 정책을 남겼으며 Kafka/WebFlux 도입은 별도 요구가 생기기 전까지 보류한다.
+
+Reviewer 필요성:
+
+- API 실행 방식, executor/timeout 설정, 503 오류 정책, k6 계측이 변경되므로 Reviewer 검토가 필요하다.
 
 ---
 

@@ -13,6 +13,7 @@ public enum GlobalErrorStatus implements BaseResponse {
     _FORBIDDEN(HttpStatus.FORBIDDEN, "해당 요청에 접근 권한이 없습니다."),
     _NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 리소스입니다."),
     _CONFLICT(HttpStatus.CONFLICT,"잘못된 입력입니다."),
+    _SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "요청이 많아 잠시 후 다시 시도해주세요."),
     _INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 에러가 발생하였습니다.");
 
     private final HttpStatus httpStatus;

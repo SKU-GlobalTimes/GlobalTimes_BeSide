@@ -21,6 +21,9 @@ export const popularDuration = new Trend('popular_duration', true);
 export const tomcatThreadsBusy = new Gauge('tomcat_threads_busy');
 export const tomcatThreadsCurrent = new Gauge('tomcat_threads_current');
 export const tomcatThreadsMax = new Gauge('tomcat_threads_max');
+export const asyncExecutorActive = new Gauge('async_executor_active');
+export const asyncExecutorQueued = new Gauge('async_executor_queued');
+export const asyncExecutorPoolSize = new Gauge('async_executor_pool_size');
 export const metricsFailures = new Rate('thread_metrics_failures');
 
 const scenarios = {
@@ -61,8 +64,8 @@ export const options = {
   },
 };
 
-function metricValue(name) {
-  const res = http.get(`${BASE_URL}/actuator/metrics/${name}`, {
+function metricValue(name, query = '') {
+  const res = http.get(`${BASE_URL}/actuator/metrics/${name}${query}`, {
     tags: { api: 'thread_saturation', endpoint: 'thread_metrics', metric: name },
   });
 
@@ -113,9 +116,16 @@ export function threadMetrics() {
   const busy = metricValue('tomcat.threads.busy');
   const current = metricValue('tomcat.threads.current');
   const max = metricValue('tomcat.threads.config.max');
+  const executorQuery = '?tag=name:aiSummaryExecutor';
+  const executorActive = metricValue('executor.active', executorQuery);
+  const executorQueued = metricValue('executor.queued', executorQuery);
+  const executorPoolSize = metricValue('executor.pool.size', executorQuery);
 
   if (busy !== null) tomcatThreadsBusy.add(busy);
   if (current !== null) tomcatThreadsCurrent.add(current);
   if (max !== null) tomcatThreadsMax.add(max);
+  if (executorActive !== null) asyncExecutorActive.add(executorActive);
+  if (executorQueued !== null) asyncExecutorQueued.add(executorQueued);
+  if (executorPoolSize !== null) asyncExecutorPoolSize.add(executorPoolSize);
   sleep(METRICS_SLEEP_SECONDS);
 }

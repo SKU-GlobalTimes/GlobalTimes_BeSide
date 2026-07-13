@@ -87,7 +87,7 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ### P2 후속 후보. Gemini 동기 호출 servlet thread 포화 및 API 영향 측정
 
-- 상태: `Verified` ([#186](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/186))
+- 상태: `Done` ([#186](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/186), [PR #187](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/187))
 - AS-IS: #182에서 mock latency가 summary p95를 지배함을 확인했지만, 동기 `.block()` 호출이 servlet thread를 얼마나 점유하고 다른 조회 API 지연으로 전파되는지는 측정하지 않았다.
 - TO-BE: 로컬 Tomcat thread 수와 Gemini mock 3초 지연을 통제하고, summary VU 증가에 따른 RPS/p95/실패율, busy thread, 동시 `popular` API p95를 같은 실행 구간에서 측정한다.
 - 범위 경계:
@@ -98,6 +98,19 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
   - 같은 실행에서 `popular` p95는 대조군 154.46ms에서 2.86초로 약 18.5배 증가하고 RPS는 24.55에서 3.71로 감소했다.
   - `popular` 내부 `dbQueryMs` 36~42ms, `totalMs` 68~76ms와 client p95 차이로 servlet thread 대기 전파를 확인했다.
   - 20 VU에서 포화가 명확해 50 VU는 안전 중단 기준에 따라 생략했고, async 전후 비교를 별도 후속 후보로 남긴다.
+
+### P2 후속 후보. Gemini summary Servlet async 전환 전후 비교
+
+- 상태: `Done` ([#188](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/188), [PR #189](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/189))
+- AS-IS: 동기 20 VU에서 Tomcat thread 20/20과 popular 지연 전파를 확인했지만, 별도 worker 격리가 실제로 다른 API를 보호하는지는 검증하지 않았다.
+- TO-BE: 동기 50 VU 기준선을 추가하고 `WebAsyncTask + bounded executor` 적용 후 20/50 VU를 같은 조건에서 비교한다.
+- 검증 결과:
+  - 동기 50 VU는 summary 6.28 RPS/p95 8.98초, popular 0.91 RPS/p95 5.97초, Tomcat busy 20/20이었다.
+  - async 50 VU는 summary 6.29 RPS/p95 9.15초로 비슷했지만 popular는 22.40 RPS/p95 172.98ms, Tomcat busy peak 8/20으로 회복했다.
+  - async executor는 active 20, queue peak 30이어서 병목 제거가 아니라 bounded pool 격리임을 확인했다.
+  - mock 500은 502, MVC async timeout과 executor rejection은 503, 내부 오류는 500으로 분리한다.
+- 범위 경계:
+  - 전면 WebFlux, Kafka, retry/circuit breaker, SSE/ask/Trend 변경은 현재 근거 대비 과해 제외한다.
 
 ## P2-1. 검색 API FULLTEXT 성능 기준선
 

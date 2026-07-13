@@ -57,10 +57,10 @@ Reviewer 이후 diff 변경을 피하기 위해 merge 후 `WORK_PROGRESS.md`만 
   - #180/#181 is merged and closed. The single-instance popular baseline concluded that 20 VU was stable at about 87 RPS and 50 VU was a saturation signal.
   - #182/#183 is merged and closed. Controlled 200ms/1s/3s and 500-response measurements established the Gemini mock baseline without real API cost.
   - #184/#185 is merged and closed. The fixed 90-second summary timeout was replaced with configurable 10 seconds, with Gemini non-2xx as 502, timeout as 504, and internal parsing errors as 500.
-  - Current active work is #186 `[PERF] Gemini 동기 호출 servlet thread 포화 및 API 영향 측정` on branch `perf/#186-gemini-thread-saturation`.
-  - #186 uses a local-only 20-thread Tomcat limit, 3-second Gemini mock, summary VU steps, and fixed popular load to measure the request-thread ceiling and cross-API p95 propagation.
-  - At 20 summary VUs, Tomcat reached 20/20 busy threads, summary throughput was 6.09 RPS, and concurrent popular p95 rose from the 154ms control to 2.86 seconds.
-  - 50 VU was skipped because the 20 VU run already met the safety stop rule. Async conversion remains out of #186 scope but now has evidence for a separate before/after issue.
+  - #186/#187 is merged and closed. At 20 summary VUs, Tomcat reached 20/20 busy threads and concurrent popular p95 rose from the 154ms control to 2.86 seconds.
+  - #188/#189 is merged and closed. It added a synchronous 50 VU baseline and a `WebAsyncTask + bounded executor` comparison at 20/50 VU.
+  - At 50 VU, popular p95 changed from 5.97 seconds synchronous to 173ms async while summary stayed near 6.29 RPS and 9 seconds p95.
+  - Tomcat busy peak changed from 20 to 8; the async executor reached 20 active and 30 queued, so the bottleneck was isolated rather than removed.
 
 - Repo: `SKU-GlobalTimes/GlobalTimes_BeSide`
 - Base branch: `develop`
@@ -108,29 +108,25 @@ pure relevance-first는 wrong-context 기사를 끌어올릴 수 있어 바로 �
 
 ## Recommended Next Backend Issue
 
-현재 진행 중:
+현재 진행 중인 backend improvement Issue는 없다.
 
 ```text
-#186 [PERF] Gemini 동기 호출 servlet thread 포화 및 API 영향 측정
+다음 후보는 develop 최신화와 열린 Issue/PR 재확인 후 선정
 ```
 
-목표:
+최근 완료:
 
-- 로컬 Tomcat request thread를 20개로 통제하고 Gemini mock 3초 지연에서 동기 `.block()` 경로의 포화 시점을 재현한다.
-- summary RPS/p95/failure와 Tomcat busy thread를 측정하고, 고정 5 VU `popular` 조회의 p95가 함께 상승하는지 확인한다.
-- 8GB 로컬 환경을 고려해 `5 -> 10 -> 20 -> 50 VU` 순서로 진행하고 명확한 포화가 나타나면 더 높은 단계를 생략한다.
-- async 구현은 #186 결과가 thread 포화와 다른 API 지연 전파를 함께 증명할 때 별도 Issue로 검토한다.
+- 동기 50 VU에서 실제 post-ceiling RPS/p95와 popular 지연 전파를 측정한다.
+- `WebAsyncTask + bounded executor`로 summary blocking 작업을 격리하고 같은 20/50 VU 조건을 비교한다.
+- Tomcat busy와 executor active/queued를 함께 기록해 병목 제거와 격리를 구분한다.
+- API 응답 의미를 유지하고 timeout/rejection overload는 503으로 분리한다.
 
-현재 측정에서는 20 summary VU에서 busy thread가 20/20에 도달했고, summary는 6.09 RPS/p95 3.23초, 동시 popular는 대조군 p95 154ms에서 2.86초로 상승했다.
-따라서 #186 이후 후보는 같은 조건에서 servlet thread를 반환하는 최소 async 경계를 적용하고 busy thread, summary RPS/p95, popular p95를 before/after 비교하는 작업이다.
+현재 측정에서는 async 50 VU에서 summary 자체 처리량/p95는 개선되지 않았지만 popular p95가 5.97초에서 173ms로 감소했고 Tomcat busy peak가 20에서 8로 줄었다.
+executor active 20/queued 30을 함께 기록했으므로 완전한 non-blocking 또는 병목 제거로 과장하지 않는다.
 
 다음 세션에서 새 후보를 고를 때는 먼저 develop 최신화, 열린 Issue/PR 확인, `WORK_PROGRESS.md`와 `BACKLOG.md` 확인을 다시 수행한다.
 #110은 사용자가 별도로 지시하기 전까지 다루지 않는다.
 #162 guardrail에 따라 "지금 구현하면 과한가?"를 먼저 판단한다.
-#180은 운영 코드 변경 없이 측정 결과와 판단 기준을 남기는 범위다.
-현재 측정에서는 `popular` 20 VU에서 약 87 RPS, p95 약 105ms, failure 0.00%였고, 50 VU에서는 약 86 RPS로 처리량이 늘지 않은 채 p95가 약 456ms로 상승했다.
-따라서 20 VU 구간을 이 로컬 환경의 안정 baseline으로 보고, 50 VU 구간은 단일 인스턴스 포화 신호로 해석한다.
-다음 후속 후보로 `[PERF] AI 질의응답 Gemini 외부 호출 mock latency 부하 테스트`를 검토한다.
 
 #164 ADR 기준상 hybrid ranking code experiment는 아래 조건이 준비된 뒤 별도 Issue로 검토한다.
 
