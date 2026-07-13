@@ -53,6 +53,14 @@ Reviewer 이후 diff 변경을 피하기 위해 merge 후 `WORK_PROGRESS.md`만 
 
 ## Current Snapshot
 
+- Active work override, 2026-07-13:
+  - #180/#181 is merged and closed. The single-instance popular baseline concluded that 20 VU was stable at about 87 RPS and 50 VU was a saturation signal.
+  - Current active work is #182 `[PERF] Gemini mock latency 기반 외부 호출 병목 기준선 수립` on branch `perf/#182-gemini-mock-latency-baseline`, PR #183.
+  - #182 changes runtime testability only: configurable `gemini.base-url`, local test flag `AI_SUMMARY_SAVE_ENABLED=false`, lightweight mock Gemini server, and `gemini-mock-latency-baseline.md`.
+  - #182 is Verified after controlled 200ms/1s/3s and 500-response measurements; PR #183 awaits Reviewer re-check and merge approval.
+  - Normal-path p95 followed mock latency, 200ms/20 VU reached 57.80 RPS with 0% failures, and mock 500 propagated as backend 5xx for 43/43 requests.
+  - Do not generalize this local mock result to real Gemini capacity; timeout/fallback/async changes remain a separate follow-up decision.
+
 - Repo: `SKU-GlobalTimes/GlobalTimes_BeSide`
 - Base branch: `develop`
 - Long-running open issue: #110 `[Troubleshooting] 서비스 설계의 근본적 한계`

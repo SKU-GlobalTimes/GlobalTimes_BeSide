@@ -106,7 +106,8 @@ Blocking 예시:
 - #174/#175에서 주요 기사 조회 API 고부하 부하 테스트 및 DB 병목 기준선을 수립했다.
 - #176/#177에서 `popular` 기사 조회의 `Using filesort`가 현재 데이터 규모에서 인덱스 추가가 필요한 병목인지 k6와 `EXPLAIN ANALYZE`로 판단했다.
 - #178/#179에서 로컬 부하 테스트 시 애플리케이션 latency 로그와 Docker/local resource 지표를 같은 실행 구간에 캡처하는 관측 runbook을 정리했다.
-- #180에서 주요 조회 API 단일 인스턴스 TPS 한계와 포화 신호 구간을 정리 중이다.
+- #180/#181에서 주요 조회 API 단일 인스턴스 TPS 한계와 포화 신호 구간을 정리했다.
+- #182에서 Gemini mock latency 기반 외부 호출 병목 기준선 측정을 완료했고 PR #183 merge를 기다리고 있다.
 - 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140, #142, #146)와 AI workflow 보강(#144)은 merge 완료 상태다.
 
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
@@ -1794,6 +1795,66 @@ PR comment 조회
 ```
 
 이 흐름이 2~3개 이상의 실제 개선 PR에서 반복되면, MCP tool로 묶는 것이 자연스럽다.
+
+### #182 - Gemini mock latency 기반 외부 호출 병목 기준선 수립
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/182
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/183
+- 작업 브랜치: `perf/#182-gemini-mock-latency-baseline`
+- 상태: Verified (Reviewer Blocking 반영 후 재검토 대기)
+- 주요 파일:
+  - `src/main/java/com/example/globalTimes_be/global/config/GeminiConfig.java`
+  - `src/main/java/com/example/globalTimes_be/domain/ai/controller/AiController.java`
+  - `src/main/resources/application.yml`
+  - `load-tests/mock-gemini-server.js`
+  - `docs/backend-improvement/gemini-mock-latency-baseline.md`
+
+목표:
+
+- 실제 Gemini API 비용, quota, rate limit, 응답 편차 없이 외부 AI 호출 지연을 통제한다.
+- `GET /api/ai/{id}/summary` 사용자-facing 경로에서 mock AI latency가 p95, RPS/TPS, failure rate에 주는 영향을 측정할 수 있게 한다.
+- 기존 k6 VU/RPS 결과를 바탕으로 8GB 로컬 노트북에서 안전한 점진 부하 범위를 정한다.
+
+Overengineering 판단:
+
+- Kafka, async queue, Redis cache, real Gemini 부하 테스트는 현재 증거 대비 과하다.
+- summary cache 때문에 첫 요청 이후 Gemini 경로가 skip되므로, 테스트 전용 `AI_SUMMARY_SAVE_ENABLED=false`가 필요하다.
+- production 기본값은 `true`로 유지해 기존 API 동작을 바꾸지 않는다.
+- `gemini.base-url`도 기본값을 실제 Gemini URL로 유지하고, 로컬 테스트에서만 mock server URL로 override한다.
+
+조사/근거:
+
+- #180 단일 인스턴스 popular 기준선은 20 VU에서 약 87 RPS, p95 약 105ms, failure 0.00%였다.
+- #180 50 VU에서는 RPS가 약 86으로 증가하지 않고 p95가 456ms로 상승해 로컬/애플리케이션 포화 신호로 해석했다.
+- #176 popular-focused 20/50/100 VU도 RPS가 `106.29/s -> 114.33/s -> 123.61/s`로 완만히 증가하는 동안 p95는 `134.87ms -> 423.79ms -> 902.51ms`로 크게 상승했다.
+- 따라서 Gemini mock 테스트는 50+ VU가 아니라 `1 -> 3 -> 5 -> 10 -> 20 VU` 순서로 점진 수행한다.
+
+구현 및 측정 결과:
+
+- `gemini.base-url`을 설정화해 local mock server로 redirect할 수 있게 한다.
+- `ai.summary-save-enabled`를 추가해 로컬 부하 테스트에서만 summary 저장을 끄고 반복 AI-path 측정을 가능하게 한다.
+- Node 내장 `http` 기반 mock Gemini server를 추가한다.
+- `200ms`는 1/3/5/10/20 VU에서 p95 `262.90~289.96ms`, 최대 57.80 RPS, failure 0.00%였다.
+- `1000ms`는 1/3/5 VU에서 p95 `1040.88~1057.59ms`, 최대 4.39 RPS, failure 0.00%였다.
+- `3000ms`는 1/3/5 VU에서 p95 `3039.06~3051.71ms`, 최대 1.59 RPS, failure 0.00%였다.
+- mock 500 응답은 1 VU/15초에서 43건 모두 backend 5xx로 전파되어 failure 100.00%였고, 의도대로 k6 threshold를 위반했다.
+- 대표 로그는 `summaryHit=false`, `aiRequested=true`, `summarySaveMs=0`을 확인했으며 `aiSummaryMs`는 200ms/1s/3s 조건에서 각각 224ms/1033ms/3020ms였다.
+- 테스트에 사용한 기사 summary는 측정 전 백업하고 측정 후 원래 값으로 복원했으며 임시 DB table도 제거했다.
+- 결과는 `docs/backend-improvement/gemini-mock-latency-baseline.md`에 실행 조건과 해석 경계까지 기록했다.
+
+판단:
+
+- 정상 경로의 p95는 mock latency를 거의 그대로 따라 외부 동기 호출이 사용자 응답 지연을 지배한다.
+- 테스트 범위에서는 VU 증가에 따른 처리량 증가가 유지되어 로컬 포화 신호는 발견되지 않았다.
+- 실제 Gemini quota/network/rate limit을 제외한 mock 결과이므로 운영 용량으로 일반화하지 않는다.
+- Gemini 5xx가 사용자-facing 5xx로 전파되는 현상은 확인했지만, timeout/fallback/async 도입은 별도 이슈에서 이 기준선과 비교해 판단한다.
+
+Reviewer 필요성:
+
+- 운영 기본 동작은 유지하지만 runtime config와 테스트 스크립트가 추가되므로 Reviewer 검토 대상이다.
+- 최초 Reviewer는 실제 측정 없이 #182를 닫는 상태 불일치를 Blocking으로 지적했고, 위 측정과 `Verified` 상태 갱신으로 반영했다.
+
+---
 
 ## 5. 다음 세션에서 바로 이어가기 위한 시작 프롬프트
 

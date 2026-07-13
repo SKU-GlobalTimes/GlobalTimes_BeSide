@@ -35,8 +35,8 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## P1. 주요 조회 API 관측성 및 성능 기준선 확보
 
-- 상태: `In Progress` ([#180](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/180))
-- 완료 근거: [#121](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/121), [#174](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/174), [#176](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/176), [#178](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/178)
+- 상태: `Done` ([#180](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/180), [PR #181](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/181))
+- 완료 근거: [#121](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/121), [#174](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/174), [#176](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/176), [#178](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/178), [#180](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/180)
 - AS-IS: 캐시 미스 시 기사 조회, 키워드 추출, 번역 API 호출, FULLTEXT 검색이 요청 경로에서 수행되지만 단계별 지연 시간과 캐시 효과를 수치로 설명할 수 없다.
 - TO-BE: 캐시 히트율, 단계별 처리 시간, 외부 번역 API 호출량, p95 응답 시간을 측정하고 부하 테스트 기준선을 만든다.
 - 성공 기준:
@@ -61,7 +61,7 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ### P2 후속 후보. Gemini mock latency 부하 테스트
 
-- 상태: `Backlog`
+- 상태: `Verified` ([#182](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/182), [PR #183](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/183))
 - AS-IS: 기사 상세의 AI 요약/질의응답 경로에는 Gemini 외부 호출이 포함될 수 있지만, 실제 Gemini API로 부하 테스트를 반복하면 비용, quota, rate limit, 응답 편차 문제가 생긴다.
 - TO-BE: mock AI 서버로 latency `200ms`, `1s`, `3s`, `timeout/5xx` 조건을 통제하고, 사용자 요청 경로의 p95/오류율/fallback 동작을 측정한다.
 - 진행 조건:
@@ -69,6 +69,9 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
   - mock 서버는 테스트/로컬 설정에만 사용하고 운영 API key, prompt 전문, 사용자 질문 전문은 문서/로그에 남기지 않는다.
 - 예상 이슈:
   - `[PERF] AI 질의응답 Gemini 외부 호출 mock latency 부하 테스트`
+- 측정 결과:
+  - 정상 응답은 mock 200ms/1s/3s 조건에서 p95가 각각 약 263~290ms/1.04~1.06s/3.04~3.05s로 외부 지연을 따라갔다.
+  - mock 500 조건은 43/43 요청이 backend 5xx로 전파되어, timeout/fallback 정책 검토가 별도 후속 후보로 남았다.
 
 ## P2-1. 검색 API FULLTEXT 성능 기준선
 
