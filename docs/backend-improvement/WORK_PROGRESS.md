@@ -107,7 +107,8 @@ Blocking 예시:
 - #176/#177에서 `popular` 기사 조회의 `Using filesort`가 현재 데이터 규모에서 인덱스 추가가 필요한 병목인지 k6와 `EXPLAIN ANALYZE`로 판단했다.
 - #178/#179에서 로컬 부하 테스트 시 애플리케이션 latency 로그와 Docker/local resource 지표를 같은 실행 구간에 캡처하는 관측 runbook을 정리했다.
 - #180/#181에서 주요 조회 API 단일 인스턴스 TPS 한계와 포화 신호 구간을 정리했다.
-- #182에서 Gemini mock latency 기반 외부 호출 병목 기준선 측정을 완료했고 PR #183 merge를 기다리고 있다.
+- #182/#183에서 Gemini mock latency 기반 외부 호출 병목 기준선을 수립하고 merge를 완료했다.
+- #184에서 Gemini summary timeout 상한과 upstream 502/504 오류 분리를 진행 중이다.
 - 현재 반복 성능/안정성 기본기 흐름의 주요 후보(#123, #127, #129, #131, #133, #137, #140, #142, #146)와 AI workflow 보강(#144)은 merge 완료 상태다.
 
 ### #113 / PR #114 - 백엔드 개선 Backlog 및 AI 작업 운영 규칙 수립
@@ -1801,7 +1802,7 @@ PR comment 조회
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/182
 - PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/183
 - 작업 브랜치: `perf/#182-gemini-mock-latency-baseline`
-- 상태: Verified (Reviewer Blocking 반영 후 재검토 대기)
+- 상태: merged
 - 주요 파일:
   - `src/main/java/com/example/globalTimes_be/global/config/GeminiConfig.java`
   - `src/main/java/com/example/globalTimes_be/domain/ai/controller/AiController.java`
@@ -1853,6 +1854,55 @@ Reviewer 필요성:
 
 - 운영 기본 동작은 유지하지만 runtime config와 테스트 스크립트가 추가되므로 Reviewer 검토 대상이다.
 - 최초 Reviewer는 실제 측정 없이 #182를 닫는 상태 불일치를 Blocking으로 지적했고, 위 측정과 `Verified` 상태 갱신으로 반영했다.
+
+### #184 - Gemini 요약 API timeout 상한 및 upstream 오류 분리
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/184
+- 작업 브랜치: `fix/#184-gemini-timeout-upstream-errors`
+- 상태: Verified (PR 및 Reviewer 대기)
+- 주요 파일:
+  - `src/main/java/com/example/globalTimes_be/domain/ai/service/AiService.java`
+  - `src/main/java/com/example/globalTimes_be/domain/detail/exception/DetailErrorStatus.java`
+  - `src/main/resources/application.yml`
+  - `src/test/java/com/example/globalTimes_be/domain/ai/service/AiServiceTest.java`
+  - `docs/backend-improvement/gemini-timeout-upstream-error-policy.md`
+
+문제:
+
+- #182에서 Gemini mock 500이 43/43건 backend 500으로 전파되어 내부 오류와 외부 의존성 장애를 구분할 수 없었다.
+- `AiService`는 고정 90초 timeout을 사용해 장시간 upstream 지연이 사용자 요청을 오래 붙잡을 수 있었다.
+- 개선 전 mock 15초/1 VU/35초 조건은 3건 성공, 평균 15.43초, p95 16.08초였다.
+
+Overengineering 판단:
+
+- 현재 200ms/20 VU 범위에서 로컬 포화 신호가 없어 async queue, Kafka, circuit breaker를 바로 도입할 근거가 부족하다.
+- 기사 원문을 summary처럼 반환하는 fallback은 API 의미를 바꾸므로 제외한다.
+- 이번 이슈는 timeout 상한과 오류 원인 분리만 적용하고 SSE/Trend Gemini 경로는 변경하지 않는다.
+
+구현:
+
+- `gemini.timeout-ms` 기본값을 10000ms로 추가하고 기존 고정 90초를 교체했다.
+- Gemini non-2xx는 502 Bad Gateway, timeout은 504 Gateway Timeout, 내부 파싱 오류는 기존 500으로 분리했다.
+- 외부 오류 body 대신 status만 로그에 남기고 timeout 로그에는 설정값만 기록한다.
+- JDK local HTTP server 기반 `AiServiceTest`로 정상, 502, 504, 내부 500을 회귀 테스트한다.
+
+검증:
+
+- 전체 Gradle test 22건 통과.
+- 개선 후 동일 mock 15초 조건은 4건 504, 평균 10.16초, p95 10.42초로 대기 상한이 줄었다.
+- 단건 API 검증은 mock 15초에서 504/10.04초, mock 500/200ms에서 502/0.31초, mock 3초 정상 조건에서 200/3.09초였다.
+- 개선 후 long-delay k6 threshold 실패는 의도된 결과이며, 성공률 개선이 아니라 bounded wait와 오류 분리가 목표다.
+- 테스트 기사 summary는 원복했고 임시 DB table은 제거했다.
+
+판단:
+
+- 이력서에서는 `Gemini 외부 호출 timeout 및 502/504 오류 분리, mock before/after 검증`으로 압축할 수 있다.
+- 실제 Gemini latency나 처리량으로 일반화하지 않는다.
+- 후속 async/retry/circuit breaker는 별도 근거와 이슈 승인 전까지 구현하지 않는다.
+
+Reviewer 필요성:
+
+- 운영 timeout 기본값과 HTTP 오류 응답이 변경되므로 Reviewer 검토가 필요하다.
 
 ---
 

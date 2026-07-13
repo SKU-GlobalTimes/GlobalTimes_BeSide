@@ -46,6 +46,7 @@ spring:
 gemini:
   api-key: ${GEMINI_API_KEY}
   base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com}
+  timeout-ms: ${GEMINI_TIMEOUT_MS:10000}
 
 # JWT 설정
 jwt:

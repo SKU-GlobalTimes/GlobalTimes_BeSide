@@ -13,6 +13,7 @@ import reactor.core.publisher.Mono;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -26,6 +27,9 @@ public class AiService {
     @Value("${gemini.api-key}")
     private String geminiApiKey;
 
+    @Value("${gemini.timeout-ms:10000}")
+    private long geminiTimeoutMs;
+
     private static final String GEMINI_MODEL = "gemini-2.5-flash";
 
     public String summarizeArticle(String crawledContent, String language) {
@@ -35,16 +39,27 @@ public class AiService {
                 .retrieve()
                 .onStatus(
                         status -> !status.is2xxSuccessful(),
-                        response -> response.bodyToMono(String.class)
-                                .doOnNext(body -> log.error("[Gemini] API ?? ??: {}", body))
-                                .then(Mono.error(new BaseException(DetailErrorStatus._GPT_ERROR.getResponse())))
+                        response -> {
+                            log.warn("[Gemini] upstreamError=true status={}", response.statusCode().value());
+                            return response.releaseBody()
+                                    .then(Mono.error(new BaseException(
+                                            DetailErrorStatus._GEMINI_UPSTREAM_ERROR.getResponse()
+                                    )));
+                        }
                 )
                 .bodyToMono(Map.class)
-                .timeout(Duration.ofSeconds(90))
+                .timeout(Duration.ofMillis(geminiTimeoutMs))
+                .onErrorMap(
+                        TimeoutException.class,
+                        ex -> {
+                            log.warn("[Gemini] timeout=true timeoutMs={}", geminiTimeoutMs);
+                            return new BaseException(DetailErrorStatus._GEMINI_TIMEOUT.getResponse());
+                        }
+                )
                 .onErrorMap(
                         ex -> !(ex instanceof BaseException),
                         ex -> {
-                            log.error("[Gemini] ?? ??: {}", ex.getMessage());
+                            log.error("[Gemini] internalError=true type={}", ex.getClass().getSimpleName());
                             return new BaseException(DetailErrorStatus._GPT_ERROR.getResponse());
                         }
                 )

@@ -61,7 +61,7 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ### P2 후속 후보. Gemini mock latency 부하 테스트
 
-- 상태: `Verified` ([#182](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/182), [PR #183](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/183))
+- 상태: `Done` ([#182](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/182), [PR #183](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/183))
 - AS-IS: 기사 상세의 AI 요약/질의응답 경로에는 Gemini 외부 호출이 포함될 수 있지만, 실제 Gemini API로 부하 테스트를 반복하면 비용, quota, rate limit, 응답 편차 문제가 생긴다.
 - TO-BE: mock AI 서버로 latency `200ms`, `1s`, `3s`, `timeout/5xx` 조건을 통제하고, 사용자 요청 경로의 p95/오류율/fallback 동작을 측정한다.
 - 진행 조건:
@@ -72,6 +72,18 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 - 측정 결과:
   - 정상 응답은 mock 200ms/1s/3s 조건에서 p95가 각각 약 263~290ms/1.04~1.06s/3.04~3.05s로 외부 지연을 따라갔다.
   - mock 500 조건은 43/43 요청이 backend 5xx로 전파되어, timeout/fallback 정책 검토가 별도 후속 후보로 남았다.
+
+### P2 후속 후보. Gemini timeout 상한 및 upstream 오류 분리
+
+- 상태: `Verified` ([#184](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/184))
+- AS-IS: article summary의 Gemini 호출은 고정 90초 timeout을 사용하고 non-2xx, timeout, 내부 파싱 오류를 모두 backend 500으로 반환한다.
+- TO-BE: 10초 설정형 timeout으로 사용자 대기 상한을 줄이고, Gemini non-2xx는 502, timeout은 504, 내부 오류는 500으로 분리한다.
+- 검증 결과:
+  - mock 15초 조건 p95가 개선 전 16.08초에서 개선 후 10.42초로 제한됐다.
+  - mock 500은 약 0.31초에 backend 502, mock 15초는 약 10.04초에 backend 504를 반환했다.
+  - mock 3초 정상 응답은 약 3.09초에 backend 200으로 유지됐다.
+- 범위 경계:
+  - retry, circuit breaker, async queue, SSE/Trend Gemini 정책 변경은 현재 근거 대비 과해 제외한다.
 
 ## P2-1. 검색 API FULLTEXT 성능 기준선
 
