@@ -1542,7 +1542,8 @@ Reviewer 결과:
 ### #180 - 주요 조회 API 단일 인스턴스 TPS 한계와 병목 지점 정리
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/180
-- 상태: In Progress
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/181
+- 상태: merged
 - 작업 브랜치: `perf/#180-single-instance-tps-baseline`
 - 주요 파일:
   - `.gitignore`
@@ -1858,8 +1859,9 @@ Reviewer 필요성:
 ### #184 - Gemini 요약 API timeout 상한 및 upstream 오류 분리
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/184
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/185
 - 작업 브랜치: `fix/#184-gemini-timeout-upstream-errors`
-- 상태: Verified (PR 및 Reviewer 대기)
+- 상태: merged
 - 주요 파일:
   - `src/main/java/com/example/globalTimes_be/domain/ai/service/AiService.java`
   - `src/main/java/com/example/globalTimes_be/domain/detail/exception/DetailErrorStatus.java`
@@ -1903,6 +1905,62 @@ Overengineering 판단:
 Reviewer 필요성:
 
 - 운영 timeout 기본값과 HTTP 오류 응답이 변경되므로 Reviewer 검토가 필요하다.
+
+### #186 - Gemini 동기 호출 servlet thread 포화 및 API 영향 측정
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/186
+- 작업 브랜치: `perf/#186-gemini-thread-saturation`
+- 상태: In Progress
+- 주요 파일:
+  - `build.gradle`
+  - `src/main/resources/application.yml`
+  - `load-tests/k6/gemini-thread-saturation.js`
+  - `docs/backend-improvement/gemini-servlet-thread-saturation-baseline.md`
+
+목표:
+
+- Gemini 3초 동기 호출 중 servlet request thread가 점유되는 구조를 Tomcat thread metric과 k6 지표로 수치화한다.
+- summary 부하가 증가할 때 Tomcat request thread ceiling 도달과 동시 `popular` 조회 p95의 지연 전파를 같은 실행 구간에서 확인한다.
+
+Overengineering 판단:
+
+- async, queue, retry, circuit breaker를 바로 구현하지 않고 현재 동기 구조의 실제 포화 근거를 먼저 측정한다.
+- 로컬 Tomcat 최대 thread를 20개로 제한해 8GB 노트북에서 낮은 VU로 재현 가능한 실험을 구성한다.
+- Actuator web endpoint는 기본 노출하지 않고 로컬 부하 테스트 환경변수에서만 health/metrics endpoint를 노출한다.
+- Tomcat 세부 thread metric에 필요한 MBean registry도 로컬 실행 환경변수에서만 활성화한다.
+
+구현 및 검증 계획:
+
+- summary VU를 `5 -> 10 -> 20 -> 50`, `popular`는 5 VU로 고정한다.
+- k6에서 summary/popular 요청 수, p95, failure를 분리하고 `tomcat.threads.busy/current/config.max`를 함께 샘플링한다.
+- mock 3초 조건에서 summary 저장을 비활성화해 모든 요청이 외부 호출 경로를 타게 한다.
+- 명확한 포화가 나타나면 노트북 안전을 위해 다음 VU 단계를 생략할 수 있다.
+- 측정 후 async 적용 또는 보류 판단을 별도 후속 이슈 기준으로 남긴다.
+
+구현 및 검증 결과:
+
+- Spring Boot Actuator를 추가하고 기본 web exposure는 비워 두며, 로컬 환경변수에서만 health/metrics와 Tomcat MBean registry를 활성화한다.
+- `gemini-thread-saturation.js`에서 summary/popular 요청 수, RPS, p95, failure와 Tomcat busy/current/max thread를 같은 실행 구간에 기록한다.
+- popular-only 5 VU 대조군은 758건, 24.55 RPS, p95 154.46ms, busy peak 6/20이었다.
+- summary 5 VU는 50건/1.55 RPS/p95 3.30초, popular p95 199.10ms, busy peak 11/20이었다.
+- summary 10 VU는 100건/3.09 RPS/p95 3.20초, popular p95 170.39ms, busy peak 16/20이었다.
+- summary 20 VU는 200건/6.09 RPS/p95 3.23초, busy/current 20/20으로 포화됐다.
+- summary RPS는 `1.55 -> 3.09 -> 6.09`로 계속 증가했으므로 20 VU 이후 처리량 plateau 자체를 관측했다고 해석하지 않는다.
+- 같은 20 VU 실행에서 popular는 122건/3.71 RPS/p95 2.86초로, 대조군보다 p95가 약 18.5배 증가하고 RPS가 약 84.9% 감소했다. 실패율은 두 조건 모두 0.00%였다.
+- 20 VU 말미 popular 로그는 `dbQueryMs=36~42`, `totalMs=68~76`이어서 client p95 2.86초의 대부분은 DB 쿼리보다 servlet thread 대기로 해석한다.
+- MySQL/Redis의 측정 직후 point-in-time CPU는 약 1.09%/0.75%, 메모리는 약 472.7MiB/11.51MiB였고 Spring Boot working set은 약 510MiB였다.
+- 20 VU에서 포화와 다른 API 지연 전파가 이미 명확해 50 VU는 안전 중단 기준에 따라 생략했다.
+- 테스트 기사 7366 summary는 측정 전 백업하고 기존 길이 420으로 복원했으며 임시 백업 테이블과 mock/backend 프로세스를 정리했다.
+
+판단:
+
+- async가 Gemini 자체의 3초 응답을 줄이지는 않지만, servlet thread 점유와 다른 API queueing을 줄일 수 있는 비교 근거가 생겼다.
+- 후속 이슈는 동일한 20-thread/3-second mock/20 summary VU/5 popular VU 조건에서 최소 async 경계의 before/after만 검증한다.
+- 실제 Gemini 처리량, 운영 SLA, 멀티 인스턴스 capacity로 일반화하지 않는다.
+
+Reviewer 필요성:
+
+- runtime dependency, metrics 노출 설정, k6 스크립트가 변경되므로 Reviewer 검토가 필요하다.
 
 ---
 

@@ -56,10 +56,11 @@ Reviewer 이후 diff 변경을 피하기 위해 merge 후 `WORK_PROGRESS.md`만 
 - Active work override, 2026-07-13:
   - #180/#181 is merged and closed. The single-instance popular baseline concluded that 20 VU was stable at about 87 RPS and 50 VU was a saturation signal.
   - #182/#183 is merged and closed. Controlled 200ms/1s/3s and 500-response measurements established the Gemini mock baseline without real API cost.
-  - Current active work is #184 `[FIX] Gemini 요약 API timeout 상한 및 upstream 오류 분리` on branch `fix/#184-gemini-timeout-upstream-errors`.
-  - #184 replaces the fixed 90-second summary timeout with configurable 10 seconds and separates Gemini non-2xx as 502, timeout as 504, and internal parsing errors as 500.
-  - In the same 15-second mock condition, p95 changed from 16.08 seconds before to 10.42 seconds after; 3-second normal response remained 200 and mock 500 returned 502.
-  - Retry, circuit breaker, async queue, and SSE/Trend Gemini policy changes remain out of scope.
+  - #184/#185 is merged and closed. The fixed 90-second summary timeout was replaced with configurable 10 seconds, with Gemini non-2xx as 502, timeout as 504, and internal parsing errors as 500.
+  - Current active work is #186 `[PERF] Gemini 동기 호출 servlet thread 포화 및 API 영향 측정` on branch `perf/#186-gemini-thread-saturation`.
+  - #186 uses a local-only 20-thread Tomcat limit, 3-second Gemini mock, summary VU steps, and fixed popular load to measure the request-thread ceiling and cross-API p95 propagation.
+  - At 20 summary VUs, Tomcat reached 20/20 busy threads, summary throughput was 6.09 RPS, and concurrent popular p95 rose from the 154ms control to 2.86 seconds.
+  - 50 VU was skipped because the 20 VU run already met the safety stop rule. Async conversion remains out of #186 scope but now has evidence for a separate before/after issue.
 
 - Repo: `SKU-GlobalTimes/GlobalTimes_BeSide`
 - Base branch: `develop`
@@ -76,7 +77,7 @@ Reviewer 이후 diff 변경을 피하기 위해 merge 후 `WORK_PROGRESS.md`만 
 - #174/#175에서 주요 기사 조회 API 고부하 부하 테스트 및 DB 병목 기준선 수립을 완료했다.
 - #176/#177에서 `articles popular` 조회의 `Using filesort`를 k6 고부하 지표와 MySQL `EXPLAIN ANALYZE`로 확인하고, 현재 데이터 규모에서는 인덱스 추가를 보류했다.
 - #178/#179에서 로컬 부하 테스트 시 k6 결과, 애플리케이션 latency 로그, Docker 리소스 지표를 같은 실행 구간에 묶어 해석하는 runbook을 완료했다.
-- #180에서 주요 조회 API 단일 인스턴스 TPS 한계와 병목 지점을 정리 중이다.
+- #180/#181에서 주요 조회 API 단일 인스턴스 TPS 한계와 병목 지점 정리를 완료했다.
 
 ## Recent Completed Work
 
@@ -110,16 +111,18 @@ pure relevance-first는 wrong-context 기사를 끌어올릴 수 있어 바로 �
 현재 진행 중:
 
 ```text
-#180 [PERF] 주요 조회 API 단일 인스턴스 TPS 한계와 병목 지점 정리
+#186 [PERF] Gemini 동기 호출 servlet thread 포화 및 API 영향 측정
 ```
 
 목표:
 
-- 로컬 Docker 기반 단일 Spring Boot 인스턴스에서 `popular` 조회의 안정 처리량과 포화 신호 구간을 정리한다.
-- #178 runbook 기준으로 k6 RPS/p95/failure, 애플리케이션 `dbQueryMs`/`totalMs`, Docker/local resource 신호를 같은 실행 구간으로 해석한다.
-- 8GB 로컬 환경을 고려해 무리한 장시간/고 VU 테스트보다 `5 -> 10 -> 20 -> 50 VU` 점진 부하 결과를 우선 기록한다.
-- 운영 코드, DB schema/index, API 응답, Repository query, Redis/cache 정책, k6 script는 변경하지 않는다.
-- 이력서에 `단일 인스턴스 조회 API TPS 한계/포화 구간 측정`으로 압축 가능한 근거를 만든다.
+- 로컬 Tomcat request thread를 20개로 통제하고 Gemini mock 3초 지연에서 동기 `.block()` 경로의 포화 시점을 재현한다.
+- summary RPS/p95/failure와 Tomcat busy thread를 측정하고, 고정 5 VU `popular` 조회의 p95가 함께 상승하는지 확인한다.
+- 8GB 로컬 환경을 고려해 `5 -> 10 -> 20 -> 50 VU` 순서로 진행하고 명확한 포화가 나타나면 더 높은 단계를 생략한다.
+- async 구현은 #186 결과가 thread 포화와 다른 API 지연 전파를 함께 증명할 때 별도 Issue로 검토한다.
+
+현재 측정에서는 20 summary VU에서 busy thread가 20/20에 도달했고, summary는 6.09 RPS/p95 3.23초, 동시 popular는 대조군 p95 154ms에서 2.86초로 상승했다.
+따라서 #186 이후 후보는 같은 조건에서 servlet thread를 반환하는 최소 async 경계를 적용하고 busy thread, summary RPS/p95, popular p95를 before/after 비교하는 작업이다.
 
 다음 세션에서 새 후보를 고를 때는 먼저 develop 최신화, 열린 Issue/PR 확인, `WORK_PROGRESS.md`와 `BACKLOG.md` 확인을 다시 수행한다.
 #110은 사용자가 별도로 지시하기 전까지 다루지 않는다.

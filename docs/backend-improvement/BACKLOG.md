@@ -75,7 +75,7 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ### P2 후속 후보. Gemini timeout 상한 및 upstream 오류 분리
 
-- 상태: `Verified` ([#184](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/184))
+- 상태: `Done` ([#184](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/184), [PR #185](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/185))
 - AS-IS: article summary의 Gemini 호출은 고정 90초 timeout을 사용하고 non-2xx, timeout, 내부 파싱 오류를 모두 backend 500으로 반환한다.
 - TO-BE: 10초 설정형 timeout으로 사용자 대기 상한을 줄이고, Gemini non-2xx는 502, timeout은 504, 내부 오류는 500으로 분리한다.
 - 검증 결과:
@@ -84,6 +84,20 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
   - mock 3초 정상 응답은 약 3.09초에 backend 200으로 유지됐다.
 - 범위 경계:
   - retry, circuit breaker, async queue, SSE/Trend Gemini 정책 변경은 현재 근거 대비 과해 제외한다.
+
+### P2 후속 후보. Gemini 동기 호출 servlet thread 포화 및 API 영향 측정
+
+- 상태: `Verified` ([#186](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/186))
+- AS-IS: #182에서 mock latency가 summary p95를 지배함을 확인했지만, 동기 `.block()` 호출이 servlet thread를 얼마나 점유하고 다른 조회 API 지연으로 전파되는지는 측정하지 않았다.
+- TO-BE: 로컬 Tomcat thread 수와 Gemini mock 3초 지연을 통제하고, summary VU 증가에 따른 RPS/p95/실패율, busy thread, 동시 `popular` API p95를 같은 실행 구간에서 측정한다.
+- 범위 경계:
+  - 실제 포화 근거를 확보하기 전에는 async, queue, retry, circuit breaker를 구현하지 않는다.
+  - 8GB 로컬 환경에서 `5 -> 10 -> 20 -> 50 VU` 순서로 진행하고 명확한 포화가 나타나면 다음 단계를 생략한다.
+- 검증 결과:
+  - 20 summary VU에서 Tomcat busy/current가 20/20에 도달했고 summary는 6.09 RPS, p95 3.23초였다.
+  - 같은 실행에서 `popular` p95는 대조군 154.46ms에서 2.86초로 약 18.5배 증가하고 RPS는 24.55에서 3.71로 감소했다.
+  - `popular` 내부 `dbQueryMs` 36~42ms, `totalMs` 68~76ms와 client p95 차이로 servlet thread 대기 전파를 확인했다.
+  - 20 VU에서 포화가 명확해 50 VU는 안전 중단 기준에 따라 생략했고, async 전후 비교를 별도 후속 후보로 남긴다.
 
 ## P2-1. 검색 API FULLTEXT 성능 기준선
 
