@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.springframework.web.context.request.async.WebAsyncTask;
 
 @Tag(name = "AI 기사 분석", description = "기사 요약 및 질의 관련 API입니다.")
 public interface AiControllerDocs {
@@ -81,7 +82,7 @@ public interface AiControllerDocs {
                     )
             )
     })
-    public ResponseEntity<?> summarizeArticle(
+    public WebAsyncTask<ResponseEntity<com.example.globalTimes_be.global.apiPayload.code.ApiResponse>> summarizeArticle(
             @Parameter(description = "뉴스기사 ID", example = "1")
             @NotNull(message = "뉴스기사 id는 비어있을 수 없습니다.")
             @PathVariable Long id,

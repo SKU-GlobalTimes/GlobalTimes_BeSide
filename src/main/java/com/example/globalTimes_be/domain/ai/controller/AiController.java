@@ -7,16 +7,20 @@ import com.example.globalTimes_be.domain.detail.exception.DetailErrorStatus;
 import com.example.globalTimes_be.domain.detail.exception.DetailSuccessStatus;
 import com.example.globalTimes_be.domain.detail.service.DetailService;
 import com.example.globalTimes_be.global.apiPayload.code.ApiResponse;
+import com.example.globalTimes_be.global.apiPayload.code.status.GlobalErrorStatus;
 import com.example.globalTimes_be.global.apiPayload.code.status.GlobalSuccessStatus;
 import com.example.globalTimes_be.global.exception.BaseException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.springframework.web.context.request.async.WebAsyncTask;
 
 import java.util.Collections;
 
@@ -29,14 +33,32 @@ public class AiController implements AiControllerDocs {
     public final AiSseService aiSseService;
     public final DetailService detailService;
     public final AnonymousChatSessionService anonymousChatSessionService;
+    @Qualifier("aiSummaryExecutor")
+    public final AsyncTaskExecutor aiSummaryExecutor;
 
     @Value("${ai.summary-save-enabled:true}")
     private boolean summarySaveEnabled;
 
+    @Value("${ai.summary-async.timeout-ms:15000}")
+    private long summaryAsyncTimeoutMs;
+
     @Override
     @GetMapping(value = "/{id}/summary")
-    public ResponseEntity<ApiResponse> summarizeArticle(@PathVariable Long id,
-                                                        @RequestParam(defaultValue = "영어") String language) {
+    public WebAsyncTask<ResponseEntity<ApiResponse>> summarizeArticle(@PathVariable Long id,
+                                                                      @RequestParam(defaultValue = "영어") String language) {
+        WebAsyncTask<ResponseEntity<ApiResponse>> task = new WebAsyncTask<>(
+                summaryAsyncTimeoutMs,
+                aiSummaryExecutor,
+                () -> summarizeArticleSync(id, language)
+        );
+        task.onTimeout(() -> {
+            log.warn("[AiSummaryAsync] timeout=true timeoutMs={}", summaryAsyncTimeoutMs);
+            return ApiResponse.fail(GlobalErrorStatus._SERVICE_UNAVAILABLE.getResponse());
+        });
+        return task;
+    }
+
+    private ResponseEntity<ApiResponse> summarizeArticleSync(Long id, String language) {
         long startedAt = System.nanoTime();
 
         // DB에 저장된 요약이 있으면 GPT 스킵
