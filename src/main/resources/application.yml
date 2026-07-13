@@ -75,3 +75,12 @@ trend:
 ai:
   context-window-size: 10
   summary-save-enabled: ${AI_SUMMARY_SAVE_ENABLED:true}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE:}
+  endpoint:
+    health:
+      show-details: never
