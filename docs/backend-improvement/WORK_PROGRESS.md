@@ -2015,6 +2015,60 @@ Reviewer 필요성:
 
 - API 실행 방식, executor/timeout 설정, 503 오류 정책, k6 계측이 변경되므로 Reviewer 검토가 필요하다.
 
+### #190 - Gemini async executor 포화 503 및 queue 보호 검증
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/190
+- PR: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/191
+- 작업 브랜치: `test/#190-gemini-executor-overload`
+- 상태: Merged
+- 주요 파일:
+  - `load-tests/k6/gemini-thread-saturation.js`
+  - `docs/backend-improvement/gemini-executor-overload-protection.md`
+
+목표:
+
+- #188에서 실제로 도달하지 않은 bounded executor queue 포화와 HTTP 503 rejection 경로를 낮은 로컬 자원으로 재현한다.
+- 포화 중 popular API 보호와 부하 종료 후 executor 회복을 함께 확인한다.
+
+Overengineering 판단:
+
+- 기본 worker/queue를 바로 조정하거나 신규 미들웨어를 도입하지 않고, 로컬 환경변수로 5 workers/queue 10을 구성해 기존 보호 동작을 먼저 측정한다.
+- 결과는 EC2 또는 대규모 운영 capacity로 일반화하지 않고 향후 인스턴스별 설정과 부하 테스트의 기반으로 한정한다.
+
+계획:
+
+- k6에서 summary HTTP 200/503과 rejection 비율을 분리한다.
+- mock Gemini 3초, summary `10 -> 15 -> 20 -> 30 VU`, popular 5 VU, metrics 1 VU를 점진 실행한다.
+- executor active/queued, Tomcat busy, popular p95와 포화 후 낮은 VU 회복 결과를 기록한다.
+- 기본 executor 20/100 설정 변경은 이번 측정 결과와 별도 승인 없이는 진행하지 않는다.
+
+구현 및 검증 결과:
+
+- k6가 summary HTTP 200/503/unexpected 응답 수와 accepted/rejected latency를 분리하도록 보강했다.
+- 로컬 executor 5 workers/queue 10, Gemini mock 3초, popular 5 VU, metrics 1 VU 조건으로 10/15/20/30 VU를 각각 30초 실행했다.
+- 10 VU는 51/51건 200, queue peak 5, accepted p95 6.75초, popular p95 371.10ms였다.
+- 15 VU는 55/55건 200, active 5/queued 10, accepted p95 9.35초, popular p95 163.49ms였다.
+- 20 VU는 200 55건/503 1,158건, accepted p95 9.41초/rejected p95 49.55ms, queue peak 10, popular p95 254.51ms였다.
+- 30 VU는 200 55건/503 3,720건, accepted p95 9.34초/rejected p95 34.25ms, queue peak 10, popular p95 256.03ms였다.
+- 모든 단계에서 unexpected summary status, popular failure, metrics failure는 0이었다.
+- 20/30 VU의 높은 503 비율은 fast rejection 뒤 0.1초마다 재요청하는 closed-model 특성이므로 운영 실패율이나 capacity로 일반화하지 않는다.
+- 30 VU 종료 직후 active/queued는 0/0이었고 recovery 5 VU에서 25/25건 200, queue peak 0, summary p95 3.68초를 확인했다.
+- 앱 working set은 20 VU 종료 후 약 482MiB였고 MySQL/Redis는 약 486MiB/11.5MiB로 안정적이었다.
+- 테스트 기사 7366 summary를 기존 길이 420으로 복원하고 임시 backup table 및 backend/mock 프로세스를 제거했다.
+
+판단:
+
+- queue 10 상한과 실제 HTTP 503 dispatch, 포화 후 회복이 검증됐다.
+- queue 증가는 처리량을 늘리지 않으며, 15 VU accepted p95 9.35초는 5-worker 기준 queue 두 batch 대기를 보여준다.
+- 기본 20/100은 이번 축소 실험만으로 변경하지 않는다. 고정 인스턴스 환경에서 arrival RPS, Gemini latency/quota, 허용 대기시간을 함께 측정한 뒤 조정한다.
+- 빠른 503에 즉시 재시도하면 rejection storm을 만들 수 있으므로 실제 client는 delay/backoff가 필요하다.
+
+Reviewer 필요성:
+
+- k6 시나리오와 측정 문서가 변경되므로 Reviewer 검토가 필요하다.
+- 최초 Reviewer는 unexpected status를 5%까지 허용하는 threshold와 빠른 503이 섞인 aggregate summary p95 threshold를 Blocking으로 지적했다.
+- unexpected threshold를 `rate==0`, latency threshold를 HTTP 200 전용 `summary_accepted_duration p95<15초`로 변경해 두 Blocking을 반영했다.
+
 ---
 
 ## 5. 다음 세션에서 바로 이어가기 위한 시작 프롬프트

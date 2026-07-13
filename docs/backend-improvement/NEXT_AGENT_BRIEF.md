@@ -61,6 +61,9 @@ Reviewer 이후 diff 변경을 피하기 위해 merge 후 `WORK_PROGRESS.md`만 
   - #188/#189 is merged and closed. It added a synchronous 50 VU baseline and a `WebAsyncTask + bounded executor` comparison at 20/50 VU.
   - At 50 VU, popular p95 changed from 5.97 seconds synchronous to 173ms async while summary stayed near 6.29 RPS and 9 seconds p95.
   - Tomcat busy peak changed from 20 to 8; the async executor reached 20 active and 30 queued, so the bottleneck was isolated rather than removed.
+  - #190/#191 is merged and closed. It verified real HTTP 503 rejection, bounded queue protection, and recovery with a locally reduced executor.
+  - With a local 5-worker/queue-10 executor, 15 VU filled the queue without rejection and 20 VU was the first tested stage to return real HTTP 503 responses.
+  - At 20/30 VU the queue stayed at 10, accepted summary throughput stayed near 1.57 RPS, and popular p95 stayed near 255ms; a later 5 VU recovery returned 25/25 HTTP 200.
 
 - Repo: `SKU-GlobalTimes/GlobalTimes_BeSide`
 - Base branch: `develop`
@@ -116,10 +119,13 @@ pure relevance-first는 wrong-context 기사를 끌어올릴 수 있어 바로 �
 
 최근 완료:
 
-- 동기 50 VU에서 실제 post-ceiling RPS/p95와 popular 지연 전파를 측정한다.
-- `WebAsyncTask + bounded executor`로 summary blocking 작업을 격리하고 같은 20/50 VU 조건을 비교한다.
-- Tomcat busy와 executor active/queued를 함께 기록해 병목 제거와 격리를 구분한다.
-- API 응답 의미를 유지하고 timeout/rejection overload는 503으로 분리한다.
+- 로컬 executor를 5 workers/queue 10으로 축소해 높은 VU 없이 실제 rejection 경계를 재현한다.
+- summary 200/503, executor active/queued, Tomcat busy, popular p95를 같은 구간에서 기록한다.
+- 부하 종료 후 queue 감소와 정상 summary 응답 회복을 확인한다.
+- 기본 20/100 설정은 결과와 별도 승인 없이 변경하지 않는다.
+
+측정은 완료됐다. 20/30 VU에서 초과 요청은 503으로 빠르게 거절되고 queue는 10을 넘지 않았으며, 부하 종료 후 active/queued 0/0과 25/25 정상 응답 회복을 확인했다.
+높은 503 비율은 fast rejection 뒤 0.1초마다 재요청하는 closed-model 특성이므로 운영 실패율로 일반화하지 않는다.
 
 현재 측정에서는 async 50 VU에서 summary 자체 처리량/p95는 개선되지 않았지만 popular p95가 5.97초에서 173ms로 감소했고 Tomcat busy peak가 20에서 8로 줄었다.
 executor active 20/queued 30을 함께 기록했으므로 완전한 non-blocking 또는 병목 제거로 과장하지 않는다.
@@ -153,6 +159,7 @@ executor active 20/queued 30을 함께 기록했으므로 완전한 non-blocking
 - `docs/backend-improvement/local-load-observability-runbook.md`
 - `docs/backend-improvement/single-instance-tps-baseline.md`
 - `docs/backend-improvement/load-test-baseline.md`
+- `docs/backend-improvement/gemini-executor-overload-protection.md`
 - `docs/backend-improvement/perspectives-fulltext-generic-token-filter-result.md`
 - `docs/backend-improvement/perspectives-fulltext-ordering-comparison.md`
 - `docs/backend-improvement/perspectives-ranking-policy-adr.md`
