@@ -7,13 +7,20 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## Current Active Work
 
+### P2 follow-up. Mixed API single-instance saturation boundary
+
+- 상태: `Done` ([#194](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/194), [PR #195](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/195))
+- AS-IS: #192에서 60 RPS까지 안정적이었고 MySQL CPU periodic sample만 54.41%까지 상승해 실제 포화 경계와 최초 병목은 아직 확인되지 않았다.
+- TO-BE: 동일한 합성 트래픽을 `80 -> 100 -> 120 RPS`로 점진 실행하고 achieved throughput, p95, dropped iteration과 Tomcat/Hikari/executor/MySQL 지표를 연결한다.
+- 범위: 최초 반복 병목을 찾기 전에는 index, query, cache, pool, executor 또는 인프라를 변경하지 않는다.
+- 검증: 120.07 business RPS까지 dropped/error 없이 처리량이 증가했다. 다만 100/120 RPS에서 Hikari pending 11/18, MySQL CPU periodic sample 152.81%/203.38%, 조회 p95 최대 174.99ms/308.08ms로 DB 자원 압박이 증가했다.
+
+## Recently Completed
+
 ### P2 follow-up. Mixed API constant-arrival-rate single-instance baseline
 
-- 상태: `In Progress` ([#192](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/192))
-- AS-IS: 기존 기준선은 popular 조회 또는 Gemini summary 포화를 격리 측정했지만, DB 조회·FULLTEXT 검색·상세 조회 쓰기·mock 외부 호출이 한 인스턴스에서 경쟁하는 형태는 확인하지 않았다.
-- TO-BE: `latest/popular/detail/search/summary` 합성 트래픽을 `20 -> 40 -> 60 RPS`로 실행하고 endpoint p95/실패율을 Tomcat, Hikari, AI executor 지표와 함께 기록한다.
-- 범위: OAuth, scrap 쓰기, 실제 외부 API, 인프라 확장 및 근거 없는 튜닝은 제외한다. 반복 관측된 병목만 후속 구현 이슈로 전환한다.
-- 검증: 20/40/60 RPS 모두 목표율을 달성했고 dropped/error는 0이었다. 60 RPS 조회 p95 최대 81.59ms, Hikari pending 0, executor queue 0으로 현재 범위에서는 병목이 확인되지 않았다.
+- 상태: `Done` ([#192](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/192), [PR #193](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/193))
+- 검증: 20/40/60 RPS 모두 목표율을 달성했고 dropped/error는 0이었다. 60 RPS 조회 p95 최대 81.59ms, Hikari pending 0, executor queue 0으로 해당 범위에서는 병목이 확인되지 않았다.
 
 ## 운영 규칙
 

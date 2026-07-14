@@ -5,11 +5,33 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Current Active Work
 
+### #194 - Mixed API single-instance saturation boundary
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/194
+- 작업 브랜치: `perf/#194-mixed-saturation-boundary`
+- 상태: `Done` ([PR #195](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/195))
+- 주요 파일:
+  - `load-tests/k6/mixed-arrival-rate.js`
+  - `docs/backend-improvement/mixed-saturation-boundary.md`
+- 목표: #192와 동일한 합성 트래픽을 `80 -> 100 -> 120 RPS`로 확장해 처리량 plateau와 최초 DB/thread/executor/host 병목 신호를 찾는다.
+- overengineering 판단: 기존 k6/mock/Actuator를 재사용하고 코드·DB·인프라 튜닝은 측정 뒤 별도 승인 이슈로 미룬다.
+- 안전 조건: 첫 명확한 포화, dropped/error, 또는 로컬 자원 압박에서 다음 단계를 중단하고 실제 외부 API와 영구 fixture 변경을 차단한다.
+- Reviewer: 실행 가능한 k6 지원 범위와 측정 안전 절차가 변경되므로 PR diff 검토가 필요하다.
+- 검증 결과:
+  - 80 반복/100/120 target RPS에서 achieved business RPS는 80.13/100.17/120.07이고 dropped/error/summary 503은 모두 0이었다.
+  - 첫 80 RPS는 dropped 7, Hikari pending 19가 발생했지만 회복 후 동일 단계 반복에서는 재현되지 않아 단독 포화 근거로 사용하지 않았다.
+  - Hikari active/pending은 80 반복 5/0, 100 RPS 10/11, 120 RPS 10/18로 증가했다.
+  - MySQL CPU periodic sample은 100.65%/152.81%/203.38%, 조회 API 최대 p95는 106.62ms/174.99ms/308.08ms로 증가했다.
+  - 처리량 plateau는 120 RPS까지 없었고 DB CPU/connection wait 압박이 100 RPS부터 나타난 것으로 판단했다.
+  - 기사 summary/view_count, Redis key, 임시 DB table, backend/mock process를 원복했다.
+
+## Recently Completed
+
 ### #192 - Mixed API constant-arrival-rate single-instance baseline
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/192
 - 작업 브랜치: `perf/#192-mixed-arrival-rate-baseline`
-- 상태: `In Progress` (implementation and local verification complete; PR pending)
+- 상태: `Done` ([PR #193](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/193))
 - 주요 파일:
   - `load-tests/k6/mixed-arrival-rate.js`
   - `docs/backend-improvement/mixed-arrival-rate-baseline.md`

@@ -10,7 +10,7 @@ const DURATION = __ENV.DURATION || '30s';
 const TOTAL_RPS = Number(__ENV.TOTAL_RPS || 20);
 const METRICS_INTERVAL_SECONDS = Number(__ENV.METRICS_INTERVAL_SECONDS || 5);
 
-const SUPPORTED_TOTAL_RPS = [20, 40, 60];
+const SUPPORTED_TOTAL_RPS = [20, 40, 60, 80, 100, 120];
 if (!SUPPORTED_TOTAL_RPS.includes(TOTAL_RPS)) {
   throw new Error(`TOTAL_RPS must be one of ${SUPPORTED_TOTAL_RPS.join(', ')}`);
 }

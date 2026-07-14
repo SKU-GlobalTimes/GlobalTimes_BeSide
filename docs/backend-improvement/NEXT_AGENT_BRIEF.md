@@ -5,11 +5,16 @@
 
 ## Current Active Work
 
-- Issue: [#192](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/192)
-- Branch: `perf/#192-mixed-arrival-rate-baseline`
-- Status: `In Progress` (20/40/60 RPS verification complete; PR pending)
-- Scope: synthetic `latest/popular/detail/search/mock-summary` traffic at `20 -> 40 -> 60 RPS`, correlated with Tomcat, Hikari, and AI executor Actuator metrics
-- Safety: do not call real Google Translate or Gemini APIs; restore the selected article summary and view count after measurement
+- Issue: [#194](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/194)
+- Branch: `perf/#194-mixed-saturation-boundary`
+- Status: `Done` ([PR #195](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/195))
+- Scope: extend the #192 synthetic mix to `80 -> 100 -> 120 RPS` and identify the first throughput, latency, DB, thread, executor, or host saturation signal
+- Safety: stop at the first clear saturation or unsafe-host signal; do not call real external APIs; restore article and Redis fixtures
+- Result: throughput remained stable through 120.07 business RPS with zero drops/errors, while MySQL CPU samples rose to 203.38%, Hikari pending reached 18, and maximum read p95 reached 308.08ms; DB pressure appeared from 100 RPS without a throughput plateau
+
+## Recently Completed
+
+- #192 / PR #193: `Done`
 - Result: 60.13 achieved business RPS, zero drops/failures, read p95 at or below 81.59ms, summary p95 3.07s, Tomcat busy 6/10 current, Hikari 5/0, executor 9/0; no saturation boundary through 60 RPS
 
 ## Read Order
