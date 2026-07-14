@@ -3,6 +3,15 @@
 이 문서는 새 Codex 세션이 `WORK_PROGRESS.md` 전체를 읽기 전에 현재 상태를 빠르게 복원하기 위한 짧은 handoff 문서다.
 상세한 이력과 근거는 `WORK_PROGRESS.md`, `BACKLOG.md`, 개별 측정 문서를 기준으로 확인한다.
 
+## Current Active Work
+
+- Issue: [#192](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/192)
+- Branch: `perf/#192-mixed-arrival-rate-baseline`
+- Status: `In Progress` (20/40/60 RPS verification complete; PR pending)
+- Scope: synthetic `latest/popular/detail/search/mock-summary` traffic at `20 -> 40 -> 60 RPS`, correlated with Tomcat, Hikari, and AI executor Actuator metrics
+- Safety: do not call real Google Translate or Gemini APIs; restore the selected article summary and view count after measurement
+- Result: 60.13 achieved business RPS, zero drops/failures, read p95 at or below 81.59ms, summary p95 3.07s, Tomcat busy 6/10 current, Hikari 5/0, executor 9/0; no saturation boundary through 60 RPS
+
 ## Read Order
 
 1. `docs/backend-improvement/NEXT_AGENT_BRIEF.md`
