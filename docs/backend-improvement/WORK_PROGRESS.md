@@ -3,6 +3,27 @@
 이 문서는 GlobalTimes 백엔드 개선 작업을 장기적으로 이어가기 위한 작업 진척 노트다.
 Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 할 때, 이 문서를 기준으로 현재까지의 의사결정, 완료 작업, 다음 작업을 복원한다.
 
+## Current Active Work
+
+### #192 - Mixed API constant-arrival-rate single-instance baseline
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/192
+- 작업 브랜치: `perf/#192-mixed-arrival-rate-baseline`
+- 상태: `In Progress` (implementation and local verification complete; PR pending)
+- 주요 파일:
+  - `load-tests/k6/mixed-arrival-rate.js`
+  - `docs/backend-improvement/mixed-arrival-rate-baseline.md`
+- 목표: 한 로컬 Spring Boot 인스턴스에 합성 API 트래픽 `20 -> 40 -> 60 RPS`를 실행하고 endpoint별 p95/실패/달성 RPS를 Tomcat, Hikari, AI executor 지표와 함께 기록한다.
+- overengineering 판단: 기존 k6, mock Gemini, Actuator만 재사용한다. 실제 외부 API, OAuth/scrap, 다중 인스턴스 추정, 측정 전 설정 튜닝 및 #110은 제외한다.
+- 안전 조건: Redis 번역 캐시 사전 주입, summary 저장 비활성화, 기사 summary/view count 백업 및 복원, 예상 외 오류·dropped iteration·로컬 자원 압박 발생 시 다음 단계를 중단한다.
+- Reviewer: 실행 가능한 k6 시나리오와 안전 장치가 변경되므로 PR diff 검토가 필요하다.
+- 검증 결과:
+  - 20/40/60 target RPS에서 business achieved RPS는 각각 20.13/40.17/60.13이었고 dropped iteration과 실패는 모두 0이었다.
+  - 60 RPS에서도 조회 API p95는 최대 81.59ms, summary accepted p95는 3.07초였다.
+  - Tomcat busy 최대 6/10 current, Hikari active/pending 최대 5/0, executor active/queued 최대 9/0으로 관측 범위에서 포화되지 않았다.
+  - 60 RPS MySQL CPU point sample은 최대 54.41%였지만 p95 상승이나 connection pending이 없어 즉시 DB 튜닝 근거로 사용하지 않는다.
+  - 테스트 기사 summary/view count를 원복하고 임시 DB backup table, Redis 테스트 key, backend/mock 프로세스를 제거했다.
+
 ## 1. 운영 원칙
 
 ### 기본 개발 흐름

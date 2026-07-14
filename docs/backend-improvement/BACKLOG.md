@@ -5,6 +5,16 @@
 GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까지 추적 가능하게 관리한다.
 각 항목은 GitHub Issue, 작업 브랜치, PR, 테스트 및 측정 결과로 연결한다.
 
+## Current Active Work
+
+### P2 follow-up. Mixed API constant-arrival-rate single-instance baseline
+
+- 상태: `In Progress` ([#192](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/192))
+- AS-IS: 기존 기준선은 popular 조회 또는 Gemini summary 포화를 격리 측정했지만, DB 조회·FULLTEXT 검색·상세 조회 쓰기·mock 외부 호출이 한 인스턴스에서 경쟁하는 형태는 확인하지 않았다.
+- TO-BE: `latest/popular/detail/search/summary` 합성 트래픽을 `20 -> 40 -> 60 RPS`로 실행하고 endpoint p95/실패율을 Tomcat, Hikari, AI executor 지표와 함께 기록한다.
+- 범위: OAuth, scrap 쓰기, 실제 외부 API, 인프라 확장 및 근거 없는 튜닝은 제외한다. 반복 관측된 병목만 후속 구현 이슈로 전환한다.
+- 검증: 20/40/60 RPS 모두 목표율을 달성했고 dropped/error는 0이었다. 60 RPS 조회 p95 최대 81.59ms, Hikari pending 0, executor queue 0으로 현재 범위에서는 병목이 확인되지 않았다.
+
 ## 운영 규칙
 
 - 모든 변경은 `Issue → Branch → PR → Merge` 순서를 따른다.
