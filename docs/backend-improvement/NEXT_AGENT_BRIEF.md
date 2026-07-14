@@ -5,17 +5,17 @@
 
 ## Current Active Work
 
-- Issue: [#194](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/194)
-- Branch: `perf/#194-mixed-saturation-boundary`
-- Status: `Done` ([PR #195](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/195))
-- Scope: extend the #192 synthetic mix to `80 -> 100 -> 120 RPS` and identify the first throughput, latency, DB, thread, executor, or host saturation signal
-- Safety: stop at the first clear saturation or unsafe-host signal; do not call real external APIs; restore article and Redis fixtures
-- Result: throughput remained stable through 120.07 business RPS with zero drops/errors, while MySQL CPU samples rose to 203.38%, Hikari pending reached 18, and maximum read p95 reached 308.08ms; DB pressure appeared from 100 RPS without a throughput plateau
+- Issue: [#196](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/196)
+- Branch: `data/#196-ingestion-idempotency`
+- Status: `Done` ([PR #197](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/197))
+- Scope: deduplicate URLs within each RSS/News API response and verify single-instance sequential rerun safety without changing the `news-fetch.enabled` collection gate
+- Baseline: local MySQL has 9,853 article rows, 9,814 distinct URLs, and 39 duplicate rows across 38 URL groups
+- Boundary: DB-enforced uniqueness, existing duplicate cleanup, and multi-instance check-then-insert races remain a follow-up transaction/data-consistency issue
 
 ## Recently Completed
 
-- #192 / PR #193: `Done`
-- Result: 60.13 achieved business RPS, zero drops/failures, read p95 at or below 81.59ms, summary p95 3.07s, Tomcat busy 6/10 current, Hikari 5/0, executor 9/0; no saturation boundary through 60 RPS
+- #194 / PR #195: `Done`
+- Result: throughput remained stable through 120.07 business RPS with zero drops/errors; DB CPU and connection pressure appeared from 100 RPS without a throughput plateau
 
 ## Read Order
 

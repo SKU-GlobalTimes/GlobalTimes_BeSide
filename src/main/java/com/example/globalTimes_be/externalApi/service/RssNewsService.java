@@ -21,6 +21,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -96,18 +97,31 @@ public class RssNewsService {
                 return 0;
             }
 
-            // 중복 URL 사전 조회
+            return processItems(feed, items);
+
+        } catch (Exception e) {
+            log.error("[RSS 수집 오류] {} 처리 중 오류 발생", feed.sourceName(), e);
+            return 0;
+        }
+    }
+
+    int processItems(RssFeedConfig.FeedSource feed, Elements items) {
+        try {
             List<String> urls = items.stream()
                     .map(item -> item.select("link").text().trim())
                     .filter(url -> !url.isBlank())
+                    .distinct()
                     .collect(Collectors.toList());
-            Set<String> existingUrls = articleRepository.findExistingUrls(urls);
+            Set<String> existingUrls = urls.isEmpty()
+                    ? Set.of()
+                    : articleRepository.findExistingUrls(urls);
 
             // feed.sourceName()은 하드코딩된 RSS 피드 설정값이므로 null/empty 가능성 없음
             Source source = sourceService.getOrCreateSource(feed.sourceName(), null);
             if (source == null) return 0;
 
             List<Article> toSave = new ArrayList<>();
+            Set<String> seenUrls = new HashSet<>();
             int invalidCount = 0;
             int duplicateCount = 0;
 
@@ -134,7 +148,7 @@ public class RssNewsService {
                 }
 
                 // 중복 체크
-                if (existingUrls.contains(url)) {
+                if (!seenUrls.add(url) || existingUrls.contains(url)) {
                     duplicateCount++;
                     continue;
                 }
@@ -161,7 +175,7 @@ public class RssNewsService {
             return toSave.size();
 
         } catch (Exception e) {
-            log.error("[RSS 수집 오류] {} 처리 중 오류 발생", feed.sourceName(), e);
+            log.error("[RSS 수집 처리 오류] {} 처리 중 오류 발생", feed.sourceName(), e);
             return 0;
         }
     }

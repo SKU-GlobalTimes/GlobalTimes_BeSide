@@ -181,48 +181,63 @@ public class NewsApiService {
                 return;
             }
 
-            List<NewsApiArticleDto> articles = response.getArticles();
-            int total = articles.size();
-
-            // 기존 URL 조회
-            List<String> urls = articles.stream()
-                    .map(NewsApiArticleDto::getUrl)
-                    .collect(Collectors.toList());
-            Set<String> existingUrls = articleRepository.findExistingUrls(urls);
-
-            // Source 캐시
-            List<String> sourceNames = articles.stream()
-                    .map(NewsApiArticleDto::getSource)
-                    .filter(Objects::nonNull)
-                    .map(NewsApiSourceDto::getName)
-                    .filter(Objects::nonNull)
-                    .distinct()
-                    .collect(Collectors.toList());
-            Map<String, Source> sourceCache = sourceService.preloadSources(sourceNames);
-
-            // 단계별 카운트 집계
-            long invalidCount = articles.stream().filter(this::isInvalid).count();
-            long duplicateCount = articles.stream()
-                    .filter(dto -> !isInvalid(dto) && existingUrls.contains(dto.getUrl()))
-                    .count();
-
-            // 유효성 검증 + 중복 제거 + 저장
-            List<Article> articleList = articles.stream()
-                    .filter(dto -> !isInvalid(dto) && !existingUrls.contains(dto.getUrl()))
-                    .map(dto -> mapDtoToEntity(dto, country, category, sourceCache))
-                    .collect(Collectors.toList());
-
-            if (!articleList.isEmpty()) {
-                articleRepository.saveAll(articleList);
-                totalNewArticles += articleList.size();
-            }
-
-            log.info("[수집 통계] {} | 응답:{}, invalid:{}, 중복:{}, 저장:{}",
-                    label, total, invalidCount, duplicateCount, articleList.size());
+            processArticles(response.getArticles(), country, category);
 
         } catch (Exception e) {
             log.error("[수집 오류] {} 처리 중 오류 발생", label, e);
         }
+    }
+
+    int processArticles(List<NewsApiArticleDto> articles, String country, String category) {
+        Set<String> seenUrls = new HashSet<>();
+        List<NewsApiArticleDto> uniqueValidArticles = new ArrayList<>();
+        int invalidCount = 0;
+        int duplicateCount = 0;
+
+        for (NewsApiArticleDto article : articles) {
+            if (isInvalid(article)) {
+                invalidCount++;
+                continue;
+            }
+            if (!seenUrls.add(article.getUrl())) {
+                duplicateCount++;
+                continue;
+            }
+            uniqueValidArticles.add(article);
+        }
+
+        Set<String> existingUrls = uniqueValidArticles.isEmpty()
+                ? Collections.emptySet()
+                : articleRepository.findExistingUrls(new ArrayList<>(seenUrls));
+        List<NewsApiArticleDto> newArticles = new ArrayList<>();
+        for (NewsApiArticleDto article : uniqueValidArticles) {
+            if (existingUrls.contains(article.getUrl())) {
+                duplicateCount++;
+            } else {
+                newArticles.add(article);
+            }
+        }
+
+        List<String> sourceNames = newArticles.stream()
+                .map(NewsApiArticleDto::getSource)
+                .map(NewsApiSourceDto::getName)
+                .distinct()
+                .collect(Collectors.toList());
+        Map<String, Source> sourceCache = sourceNames.isEmpty()
+                ? new HashMap<>()
+                : sourceService.preloadSources(sourceNames);
+
+        List<Article> articleList = newArticles.stream()
+                .map(dto -> mapDtoToEntity(dto, country, category, sourceCache))
+                .collect(Collectors.toList());
+        if (!articleList.isEmpty()) {
+            articleRepository.saveAll(articleList);
+            totalNewArticles += articleList.size();
+        }
+
+        log.info("[수집 통계] {}/{} | 응답:{}, invalid:{}, 중복:{}, 저장:{}",
+                country, category, articles.size(), invalidCount, duplicateCount, articleList.size());
+        return articleList.size();
     }
 
     private boolean isInvalid(NewsApiArticleDto dto) {
@@ -231,6 +246,7 @@ public class NewsApiService {
                 dto.getDescription() == null ||
                 dto.getContent() == null ||
                 dto.getUrl() == null ||
+                dto.getUrl().isBlank() ||
                 dto.getUrlToImage() == null ||
                 dto.getPublishedAt() == null ||
                 dto.getSource() == null ||
