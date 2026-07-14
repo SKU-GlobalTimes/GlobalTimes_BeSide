@@ -7,15 +7,20 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## Current Active Work
 
+### P1. RSS/News API 수집 중복 방지와 재실행 안전성
+
+- 상태: `Done` ([#196](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/196), [PR #197](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/197))
+- AS-IS: RSS와 News API 수집이 DB의 기존 URL만 사전 조회하므로, 같은 응답 안에서 URL이 반복되면 한 배치에 중복 저장될 수 있다. 로컬 DB에는 중복 URL 행 39건이 존재한다.
+- TO-BE: 응답 내부 URL을 먼저 중복 제거하고 기존 URL 조회와 결합해 단일 인스턴스의 순차 재실행을 안전하게 만든다.
+- 범위: `news-fetch.enabled` 실행 제어는 유지한다. DB 유니크 제약, 기존 데이터 정리, 다중 인스턴스 경쟁은 후속 트랜잭션/정합성 이슈에서 다룬다.
+- 검증: RSS/News API 각각에서 응답 내부 중복, 기존 URL 혼합, 동일 응답 재실행 및 수집 비활성화를 자동 테스트한다.
+
+## Recently Completed
+
 ### P2 follow-up. Mixed API single-instance saturation boundary
 
 - 상태: `Done` ([#194](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/194), [PR #195](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/195))
-- AS-IS: #192에서 60 RPS까지 안정적이었고 MySQL CPU periodic sample만 54.41%까지 상승해 실제 포화 경계와 최초 병목은 아직 확인되지 않았다.
-- TO-BE: 동일한 합성 트래픽을 `80 -> 100 -> 120 RPS`로 점진 실행하고 achieved throughput, p95, dropped iteration과 Tomcat/Hikari/executor/MySQL 지표를 연결한다.
-- 범위: 최초 반복 병목을 찾기 전에는 index, query, cache, pool, executor 또는 인프라를 변경하지 않는다.
 - 검증: 120.07 business RPS까지 dropped/error 없이 처리량이 증가했다. 다만 100/120 RPS에서 Hikari pending 11/18, MySQL CPU periodic sample 152.81%/203.38%, 조회 p95 최대 174.99ms/308.08ms로 DB 자원 압박이 증가했다.
-
-## Recently Completed
 
 ### P2 follow-up. Mixed API constant-arrival-rate single-instance baseline
 

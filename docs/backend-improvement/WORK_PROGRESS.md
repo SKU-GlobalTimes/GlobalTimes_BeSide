@@ -5,27 +5,27 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Current Active Work
 
+### #196 - RSS/News API 수집 중복 방지와 재실행 안전성 개선
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/196
+- 작업 브랜치: `data/#196-ingestion-idempotency`
+- 상태: `Done` ([PR #197](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/197))
+- 주요 파일:
+  - `externalApi/service/NewsApiService.java`
+  - `externalApi/service/RssNewsService.java`
+  - RSS/News API 서비스 단위 테스트
+- 기준선: 로컬 MySQL 기사 9,853건 중 distinct URL은 9,814개이며, 38개 URL 그룹에서 중복 행 39건이 확인됐다. 중복 기사를 참조하는 scrap/chat 행은 없었다.
+- 목표: 한 수집 응답 내부의 URL 중복과 동일 응답의 순차 재실행으로 인한 중복 저장을 막고, `news-fetch.enabled=false` 수집 차단 동작을 회귀 테스트로 고정한다.
+- overengineering 판단: 현재 단일 인스턴스 기본 스케줄러에서 분산 락이나 메시지 큐는 과하다. URL `TEXT` 컬럼의 DB 유니크 제약, 기존 중복 정리, 다중 인스턴스 경쟁은 후속 트랜잭션/데이터 정합성 이슈로 분리한다.
+- 검증: 외부 네트워크 없이 응답 내부 중복, 기존 URL 혼합, 순차 재실행, 수집 플래그 비활성화 시나리오를 단위 테스트로 확인한다.
+
+## Recently Completed
+
 ### #194 - Mixed API single-instance saturation boundary
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/194
-- 작업 브랜치: `perf/#194-mixed-saturation-boundary`
 - 상태: `Done` ([PR #195](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/195))
-- 주요 파일:
-  - `load-tests/k6/mixed-arrival-rate.js`
-  - `docs/backend-improvement/mixed-saturation-boundary.md`
-- 목표: #192와 동일한 합성 트래픽을 `80 -> 100 -> 120 RPS`로 확장해 처리량 plateau와 최초 DB/thread/executor/host 병목 신호를 찾는다.
-- overengineering 판단: 기존 k6/mock/Actuator를 재사용하고 코드·DB·인프라 튜닝은 측정 뒤 별도 승인 이슈로 미룬다.
-- 안전 조건: 첫 명확한 포화, dropped/error, 또는 로컬 자원 압박에서 다음 단계를 중단하고 실제 외부 API와 영구 fixture 변경을 차단한다.
-- Reviewer: 실행 가능한 k6 지원 범위와 측정 안전 절차가 변경되므로 PR diff 검토가 필요하다.
-- 검증 결과:
-  - 80 반복/100/120 target RPS에서 achieved business RPS는 80.13/100.17/120.07이고 dropped/error/summary 503은 모두 0이었다.
-  - 첫 80 RPS는 dropped 7, Hikari pending 19가 발생했지만 회복 후 동일 단계 반복에서는 재현되지 않아 단독 포화 근거로 사용하지 않았다.
-  - Hikari active/pending은 80 반복 5/0, 100 RPS 10/11, 120 RPS 10/18로 증가했다.
-  - MySQL CPU periodic sample은 100.65%/152.81%/203.38%, 조회 API 최대 p95는 106.62ms/174.99ms/308.08ms로 증가했다.
-  - 처리량 plateau는 120 RPS까지 없었고 DB CPU/connection wait 압박이 100 RPS부터 나타난 것으로 판단했다.
-  - 기사 summary/view_count, Redis key, 임시 DB table, backend/mock process를 원복했다.
-
-## Recently Completed
+- 검증 결과: 120.07 business RPS까지 dropped/error 없이 처리량이 증가했으며, 100 RPS부터 MySQL CPU와 Hikari pending 증가로 DB 자원 압박이 확인됐다.
 
 ### #192 - Mixed API constant-arrival-rate single-instance baseline
 
