@@ -5,17 +5,18 @@
 
 ## Current Active Work
 
-- Issue: [#196](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/196)
-- Branch: `data/#196-ingestion-idempotency`
-- Status: `Done` ([PR #197](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/197))
-- Scope: deduplicate URLs within each RSS/News API response and verify single-instance sequential rerun safety without changing the `news-fetch.enabled` collection gate
-- Baseline: local MySQL has 9,853 article rows, 9,814 distinct URLs, and 39 duplicate rows across 38 URL groups
-- Boundary: DB-enforced uniqueness, existing duplicate cleanup, and multi-instance check-then-insert races remain a follow-up transaction/data-consistency issue
+- Issue: [#198](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/198)
+- Branch: `data/#198-atomic-view-count`
+- Status: `Done` ([PR #199](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/199))
+- Scope: replace article detail read-modify-write view count updates with a DB atomic increment and return the incremented value
+- Baseline: 20 concurrent successful detail requests increased `view_count` by only 2, losing 18 increments
+- Result: the same 20 VU and 20 requests increased `view_count` by exactly 20 after the atomic UPDATE; test data was restored
+- Boundary: this is a consistency check, not a maximum throughput claim; Redis counters and lock-based designs remain deferred
 
 ## Recently Completed
 
-- #194 / PR #195: `Done`
-- Result: throughput remained stable through 120.07 business RPS with zero drops/errors; DB CPU and connection pressure appeared from 100 RPS without a throughput plateau
+- #196 / PR #197: `Done`
+- Result: RSS/News API response-level URL deduplication and single-instance sequential rerun safety are covered; DB uniqueness remains a follow-up
 
 ## Read Order
 

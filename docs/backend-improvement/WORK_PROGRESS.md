@@ -5,21 +5,28 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Current Active Work
 
+### #198 - 기사 상세 동시 조회 viewCount lost update 원자 증가 개선
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/198
+- 작업 브랜치: `data/#198-atomic-view-count`
+- 상태: `Done` ([PR #199](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/199))
+- 주요 파일:
+  - `domain/article/repository/ArticleRepository.java`
+  - `domain/detail/service/DetailService.java`
+  - `load-tests/k6/view-count-consistency.js`
+  - `docs/backend-improvement/atomic-view-count-consistency.md`
+- 기준선: 20 VU가 같은 기사 상세 API를 총 20회 호출해 모두 성공했지만 `view_count`는 2건만 증가해 18건이 유실됐다.
+- 목표: `view_count = view_count + 1` 원자 UPDATE로 성공 요청 수와 조회수 증가량을 일치시키고 증가 완료 값을 응답한다.
+- overengineering 판단: 단일 숫자 증가에 Redis counter, 비관적 락, 낙관적 락 재시도는 과하다. 단일 DB UPDATE가 현재 규모에서 가장 작은 해법이다.
+- 검증: 동일한 20 VU·20요청에서 20건 모두 성공하고 조회수도 정확히 20 증가했다. 측정 전후 테스트 기사 조회수는 기준값 0으로 복원했다.
+
+## Recently Completed
+
 ### #196 - RSS/News API 수집 중복 방지와 재실행 안전성 개선
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/196
-- 작업 브랜치: `data/#196-ingestion-idempotency`
 - 상태: `Done` ([PR #197](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/197))
-- 주요 파일:
-  - `externalApi/service/NewsApiService.java`
-  - `externalApi/service/RssNewsService.java`
-  - RSS/News API 서비스 단위 테스트
-- 기준선: 로컬 MySQL 기사 9,853건 중 distinct URL은 9,814개이며, 38개 URL 그룹에서 중복 행 39건이 확인됐다. 중복 기사를 참조하는 scrap/chat 행은 없었다.
-- 목표: 한 수집 응답 내부의 URL 중복과 동일 응답의 순차 재실행으로 인한 중복 저장을 막고, `news-fetch.enabled=false` 수집 차단 동작을 회귀 테스트로 고정한다.
-- overengineering 판단: 현재 단일 인스턴스 기본 스케줄러에서 분산 락이나 메시지 큐는 과하다. URL `TEXT` 컬럼의 DB 유니크 제약, 기존 중복 정리, 다중 인스턴스 경쟁은 후속 트랜잭션/데이터 정합성 이슈로 분리한다.
-- 검증: 외부 네트워크 없이 응답 내부 중복, 기존 URL 혼합, 순차 재실행, 수집 플래그 비활성화 시나리오를 단위 테스트로 확인한다.
-
-## Recently Completed
+- 검증 결과: 응답 내부 URL 중복과 동일 응답의 단일 인스턴스 순차 재실행을 자동 테스트로 고정했다.
 
 ### #194 - Mixed API single-instance saturation boundary
 

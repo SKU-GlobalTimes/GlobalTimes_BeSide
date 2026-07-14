@@ -4,6 +4,7 @@ import com.example.globalTimes_be.domain.article.entity.Article;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -25,6 +26,10 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
 
     @Query("SELECT a.url FROM Article a WHERE a.url IN :urls")
     Set<String> findExistingUrls(@Param("urls") List<String> urls);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Article a SET a.viewCount = a.viewCount + 1 WHERE a.id = :id")
+    int incrementViewCount(@Param("id") Long id);
 
     // 특정 id를 제외한 최신기사 20개 조회
     List<Article> findTop20ByIdNotOrderByPublishedAtDesc(Long id);
