@@ -135,11 +135,6 @@ public class Article {
         this.summary = summary;
     }
 
-    // get/{id} 와 같이 특정 뉴스 조회시 viewCount 증가
-    public void increaseViewCount() {
-        this.viewCount++;
-    }
-
     public void updateCountryAndCategory(String countryCode, String category) {
         this.country = countryCode;
         this.category = category == null ? "general" : category;

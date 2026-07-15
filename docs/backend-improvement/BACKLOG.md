@@ -7,15 +7,20 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## Current Active Work
 
+### P1. 기사 상세 동시 조회 viewCount 원자 증가
+
+- 상태: `Done` ([#198](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/198), [PR #199](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/199))
+- AS-IS: 상세 조회가 Article 엔티티를 읽고 `viewCount++` 후 저장해 동시 성공 요청 20건 중 18건의 증가가 유실됐다.
+- TO-BE: DB 원자 UPDATE로 조회수를 증가시키고, 상세 응답에는 증가 완료된 값을 반환한다.
+- 범위: 정합성 검증에 집중하며 최대 TPS, Redis counter, 비관적/낙관적 락 도입은 제외한다.
+- 검증: 동일한 20 VU·20요청에서 성공 20건과 실제 증가량 20이 일치하고 테스트 데이터가 원복돼야 한다.
+
+## Recently Completed
+
 ### P1. RSS/News API 수집 중복 방지와 재실행 안전성
 
 - 상태: `Done` ([#196](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/196), [PR #197](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/197))
-- AS-IS: RSS와 News API 수집이 DB의 기존 URL만 사전 조회하므로, 같은 응답 안에서 URL이 반복되면 한 배치에 중복 저장될 수 있다. 로컬 DB에는 중복 URL 행 39건이 존재한다.
-- TO-BE: 응답 내부 URL을 먼저 중복 제거하고 기존 URL 조회와 결합해 단일 인스턴스의 순차 재실행을 안전하게 만든다.
-- 범위: `news-fetch.enabled` 실행 제어는 유지한다. DB 유니크 제약, 기존 데이터 정리, 다중 인스턴스 경쟁은 후속 트랜잭션/정합성 이슈에서 다룬다.
-- 검증: RSS/News API 각각에서 응답 내부 중복, 기존 URL 혼합, 동일 응답 재실행 및 수집 비활성화를 자동 테스트한다.
-
-## Recently Completed
+- 검증: RSS/News API 응답 내부 URL 중복 제거와 단일 인스턴스 순차 재실행을 자동 테스트로 고정했다.
 
 ### P2 follow-up. Mixed API single-instance saturation boundary
 

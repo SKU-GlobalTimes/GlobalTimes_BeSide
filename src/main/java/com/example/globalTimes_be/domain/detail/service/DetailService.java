@@ -25,11 +25,13 @@ public class DetailService {
 
     @Transactional
     public DetailResDTO getNewsDetail(Long id) {
+        int updatedRows = articleRepository.incrementViewCount(id);
+        if (updatedRows == 0) {
+            throw new BaseException(DetailErrorStatus._EMPTY_NEWS_DATA.getResponse());
+        }
+
         Article article = articleRepository.findById(id)
                 .orElseThrow(() -> new BaseException(DetailErrorStatus._EMPTY_NEWS_DATA.getResponse()));
-
-        article.increaseViewCount();
-        articleRepository.save(article);
 
         DetailResponseDTO detailResponseDTO = DetailResponseDTO.builder()
                 .sourceName(article.getSource().getSourceName())
