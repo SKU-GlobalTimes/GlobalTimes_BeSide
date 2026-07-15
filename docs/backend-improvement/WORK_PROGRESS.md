@@ -5,20 +5,27 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Current Active Work
 
+### #202 - MySQL Testcontainers 통합 테스트 및 트랜잭션 회귀 검증
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/202
+- 작업 브랜치: `test/#202-mysql-integration`
+- 상태: `Done` ([PR #203](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/203))
+- 주요 파일:
+  - `build.gradle`
+  - `domain/article/repository/ArticleRepositoryIntegrationTest.java`
+  - `docs/backend-improvement/mysql-testcontainers-integration.md`
+- 기준선: 기존 자동 테스트는 mock/WebMvc 단위에 집중되어 #198 원자 UPDATE의 실제 MySQL 동시성·rollback 동작을 자동 회귀 검증하지 못했다.
+- 목표: 테스트 전용 MySQL 8과 Repository slice에서 20개 동시 증가 및 예외 rollback을 검증하고 개발 DB와 테스트 데이터를 분리한다.
+- overengineering 판단: 전체 SpringBootTest, API E2E, Redis/Kafka는 제외한다. MySQL 고유 트랜잭션 동작만 실제 DB로 검증하는 작은 slice가 적절하다.
+- 검증: 동시 UPDATE 20건 후 viewCount 20, 강제 예외 transaction 후 viewCount 0, 종료 후 임시 MySQL/Ryuk 자동 제거, compose DB 비변경을 확인했다.
+
+## Recently Completed
+
 ### #200 - 보호 API matcher 순서 수정 및 사용자 데이터 접근 통제 테스트
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/200
-- 작업 브랜치: `security/#200-protected-api-matchers`
 - 상태: `Done` ([PR #201](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/201))
-- 주요 파일:
-  - `global/config/SecurityConfig.java`
-  - `global/config/SecurityConfigTest.java`
-- 기준선: `/api/**.permitAll()`이 구체적인 인증 matcher보다 먼저 선언되어 미인증·잘못된 JWT 요청이 스크랩/채팅 컨트롤러까지 진입하고 500을 반환했다.
-- 목표: 보호 matcher를 먼저 평가해 미인증 요청을 401로 차단하고, 유효 JWT subject의 userId만 사용자 소유 데이터 서비스에 전달한다.
-- overengineering 판단: 컨트롤러는 이미 request userId가 아닌 Authentication principal을 사용한다. RBAC, ACL 테이블, 관리자 역할, 메서드 보안은 추가하지 않고 HTTP 보안 경계와 소유권 회귀 테스트에 집중한다.
-- 검증: 미인증 및 invalid JWT 보호 API는 401, valid JWT의 userId=42는 scrap/chat 서비스에 전달, 공개 `/api/scrap`은 비로그인 200을 유지한다.
-
-## Recently Completed
+- 검증 결과: 보호 API의 미인증·invalid JWT는 401, valid JWT principal은 사용자 소유 서비스에 전달되고 공개 API는 비로그인 접근을 유지했다.
 
 ### #198 - 기사 상세 동시 조회 viewCount lost update 원자 증가 개선
 

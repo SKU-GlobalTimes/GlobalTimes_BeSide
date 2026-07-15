@@ -5,18 +5,19 @@
 
 ## Current Active Work
 
-- Issue: [#200](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/200)
-- Branch: `security/#200-protected-api-matchers`
-- Status: `Done` ([PR #201](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/201))
-- Scope: place authenticated user/scrap/chat matchers before the broad `/api/**` permit rule and verify JWT principal ownership at the HTTP security boundary
-- Baseline: unauthenticated and invalid-JWT protected requests reached controllers through `/api/**.permitAll()` and returned 500 instead of being rejected
-- Result: protected requests now stop at the Security filter with 401, valid JWT subject user IDs reach scrap/chat services, and the public scrap lookup remains accessible
-- Boundary: RBAC, ACL tables, admin roles, method security, and global query-token restrictions are excluded
+- Issue: [#202](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/202)
+- Branch: `test/#202-mysql-integration`
+- Status: `Done` ([PR #203](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/203))
+- Scope: add a MySQL 8 Testcontainers Repository slice for concurrent atomic view-count updates and transaction rollback
+- Result: 20 concurrent UPDATE transactions produced viewCount 20, and a forced exception rolled the increment back to 0
+- Isolation: dynamic JDBC connection through `@ServiceConnection`; temporary schema and fixtures do not touch the compose MySQL
+- Runtime: the cached focused run completed in about 42 seconds and automatically removed MySQLContainer/Ryuk
+- Boundary: full application E2E, Redis/Kafka containers, H2 substitution, and broad conversion of unit tests are excluded
 
 ## Recently Completed
 
-- #198 / PR #199: `Done`
-- Result: 20 concurrent successful detail requests changed from 18 lost view-count increments to zero through a DB atomic UPDATE
+- #200 / PR #201: `Done`
+- Result: protected user/scrap/chat requests now return 401 without authentication while valid JWT subjects own service access
 
 ## Read Order
 
