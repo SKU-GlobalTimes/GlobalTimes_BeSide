@@ -5,22 +5,26 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Current Active Work
 
+### #200 - 보호 API matcher 순서 수정 및 사용자 데이터 접근 통제 테스트
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/200
+- 작업 브랜치: `security/#200-protected-api-matchers`
+- 상태: `Done` ([PR #201](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/201))
+- 주요 파일:
+  - `global/config/SecurityConfig.java`
+  - `global/config/SecurityConfigTest.java`
+- 기준선: `/api/**.permitAll()`이 구체적인 인증 matcher보다 먼저 선언되어 미인증·잘못된 JWT 요청이 스크랩/채팅 컨트롤러까지 진입하고 500을 반환했다.
+- 목표: 보호 matcher를 먼저 평가해 미인증 요청을 401로 차단하고, 유효 JWT subject의 userId만 사용자 소유 데이터 서비스에 전달한다.
+- overengineering 판단: 컨트롤러는 이미 request userId가 아닌 Authentication principal을 사용한다. RBAC, ACL 테이블, 관리자 역할, 메서드 보안은 추가하지 않고 HTTP 보안 경계와 소유권 회귀 테스트에 집중한다.
+- 검증: 미인증 및 invalid JWT 보호 API는 401, valid JWT의 userId=42는 scrap/chat 서비스에 전달, 공개 `/api/scrap`은 비로그인 200을 유지한다.
+
+## Recently Completed
+
 ### #198 - 기사 상세 동시 조회 viewCount lost update 원자 증가 개선
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/198
-- 작업 브랜치: `data/#198-atomic-view-count`
 - 상태: `Done` ([PR #199](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/199))
-- 주요 파일:
-  - `domain/article/repository/ArticleRepository.java`
-  - `domain/detail/service/DetailService.java`
-  - `load-tests/k6/view-count-consistency.js`
-  - `docs/backend-improvement/atomic-view-count-consistency.md`
-- 기준선: 20 VU가 같은 기사 상세 API를 총 20회 호출해 모두 성공했지만 `view_count`는 2건만 증가해 18건이 유실됐다.
-- 목표: `view_count = view_count + 1` 원자 UPDATE로 성공 요청 수와 조회수 증가량을 일치시키고 증가 완료 값을 응답한다.
-- overengineering 판단: 단일 숫자 증가에 Redis counter, 비관적 락, 낙관적 락 재시도는 과하다. 단일 DB UPDATE가 현재 규모에서 가장 작은 해법이다.
-- 검증: 동일한 20 VU·20요청에서 20건 모두 성공하고 조회수도 정확히 20 증가했다. 측정 전후 테스트 기사 조회수는 기준값 0으로 복원했다.
-
-## Recently Completed
+- 검증 결과: 20개 성공 요청의 조회수 증가량이 개선 전 2건에서 DB 원자 UPDATE 적용 후 20건으로 일치했다.
 
 ### #196 - RSS/News API 수집 중복 방지와 재실행 안전성 개선
 
