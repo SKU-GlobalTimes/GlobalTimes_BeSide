@@ -5,6 +5,18 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Current Active Work
 
+### #204 - SSE query token 허용 경로 제한
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/204
+- 작업 브랜치: `security/#204-sse-query-token-scope`
+- 상태: `Done` ([PR #205](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/205))
+- 기준선: `JwtAuthenticationFilter`가 EventSource 지원을 위해 모든 요청에서 `token` 쿼리 파라미터를 JWT로 해석해, SSE와 무관한 URL까지 인증정보 노출 범위가 넓다.
+- 목표: Bearer JWT 동작은 유지하면서 query JWT를 로그인 사용자의 대화 저장에 인증 정보가 필요한 `GET /api/ai/{id}/ask`에서만 허용한다.
+- overengineering 판단: 인증 모델, JWT 구조, OAuth redirect, SSE 구현은 바꾸지 않는다. 기존 필터의 토큰 추출 조건과 회귀 테스트만 다루는 작은 보안 변경이 적절하다.
+- 검증: ask SSE query token 허용, 일반 API·summary SSE·비-GET ask의 query token 무시, 모든 경로의 Bearer JWT 유지 및 우선순위를 자동 테스트했다. 집중 보안 테스트와 Testcontainers를 포함한 전체 45개 테스트가 통과했다.
+
+## Recently Completed
+
 ### #202 - MySQL Testcontainers 통합 테스트 및 트랜잭션 회귀 검증
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/202
@@ -18,8 +30,6 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 - 목표: 테스트 전용 MySQL 8과 Repository slice에서 20개 동시 증가 및 예외 rollback을 검증하고 개발 DB와 테스트 데이터를 분리한다.
 - overengineering 판단: 전체 SpringBootTest, API E2E, Redis/Kafka는 제외한다. MySQL 고유 트랜잭션 동작만 실제 DB로 검증하는 작은 slice가 적절하다.
 - 검증: 동시 UPDATE 20건 후 viewCount 20, 강제 예외 transaction 후 viewCount 0, 종료 후 임시 MySQL/Ryuk 자동 제거, compose DB 비변경을 확인했다.
-
-## Recently Completed
 
 ### #200 - 보호 API matcher 순서 수정 및 사용자 데이터 접근 통제 테스트
 

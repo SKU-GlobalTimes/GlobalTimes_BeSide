@@ -5,17 +5,17 @@
 
 ## Current Active Work
 
-- Issue: [#202](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/202)
-- Branch: `test/#202-mysql-integration`
-- Status: `Done` ([PR #203](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/203))
-- Scope: add a MySQL 8 Testcontainers Repository slice for concurrent atomic view-count updates and transaction rollback
-- Result: 20 concurrent UPDATE transactions produced viewCount 20, and a forced exception rolled the increment back to 0
-- Isolation: dynamic JDBC connection through `@ServiceConnection`; temporary schema and fixtures do not touch the compose MySQL
-- Runtime: the cached focused run completed in about 42 seconds and automatically removed MySQLContainer/Ryuk
-- Boundary: full application E2E, Redis/Kafka containers, H2 substitution, and broad conversion of unit tests are excluded
+- Issue: [#204](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/204)
+- Branch: `security/#204-sse-query-token-scope`
+- Status: `Done` ([PR #205](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/205))
+- Scope: keep Bearer JWT behavior unchanged while accepting query JWT only on `GET /api/ai/{id}/ask`
+- Test: focused security tests and the full 45-test suite pass; ask SSE query authentication, ignored query tokens elsewhere, and Bearer priority are verified
+- Boundary: OAuth redirect, JWT contents, authorization rules, SSE response behavior, and Issue #110 are excluded
 
 ## Recently Completed
 
+- #202 / PR #203: `Done`
+- Result: MySQL 8 Testcontainers verifies 20 concurrent atomic increments and transaction rollback without touching the compose database
 - #200 / PR #201: `Done`
 - Result: protected user/scrap/chat requests now return 401 without authentication while valid JWT subjects own service access
 
