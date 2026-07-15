@@ -7,15 +7,20 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## Current Active Work
 
+### P1. MySQL Testcontainers 통합 테스트 및 트랜잭션 회귀
+
+- 상태: `Done` ([#202](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/202), [PR #203](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/203))
+- AS-IS: MySQL 원자 UPDATE와 rollback은 수동 측정 또는 mock 테스트만 있어 실제 DB 회귀를 자동으로 감지하지 못한다.
+- TO-BE: 테스트 전용 MySQL 8에서 20개 동시 증가와 실패 transaction rollback을 자동 검증한다.
+- 범위: Repository slice로 제한하고 개발 DB, 전체 E2E, Redis/Kafka container는 제외한다.
+- 검증: viewCount가 동시 UPDATE 수 20과 일치하고 실패 transaction은 0으로 rollback되며 임시 container가 자동 정리돼야 한다.
+
+## Recently Completed
+
 ### P1. 보호 API matcher 및 사용자 데이터 접근 통제
 
 - 상태: `Done` ([#200](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/200), [PR #201](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/201))
-- AS-IS: `/api/**.permitAll()`이 보호 matcher보다 먼저 적용돼 미인증 요청이 사용자 스크랩·채팅 컨트롤러까지 진입하고 500을 반환한다.
-- TO-BE: 구체적인 인증 matcher를 먼저 적용해 미인증 요청을 401로 차단하고 JWT principal의 userId만 서비스에 전달한다.
-- 범위: HTTP matcher와 소유권 회귀 테스트에 집중하며 RBAC, ACL, 관리자 역할, 메서드 보안은 제외한다.
-- 검증: 미인증·invalid JWT는 401, valid JWT는 자신의 userId로 200, 공개 API는 비로그인 접근을 유지해야 한다.
-
-## Recently Completed
+- 검증: 보호 API의 미인증 요청은 401, valid JWT는 token subject userId로 접근하며 공개 API는 비로그인 접근을 유지했다.
 
 ### P1. 기사 상세 동시 조회 viewCount 원자 증가
 
