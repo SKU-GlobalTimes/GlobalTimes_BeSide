@@ -13,10 +13,13 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.regex.Pattern;
 
 @Slf4j
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private static final Pattern AI_ASK_SSE_PATH = Pattern.compile("^/api/ai/[^/]+/ask/?$");
 
     private final JwtUtil jwtUtil;
 
@@ -46,11 +49,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (StringUtils.hasText(bearer) && bearer.startsWith("Bearer ")) {
             return bearer.substring(7);
         }
-        // EventSource는 커스텀 헤더를 지원하지 않으므로 SSE 요청에서는 쿼리 파라미터로 토큰 전달
-        String queryToken = request.getParameter("token");
-        if (StringUtils.hasText(queryToken)) {
-            return queryToken;
+        // EventSource가 사용하는 기사 질의 SSE 요청에서만 query token을 허용한다.
+        if (isAiAskSseRequest(request)) {
+            String queryToken = request.getParameter("token");
+            if (StringUtils.hasText(queryToken)) {
+                return queryToken;
+            }
         }
         return null;
+    }
+
+    private boolean isAiAskSseRequest(HttpServletRequest request) {
+        return "GET".equalsIgnoreCase(request.getMethod())
+                && AI_ASK_SSE_PATH.matcher(request.getRequestURI()).matches();
     }
 }

@@ -7,6 +7,16 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## Current Active Work
 
+### P1. SSE query token 허용 경로 제한
+
+- 상태: `Done` ([#204](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/204), [PR #205](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/205))
+- AS-IS: JWT 필터가 모든 요청의 `token` 쿼리 파라미터를 인증 수단으로 허용해 EventSource와 무관한 URL까지 JWT 노출 범위가 넓다.
+- TO-BE: Bearer JWT는 기존처럼 전역에서 허용하고, query JWT는 `GET /api/ai/{id}/ask`에서만 인증에 사용한다.
+- 범위: 필터 토큰 추출 조건과 허용·차단·Bearer 회귀 테스트로 제한하며 OAuth, JWT 구조, API 응답은 변경하지 않는다.
+- 검증: 허용 경로·차단 경로·Bearer 우선순위 테스트와 Testcontainers를 포함한 전체 45개 테스트가 통과했다.
+
+## Recently Completed
+
 ### P1. MySQL Testcontainers 통합 테스트 및 트랜잭션 회귀
 
 - 상태: `Done` ([#202](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/202), [PR #203](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/203))
@@ -14,8 +24,6 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 - TO-BE: 테스트 전용 MySQL 8에서 20개 동시 증가와 실패 transaction rollback을 자동 검증한다.
 - 범위: Repository slice로 제한하고 개발 DB, 전체 E2E, Redis/Kafka container는 제외한다.
 - 검증: viewCount가 동시 UPDATE 수 20과 일치하고 실패 transaction은 0으로 rollback되며 임시 container가 자동 정리돼야 한다.
-
-## Recently Completed
 
 ### P1. 보호 API matcher 및 사용자 데이터 접근 통제
 
