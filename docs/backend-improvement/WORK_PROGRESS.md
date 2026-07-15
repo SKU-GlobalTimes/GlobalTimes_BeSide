@@ -5,6 +5,18 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Current Active Work
 
+### #206 - develop PR Gradle·Testcontainers 자동 테스트 및 배포 workflow 분리
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/206
+- 작업 브랜치: `ci/#206-backend-test-workflow`
+- 상태: `Done` ([PR #207](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/207))
+- 기준선: 기존 GitHub Actions는 `main` build/deploy에 결합되어 있고 `./gradlew clean build -x test`로 테스트를 제외해 `develop` PR의 45개 회귀 테스트가 자동 실행되지 않는다.
+- 목표: secrets 없는 독립 CI에서 JDK 17과 `./gradlew test`를 사용해 단위·보안·Testcontainers MySQL 테스트를 자동 실행한다.
+- overengineering 판단: 새 배포 파이프라인과 branch protection을 설계하지 않는다. 독립 CI를 추가하고 대상 EC2가 삭제된 legacy CD workflow는 제거하되 Dockerfile·Compose는 유지한다.
+- 검증: 로컬에서 `./gradlew test --rerun-tasks`로 Testcontainers를 포함한 전체 45개 테스트가 1분 11초에 통과했다. PR #207의 첫 GitHub `Backend CI`도 운영 secret 없이 1분 50초에 통과했다.
+
+## Recently Completed
+
 ### #204 - SSE query token 허용 경로 제한
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/204
@@ -14,8 +26,6 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 - 목표: Bearer JWT 동작은 유지하면서 query JWT를 로그인 사용자의 대화 저장에 인증 정보가 필요한 `GET /api/ai/{id}/ask`에서만 허용한다.
 - overengineering 판단: 인증 모델, JWT 구조, OAuth redirect, SSE 구현은 바꾸지 않는다. 기존 필터의 토큰 추출 조건과 회귀 테스트만 다루는 작은 보안 변경이 적절하다.
 - 검증: ask SSE query token 허용, 일반 API·summary SSE·비-GET ask의 query token 무시, 모든 경로의 Bearer JWT 유지 및 우선순위를 자동 테스트했다. 집중 보안 테스트와 Testcontainers를 포함한 전체 45개 테스트가 통과했다.
-
-## Recently Completed
 
 ### #202 - MySQL Testcontainers 통합 테스트 및 트랜잭션 회귀 검증
 
