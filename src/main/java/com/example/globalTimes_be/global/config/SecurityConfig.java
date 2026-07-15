@@ -7,12 +7,14 @@ import com.example.globalTimes_be.global.security.oauth2.OAuth2SuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -36,8 +38,15 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .authorizeHttpRequests(auth -> auth
-                        // 인증 불필요 (기존 API 전체 허용)
+                        // 사용자 소유 데이터 API는 광범위한 /api/** 허용 규칙보다 먼저 선언한다.
+                        .requestMatchers("/api/user/**").authenticated()
+                        .requestMatchers("/api/articles/*/chat-history").authenticated()
+                        .requestMatchers("/api/articles/*/scrap").authenticated()
+                        .requestMatchers("/api/articles/*/scrap/status").authenticated()
+                        // 인증 불필요
                         .requestMatchers(
                                 "/api/**",
                                 "/oauth2/**",
@@ -46,12 +55,6 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/error"
                         ).permitAll()
-                        // 사용자 정보 및 채팅 히스토리는 인증 필요
-                        .requestMatchers("/api/user/**").authenticated()
-                        .requestMatchers("/api/articles/*/chat-history").authenticated()
-                        // 스크랩 토글 및 상태 조회는 인증 필요
-                        .requestMatchers("/api/articles/*/scrap").authenticated()
-                        .requestMatchers("/api/articles/*/scrap/status").authenticated()
                         .anyRequest().permitAll()
                 )
                 .oauth2Login(oauth2 -> oauth2

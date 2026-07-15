@@ -7,15 +7,20 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## Current Active Work
 
+### P1. 보호 API matcher 및 사용자 데이터 접근 통제
+
+- 상태: `Done` ([#200](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/200), [PR #201](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/201))
+- AS-IS: `/api/**.permitAll()`이 보호 matcher보다 먼저 적용돼 미인증 요청이 사용자 스크랩·채팅 컨트롤러까지 진입하고 500을 반환한다.
+- TO-BE: 구체적인 인증 matcher를 먼저 적용해 미인증 요청을 401로 차단하고 JWT principal의 userId만 서비스에 전달한다.
+- 범위: HTTP matcher와 소유권 회귀 테스트에 집중하며 RBAC, ACL, 관리자 역할, 메서드 보안은 제외한다.
+- 검증: 미인증·invalid JWT는 401, valid JWT는 자신의 userId로 200, 공개 API는 비로그인 접근을 유지해야 한다.
+
+## Recently Completed
+
 ### P1. 기사 상세 동시 조회 viewCount 원자 증가
 
 - 상태: `Done` ([#198](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/198), [PR #199](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/199))
-- AS-IS: 상세 조회가 Article 엔티티를 읽고 `viewCount++` 후 저장해 동시 성공 요청 20건 중 18건의 증가가 유실됐다.
-- TO-BE: DB 원자 UPDATE로 조회수를 증가시키고, 상세 응답에는 증가 완료된 값을 반환한다.
-- 범위: 정합성 검증에 집중하며 최대 TPS, Redis counter, 비관적/낙관적 락 도입은 제외한다.
-- 검증: 동일한 20 VU·20요청에서 성공 20건과 실제 증가량 20이 일치하고 테스트 데이터가 원복돼야 한다.
-
-## Recently Completed
+- 검증: 동일한 20 VU·20요청에서 성공 요청 수와 실제 조회수 증가량이 20으로 일치했다.
 
 ### P1. RSS/News API 수집 중복 방지와 재실행 안전성
 

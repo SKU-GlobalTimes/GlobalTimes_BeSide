@@ -5,18 +5,18 @@
 
 ## Current Active Work
 
-- Issue: [#198](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/198)
-- Branch: `data/#198-atomic-view-count`
-- Status: `Done` ([PR #199](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/199))
-- Scope: replace article detail read-modify-write view count updates with a DB atomic increment and return the incremented value
-- Baseline: 20 concurrent successful detail requests increased `view_count` by only 2, losing 18 increments
-- Result: the same 20 VU and 20 requests increased `view_count` by exactly 20 after the atomic UPDATE; test data was restored
-- Boundary: this is a consistency check, not a maximum throughput claim; Redis counters and lock-based designs remain deferred
+- Issue: [#200](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/200)
+- Branch: `security/#200-protected-api-matchers`
+- Status: `Done` ([PR #201](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/201))
+- Scope: place authenticated user/scrap/chat matchers before the broad `/api/**` permit rule and verify JWT principal ownership at the HTTP security boundary
+- Baseline: unauthenticated and invalid-JWT protected requests reached controllers through `/api/**.permitAll()` and returned 500 instead of being rejected
+- Result: protected requests now stop at the Security filter with 401, valid JWT subject user IDs reach scrap/chat services, and the public scrap lookup remains accessible
+- Boundary: RBAC, ACL tables, admin roles, method security, and global query-token restrictions are excluded
 
 ## Recently Completed
 
-- #196 / PR #197: `Done`
-- Result: RSS/News API response-level URL deduplication and single-instance sequential rerun safety are covered; DB uniqueness remains a follow-up
+- #198 / PR #199: `Done`
+- Result: 20 concurrent successful detail requests changed from 18 lost view-count increments to zero through a DB atomic UPDATE
 
 ## Read Order
 
