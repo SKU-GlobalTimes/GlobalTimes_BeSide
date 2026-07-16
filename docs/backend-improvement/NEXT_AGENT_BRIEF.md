@@ -5,15 +5,18 @@
 
 ## Current Active Work
 
-- Issue: [#204](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/204)
-- Branch: `security/#204-sse-query-token-scope`
-- Status: `Done` ([PR #205](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/205))
-- Scope: keep Bearer JWT behavior unchanged while accepting query JWT only on `GET /api/ai/{id}/ask`
-- Test: focused security tests and the full 45-test suite pass; ask SSE query authentication, ignored query tokens elsewhere, and Bearer priority are verified
-- Boundary: OAuth redirect, JWT contents, authorization rules, SSE response behavior, and Issue #110 are excluded
+- Issue: [#206](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/206)
+- Branch: `ci/#206-backend-test-workflow`
+- Status: `Done` ([PR #207](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/207))
+- Scope: run the full Gradle test suite, including Testcontainers MySQL, on `develop` PRs and pushes without deployment secrets
+- Safety: retire the legacy EC2/Docker Hub deployment workflow because its target instance no longer exists; Git history preserves the old setup
+- Test: all 45 local tests passed with `--rerun-tasks` in 1m 11s, and the first GitHub `Backend CI` run passed in 1m 50s
+- Boundary: new EC2/CD design, Dockerfile/Compose changes, repository secret deletion, branch protection settings, load tests, and Issue #110 are excluded
 
 ## Recently Completed
 
+- #204 / PR #205: `Done`
+- Result: query JWT is accepted only on the article ask SSE route while Bearer authentication remains globally available and takes priority
 - #202 / PR #203: `Done`
 - Result: MySQL 8 Testcontainers verifies 20 concurrent atomic increments and transaction rollback without touching the compose database
 - #200 / PR #201: `Done`
