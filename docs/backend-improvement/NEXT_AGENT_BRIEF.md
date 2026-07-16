@@ -5,15 +5,18 @@
 
 ## Current Active Work
 
-- Issue: [#206](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/206)
-- Branch: `ci/#206-backend-test-workflow`
-- Status: `Done` ([PR #207](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/207))
-- Scope: run the full Gradle test suite, including Testcontainers MySQL, on `develop` PRs and pushes without deployment secrets
-- Safety: retire the legacy EC2/Docker Hub deployment workflow because its target instance no longer exists; Git history preserves the old setup
-- Test: all 45 local tests passed with `--rerun-tasks` in 1m 11s, and the first GitHub `Backend CI` run passed in 1m 50s
-- Boundary: new EC2/CD design, Dockerfile/Compose changes, repository secret deletion, branch protection settings, load tests, and Issue #110 are excluded
+- Issue: [#208](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/208)
+- Branch: `db/#208-flyway-baseline`
+- Status: `Done` ([PR #209](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/209))
+- Scope: manage the five domain tables with Flyway V1 and normalize legacy constraint/index names plus the article FULLTEXT index with V2
+- Safety: existing local data remains intact; V2 changes schema object names and restores a missing FULLTEXT index without rewriting domain rows
+- Test: all 49 local tests passed with `--rerun-tasks` in about 1m 10s; the 6 focused MySQL cases include fresh/legacy success plus invalid index/FK failure-repair-retry paths
+- Boundary: URL uniqueness, duplicate cleanup, feature schema changes, production deployment, and Issue #110 are excluded
 
 ## Recently Completed
+
+- #206 / PR #207: `Done`
+- Result: every `develop` PR and push runs all Gradle tests, including MySQL Testcontainers, in an independent Backend CI workflow
 
 - #204 / PR #205: `Done`
 - Result: query JWT is accepted only on the article ask SSE route while Bearer authentication remains globally available and takes priority
