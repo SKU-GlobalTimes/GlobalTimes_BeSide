@@ -5,6 +5,18 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Current Active Work
 
+### #208 - Flyway 기반 스키마 기준선 및 Testcontainers 재현성 확보
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/208
+- 작업 브랜치: `db/#208-flyway-baseline`
+- 상태: `Done` ([PR #209](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/209))
+- 기준선: 애플리케이션 시작 시 Hibernate DDL과 `FullTextIndexConfig`가 스키마를 암묵적으로 보완해, 빈 DB·개발 DB·CI DB가 같은 구조에서 시작하는지 버전으로 추적할 수 없다.
+- 목표: 5개 도메인 테이블을 Flyway V1으로 관리하고, V2에서 legacy constraint/index 이름과 기사 FULLTEXT 인덱스를 canonical 구조로 수렴시킨다. Hibernate는 `ddl-auto=validate`로 migration 결과만 검증한다.
+- overengineering 판단: 현재 스키마를 V1으로 고정하고 재현 테스트만 추가한다. URL UNIQUE, 중복 데이터 정리, 신규 테이블·컬럼, 운영 배포 자동화는 별도 근거가 필요하므로 제외한다.
+- 검증: 빈 MySQL의 V1→V2와 Hibernate식 이름·FULLTEXT 누락 fixture의 baseline 1→V2를 Testcontainers에서 검증했다. 잘못된 canonical index와 `ON DELETE CASCADE` FK는 migration 실패 후 구조 수정·repair·재실행되는 negative test로 고정했다. 기존 로컬 DB에도 V2를 적용해 5개 FK와 주요 인덱스 이름, `FULLTEXT(title, description)`을 canonical 구조로 통일했으며 전후 행 수 `article 9853 / source 673 / users 1 / scrap 1 / chat_history 4`가 동일하다. 전체 49개 테스트가 약 1분 10초에 통과했다.
+
+## Recently Completed
+
 ### #206 - develop PR Gradle·Testcontainers 자동 테스트 및 배포 workflow 분리
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/206
@@ -14,8 +26,6 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 - 목표: secrets 없는 독립 CI에서 JDK 17과 `./gradlew test`를 사용해 단위·보안·Testcontainers MySQL 테스트를 자동 실행한다.
 - overengineering 판단: 새 배포 파이프라인과 branch protection을 설계하지 않는다. 독립 CI를 추가하고 대상 EC2가 삭제된 legacy CD workflow는 제거하되 Dockerfile·Compose는 유지한다.
 - 검증: 로컬에서 `./gradlew test --rerun-tasks`로 Testcontainers를 포함한 전체 45개 테스트가 1분 11초에 통과했다. PR #207의 첫 GitHub `Backend CI`도 운영 secret 없이 1분 50초에 통과했다.
-
-## Recently Completed
 
 ### #204 - SSE query token 허용 경로 제한
 

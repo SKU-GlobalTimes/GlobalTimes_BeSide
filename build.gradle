@@ -39,7 +39,9 @@ dependencies {
 
 	//db
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.flywaydb:flyway-core'
 	runtimeOnly 'com.mysql:mysql-connector-j'//mysql
+	runtimeOnly 'org.flywaydb:flyway-mysql'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'//redis
 
 	//swagger

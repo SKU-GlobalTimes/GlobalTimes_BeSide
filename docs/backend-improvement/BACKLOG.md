@@ -7,6 +7,16 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## Current Active Work
 
+### P1. Flyway 기반 스키마 기준선 및 Testcontainers 재현성 확보
+
+- 상태: `Done` ([#208](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/208), [PR #209](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/209))
+- AS-IS: Hibernate DDL과 시작 시점 Java 설정이 스키마를 보완해 schema 변경 순서와 환경별 재현 여부를 추적하기 어렵다.
+- TO-BE: V1으로 5개 도메인 테이블을 생성하고 V2로 legacy 객체 이름과 FULLTEXT를 canonical 구조로 수렴시킨 뒤 Hibernate `validate`와 Testcontainers로 자동 검증한다.
+- 범위: 현재 schema 기준선과 비파괴 local baseline으로 제한한다. URL UNIQUE, 중복 정리, 기능 schema 변경, 운영 배포는 제외한다.
+- 검증: 빈 MySQL V1→V2와 legacy baseline 1→V2, invalid index/FK 실패·repair·재실행을 재현했다. 기존 DB의 V2 적용 후 canonical FK·인덱스와 데이터 보존 및 전체 49개 테스트 통과를 확인했다.
+
+## Recently Completed
+
 ### P1. develop PR Gradle·Testcontainers 자동 테스트 및 배포 workflow 분리
 
 - 상태: `Done` ([#206](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/206), [PR #207](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/207))
@@ -14,8 +24,6 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 - TO-BE: secrets 없는 독립 CI에서 전체 Gradle 테스트를 실행하고, 대상 EC2가 삭제된 legacy 배포 workflow는 자동 실행 목록에서 제거한다.
 - 범위: Backend CI 추가와 legacy CD workflow 제거로 제한하며 새 EC2/CD, Dockerfile·Compose, repository secrets, branch protection은 변경하지 않는다.
 - 검증: 로컬 강제 재실행에서 Testcontainers를 포함한 45개 테스트가 통과했고, 첫 GitHub `Backend CI`도 1분 50초에 통과했다.
-
-## Recently Completed
 
 ### P1. SSE query token 허용 경로 제한
 

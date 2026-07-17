@@ -18,7 +18,8 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: update
+      # Flyway가 schema 변경을 소유하고 Hibernate는 Entity와 실제 schema의 일치 여부만 검증한다.
+      ddl-auto: validate
 
   # OAuth2 소셜 로그인 (Google)
   security:

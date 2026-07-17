@@ -21,13 +21,31 @@ mock 단위 테스트나 수동 API 측정만으로는 확인하기 어려운 My
 - `@DataJpaTest`: Repository와 JPA 관련 bean만 로드
 - `MySQLContainer("mysql:8.0")`: 테스트 전용 임시 MySQL 사용
 - `@ServiceConnection`: 동적 JDBC URL과 인증 정보를 Spring Boot에 자동 연결
-- `ddl-auto=create`: 임시 database에 schema 생성
+- Flyway V1/V2 migration: 임시 database에 실제 MySQL schema를 만들고 constraint/index 이름과 FULLTEXT 인덱스를 canonical 구조로 수렴
+- `ddl-auto=validate`: Hibernate가 Entity와 migration schema의 일치 여부 검증
 - `TransactionTemplate`: worker별 독립 transaction과 rollback 경계 구성
 
 개발용 `application.yml`의 datasource URL이나 로컬 MySQL 계정을 테스트에 복사하지 않는다.
-컨테이너가 제거될 때 database도 함께 폐기되므로 종료 시 `create-drop` DDL은 실행하지 않는다.
+컨테이너가 제거될 때 database도 함께 폐기되므로 Hibernate의 create/create-drop DDL은 사용하지 않는다.
 
 ## 검증 결과
+
+### Flyway schema 재현
+
+- 빈 MySQL 8에 V1 migration 적용
+- `flyway_schema_history`의 version 1, 2 성공 이력 확인
+- 5개 domain table 생성 확인
+- `ft_article_title_description` FULLTEXT 인덱스가 `title`, `description` 순서인지 확인
+
+### 기존 DB baseline 재현
+
+- Hibernate 생성 이름을 가진 5개 domain table과 FULLTEXT가 없는 legacy fixture 구성
+- version 1 baseline 등록 후 V2만 실행
+- 5개 FK와 주요 보조·unique 인덱스가 canonical 이름으로 정규화되는지 확인
+- 누락된 `ft_article_title_description(title, description)` 생성 확인
+- 잘못된 canonical index와 FK rule이 migration을 실패시키는지 확인
+- 실패 후 구조 수정, Flyway repair, V2 재실행 및 procedure 정리를 확인
+- 집중 테스트 6개와 전체 49개 테스트 통과
 
 ### 동시 원자 증가
 
@@ -47,7 +65,8 @@ mock 단위 테스트나 수동 API 측정만으로는 확인하기 어려운 My
 - fixture는 임시 MySQL에만 저장한다.
 - 각 테스트 후 article/source fixture를 정리한다.
 - 테스트 종료 후 MySQLContainer와 Ryuk가 자동 제거되는 것을 확인했다.
-- 기존 `globaltimes_beside-mysql-1`, `globaltimes_beside-redis-1`에는 변경이 없다.
+- Testcontainers 검증은 기존 `globaltimes_beside-mysql-1`, `globaltimes_beside-redis-1`의 데이터에 접근하지 않는다.
+- #208에서 기존 local MySQL에는 별도 1회 baseline 절차로 `flyway_schema_history`만 추가했으며 도메인 데이터 행 수는 유지됐다.
 
 ## 범위와 후속 기준
 
