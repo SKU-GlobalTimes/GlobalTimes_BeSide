@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
@@ -77,7 +78,7 @@ class ArticleRepositoryIntegrationTest {
     @Test
     void flywayCreatesBaselineSchemaAndFullTextIndex() {
         Integer migrationCount = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM flyway_schema_history WHERE version IN ('1', '2') AND success = 1",
+                "SELECT COUNT(*) FROM flyway_schema_history WHERE version IN ('1', '2', '3') AND success = 1",
                 Integer.class
         );
         Integer domainTableCount = jdbcTemplate.queryForObject(
@@ -88,7 +89,7 @@ class ArticleRepositoryIntegrationTest {
         );
         List<String> fullTextColumns = fullTextColumns(jdbcTemplate);
 
-        assertThat(migrationCount).isEqualTo(2);
+        assertThat(migrationCount).isEqualTo(3);
         assertThat(domainTableCount).isEqualTo(5);
         assertThat(fullTextColumns).containsExactly("title", "description");
     }
@@ -144,7 +145,7 @@ class ArticleRepositoryIntegrationTest {
             );
             flyway.repair();
 
-            assertThat(flyway.migrate().migrationsExecuted).isEqualTo(1);
+            assertThat(flyway.migrate().migrationsExecuted).isEqualTo(2);
             assertThat(normalizationProcedureCount(legacyJdbcTemplate)).isZero();
             assertThat(schemaObjectNames(legacyJdbcTemplate)).contains("uk_source_name");
         } finally {
@@ -178,10 +179,207 @@ class ArticleRepositoryIntegrationTest {
             );
             flyway.repair();
 
-            assertThat(flyway.migrate().migrationsExecuted).isEqualTo(1);
+            assertThat(flyway.migrate().migrationsExecuted).isEqualTo(2);
             assertThat(normalizationProcedureCount(legacyJdbcTemplate)).isZero();
             assertThat(foreignKeyRules(legacyJdbcTemplate, "fk_article_source"))
                     .isEqualTo("NO ACTION/NO ACTION");
+        } finally {
+            dropDatabase(databaseName);
+        }
+    }
+
+    @Test
+    void flywayV3RemovesSafeDuplicatesAndRejectsFutureDuplicateUrl() throws Exception {
+        String databaseName = "url_uniqueness_baseline";
+        DriverManagerDataSource dataSource = createLegacyDatabase(databaseName);
+        JdbcTemplate targetJdbcTemplate = new JdbcTemplate(dataSource);
+
+        try {
+            flywayAtVersion2(dataSource).migrate();
+            long sourceId = insertSource(targetJdbcTemplate, "URL Unique Source");
+            insertArticle(targetJdbcTemplate, sourceId, "older title", "https://news.example/duplicate", null);
+            insertArticle(targetJdbcTemplate, sourceId, "latest title", "https://news.example/duplicate", null);
+            insertArticle(targetJdbcTemplate, sourceId, "other title", "https://news.example/other", null);
+            insertArticle(targetJdbcTemplate, sourceId, "upper path", "https://news.example/Path", null);
+            insertArticle(targetJdbcTemplate, sourceId, "lower path", "https://news.example/path", null);
+
+            assertThat(baselineFlyway(dataSource).migrate().migrationsExecuted).isEqualTo(1);
+            assertThat(articleCountByExactUrl(targetJdbcTemplate, "https://news.example/duplicate")).isEqualTo(1);
+            assertThat(targetJdbcTemplate.queryForObject(
+                    "SELECT title FROM article WHERE url = ?",
+                    String.class,
+                    "https://news.example/duplicate"
+            )).isEqualTo("latest title");
+            assertThat(articleCountByExactUrl(targetJdbcTemplate, "https://news.example/Path")).isEqualTo(1);
+            assertThat(articleCountByExactUrl(targetJdbcTemplate, "https://news.example/path")).isEqualTo(1);
+            assertThat(targetJdbcTemplate.queryForObject(
+                    "SELECT COUNT(DISTINCT HEX(url_hash)) FROM article " +
+                            "WHERE LOWER(url) = 'https://news.example/path'",
+                    Integer.class
+            )).isEqualTo(2);
+            assertThat(urlHashIndexColumns(targetJdbcTemplate)).containsExactly("url_hash");
+
+            assertThatThrownBy(() -> insertArticle(
+                    targetJdbcTemplate,
+                    sourceId,
+                    "duplicate after V3",
+                    "https://news.example/duplicate",
+                    null
+            )).isInstanceOf(DataIntegrityViolationException.class);
+        } finally {
+            dropDatabase(databaseName);
+        }
+    }
+
+    @Test
+    void flywayV3RejectsDuplicateThatContainsPreservedData() throws Exception {
+        String databaseName = "unsafe_url_duplicate_baseline";
+        DriverManagerDataSource dataSource = createLegacyDatabase(databaseName);
+        JdbcTemplate targetJdbcTemplate = new JdbcTemplate(dataSource);
+
+        try {
+            flywayAtVersion2(dataSource).migrate();
+            long sourceId = insertSource(targetJdbcTemplate, "Unsafe Duplicate Source");
+            insertArticle(
+                    targetJdbcTemplate,
+                    sourceId,
+                    "older enriched title",
+                    "https://news.example/unsafe-duplicate",
+                    "summary to preserve"
+            );
+            insertArticle(
+                    targetJdbcTemplate,
+                    sourceId,
+                    "latest title",
+                    "https://news.example/unsafe-duplicate",
+                    null
+            );
+            long protectedArticleId = targetJdbcTemplate.queryForObject(
+                    "SELECT MIN(article_id) FROM article WHERE url = ?",
+                    Long.class,
+                    "https://news.example/unsafe-duplicate"
+            );
+            long userId = insertUser(targetJdbcTemplate, "unsafe-duplicate-user@example.com");
+            targetJdbcTemplate.update(
+                    "INSERT INTO scrap(created_at, article_id, user_id) VALUES (NOW(6), ?, ?)",
+                    protectedArticleId,
+                    userId
+            );
+
+            Flyway flyway = baselineFlyway(dataSource);
+
+            assertThatThrownBy(flyway::migrate)
+                    .isInstanceOf(FlywayException.class)
+                    .hasRootCauseMessage(
+                            "Unsafe duplicate article data must be resolved before URL uniqueness migration"
+                    );
+            assertThat(articleCountByUrl(
+                    targetJdbcTemplate,
+                    "https://news.example/unsafe-duplicate"
+            )).isEqualTo(2);
+            assertThat(targetJdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM scrap",
+                    Integer.class
+            )).isEqualTo(1);
+
+            targetJdbcTemplate.update("DELETE FROM scrap");
+            targetJdbcTemplate.update(
+                    "UPDATE article SET summary = NULL WHERE article_id = ?",
+                    protectedArticleId
+            );
+            flyway.repair();
+
+            assertThat(flyway.migrate().migrationsExecuted).isEqualTo(1);
+            assertThat(articleCountByExactUrl(
+                    targetJdbcTemplate,
+                    "https://news.example/unsafe-duplicate"
+            )).isEqualTo(1);
+            assertThat(urlUniquenessProcedureCount(targetJdbcTemplate)).isZero();
+        } finally {
+            dropDatabase(databaseName);
+        }
+    }
+
+    @Test
+    void flywayV3ValidatesCanonicalColumnBeforeDeletingDuplicatesAndCanRetry() throws Exception {
+        String databaseName = "invalid_url_hash_baseline";
+        DriverManagerDataSource dataSource = createLegacyDatabase(databaseName);
+        JdbcTemplate targetJdbcTemplate = new JdbcTemplate(dataSource);
+
+        try {
+            flywayAtVersion2(dataSource).migrate();
+            long sourceId = insertSource(targetJdbcTemplate, "Invalid URL Hash Source");
+            insertArticle(targetJdbcTemplate, sourceId, "older title", "https://news.example/schema-error", null);
+            insertArticle(targetJdbcTemplate, sourceId, "latest title", "https://news.example/schema-error", null);
+            targetJdbcTemplate.execute(
+                    "ALTER TABLE article ADD COLUMN url_hash BINARY(32) " +
+                            "GENERATED ALWAYS AS " +
+                            "(UNHEX(SHA2(CONCAT(url, 'wrong'), 256))) STORED"
+            );
+            Flyway flyway = baselineFlyway(dataSource);
+
+            assertThatThrownBy(flyway::migrate)
+                    .isInstanceOf(FlywayException.class)
+                    .hasRootCauseMessage("article.url_hash has an unexpected definition");
+            assertThat(articleCountByExactUrl(
+                    targetJdbcTemplate,
+                    "https://news.example/schema-error"
+            )).isEqualTo(2);
+            assertThat(urlUniquenessProcedureCount(targetJdbcTemplate)).isEqualTo(1);
+
+            targetJdbcTemplate.execute("ALTER TABLE article DROP COLUMN url_hash");
+            flyway.repair();
+
+            assertThat(flyway.migrate().migrationsExecuted).isEqualTo(1);
+            assertThat(articleCountByExactUrl(
+                    targetJdbcTemplate,
+                    "https://news.example/schema-error"
+            )).isEqualTo(1);
+            assertThat(urlUniquenessProcedureCount(targetJdbcTemplate)).isZero();
+        } finally {
+            dropDatabase(databaseName);
+        }
+    }
+
+    @Test
+    void databaseUniqueConstraintAllowsOnlyOneConcurrentInsertPerUrl() throws Exception {
+        String databaseName = "concurrent_url_uniqueness";
+        DriverManagerDataSource dataSource = createLegacyDatabase(databaseName);
+        JdbcTemplate targetJdbcTemplate = new JdbcTemplate(dataSource);
+
+        try {
+            baselineFlyway(dataSource).migrate();
+            long sourceId = insertSource(targetJdbcTemplate, "Concurrent URL Source");
+            String url = "https://news.example/concurrent";
+            ExecutorService executor = Executors.newFixedThreadPool(2);
+            CountDownLatch start = new CountDownLatch(1);
+            List<Future<Boolean>> inserts = new ArrayList<>();
+
+            try {
+                for (int i = 0; i < 2; i++) {
+                    int sequence = i;
+                    inserts.add(executor.submit(() -> {
+                        start.await();
+                        try {
+                            insertArticle(targetJdbcTemplate, sourceId, "title " + sequence, url, null);
+                            return true;
+                        } catch (DataIntegrityViolationException e) {
+                            return false;
+                        }
+                    }));
+                }
+                start.countDown();
+
+                List<Boolean> results = new ArrayList<>();
+                for (Future<Boolean> insert : inserts) {
+                    results.add(insert.get(30, TimeUnit.SECONDS));
+                }
+                assertThat(results).containsExactlyInAnyOrder(true, false);
+            } finally {
+                executor.shutdownNow();
+            }
+
+            assertThat(articleCountByExactUrl(targetJdbcTemplate, url)).isEqualTo(1);
         } finally {
             dropDatabase(databaseName);
         }
@@ -285,6 +483,15 @@ class ArticleRepositoryIntegrationTest {
                 .load();
     }
 
+    private Flyway flywayAtVersion2(DriverManagerDataSource dataSource) {
+        return Flyway.configure()
+                .dataSource(dataSource)
+                .baselineOnMigrate(true)
+                .baselineVersion("1")
+                .target("2")
+                .load();
+    }
+
     private void dropDatabase(String databaseName) {
         jdbcTemplate.execute("DROP DATABASE IF EXISTS " + databaseName);
     }
@@ -338,6 +545,99 @@ class ArticleRepositoryIntegrationTest {
                         "WHERE constraint_schema = DATABASE() AND constraint_name = ?",
                 String.class,
                 constraintName
+        );
+    }
+
+    private long insertSource(JdbcTemplate targetJdbcTemplate, String sourceName) {
+        targetJdbcTemplate.update(
+                "INSERT INTO source(source_api_id, source_name) VALUES (NULL, ?)",
+                sourceName
+        );
+        return targetJdbcTemplate.queryForObject(
+                "SELECT source_id FROM source WHERE source_name = ?",
+                Long.class,
+                sourceName
+        );
+    }
+
+    private void insertArticle(
+            JdbcTemplate targetJdbcTemplate,
+            long sourceId,
+            String title,
+            String url,
+            String summary
+    ) {
+        targetJdbcTemplate.update(
+                "INSERT INTO article(" +
+                        "author, category, content, country, crawled_content, description, " +
+                        "published_at, summary, title, url, url_to_image, view_count, source_id, language" +
+                        ") VALUES (?, ?, ?, ?, NULL, ?, NOW(6), ?, ?, ?, ?, 0, ?, ?)",
+                "author",
+                "general",
+                "content",
+                "us",
+                "description",
+                summary,
+                title,
+                url,
+                "https://news.example/image.jpg",
+                sourceId,
+                "en"
+        );
+    }
+
+    private int articleCountByUrl(JdbcTemplate targetJdbcTemplate, String url) {
+        Integer count = targetJdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM article WHERE url = ?",
+                Integer.class,
+                url
+        );
+        return count == null ? 0 : count;
+    }
+
+    private int articleCountByExactUrl(JdbcTemplate targetJdbcTemplate, String url) {
+        Integer count = targetJdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM article WHERE BINARY url = BINARY ?",
+                Integer.class,
+                url
+        );
+        return count == null ? 0 : count;
+    }
+
+    private long insertUser(JdbcTemplate targetJdbcTemplate, String email) {
+        targetJdbcTemplate.update(
+                "INSERT INTO users(created_at, email, nickname, provider, provider_id) " +
+                        "VALUES (NOW(6), ?, ?, ?, ?)",
+                email,
+                "nickname",
+                "test",
+                email
+        );
+        Long userId = targetJdbcTemplate.queryForObject(
+                "SELECT user_id FROM users WHERE email = ?",
+                Long.class,
+                email
+        );
+        return userId == null ? 0L : userId;
+    }
+
+    private int urlUniquenessProcedureCount(JdbcTemplate targetJdbcTemplate) {
+        Integer count = targetJdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.routines " +
+                        "WHERE routine_schema = DATABASE() " +
+                        "AND routine_name = 'enforce_article_url_uniqueness'",
+                Integer.class
+        );
+        return count == null ? 0 : count;
+    }
+
+    private List<String> urlHashIndexColumns(JdbcTemplate targetJdbcTemplate) {
+        return targetJdbcTemplate.queryForList(
+                "SELECT column_name FROM information_schema.statistics " +
+                        "WHERE table_schema = DATABASE() AND table_name = 'article' " +
+                        "AND index_name = 'uk_article_url_hash' AND non_unique = 0 " +
+                        "ORDER BY seq_in_index",
+                String.class
         );
     }
 }

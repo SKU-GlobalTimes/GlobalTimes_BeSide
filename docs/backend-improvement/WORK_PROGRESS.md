@@ -5,6 +5,20 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Current Active Work
 
+- 없음
+
+## Recently Completed
+
+### #210 - 기사 URL 중복 정리 및 DB 유일성 제약 보강
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/210
+- 작업 브랜치: `data/#210-article-url-uniqueness`
+- 상태: `Done` ([PR #211](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/211))
+- 기준선: #196 이전 동일 응답 중복 방어가 없던 시기의 흔적으로 기사 9,853건 중 고유 URL은 9,814개이며 38개 URL 그룹에 초과 행 39건이 남아 있었다.
+- 목표: 보존 데이터가 없는 과거 중복만 Flyway V3로 정리하고, `SHA2(url, 256)` generated column UNIQUE로 DB가 URL 유일성을 최종 보장한다.
+- overengineering 판단: 실제 중복이 존재하고 Flyway 기반이 준비돼 DB 제약은 적절하다. 외부 수집 E2E, Redis 분산 락, Kafka, 멀티 인스턴스 구성은 현재 단일 순차 수집 범위에 과해 제외한다.
+- 검증: Testcontainers에서 raw SHA-256 hash 기준 안전 중복 정리와 대소문자 URL 보존, summary/scrap 참조 중복 차단, 잘못된 generated column의 삭제 전 실패·repair·재실행, 동일 URL 동시 INSERT 1건 성공/1건 거부를 확인했다. 집중 테스트 10개와 전체 53개 테스트 및 Backend CI가 통과했다. 로컬 V3 적용 후 기사 9,814건·고유 URL 9,814개·중복 0건이며 scrap 1, chat 4, source 673은 유지됐다.
+
 ### #208 - Flyway 기반 스키마 기준선 및 Testcontainers 재현성 확보
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/208
@@ -14,8 +28,6 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 - 목표: 5개 도메인 테이블을 Flyway V1으로 관리하고, V2에서 legacy constraint/index 이름과 기사 FULLTEXT 인덱스를 canonical 구조로 수렴시킨다. Hibernate는 `ddl-auto=validate`로 migration 결과만 검증한다.
 - overengineering 판단: 현재 스키마를 V1으로 고정하고 재현 테스트만 추가한다. URL UNIQUE, 중복 데이터 정리, 신규 테이블·컬럼, 운영 배포 자동화는 별도 근거가 필요하므로 제외한다.
 - 검증: 빈 MySQL의 V1→V2와 Hibernate식 이름·FULLTEXT 누락 fixture의 baseline 1→V2를 Testcontainers에서 검증했다. 잘못된 canonical index와 `ON DELETE CASCADE` FK는 migration 실패 후 구조 수정·repair·재실행되는 negative test로 고정했다. 기존 로컬 DB에도 V2를 적용해 5개 FK와 주요 인덱스 이름, `FULLTEXT(title, description)`을 canonical 구조로 통일했으며 전후 행 수 `article 9853 / source 673 / users 1 / scrap 1 / chat_history 4`가 동일하다. 전체 49개 테스트가 약 1분 10초에 통과했다.
-
-## Recently Completed
 
 ### #206 - develop PR Gradle·Testcontainers 자동 테스트 및 배포 workflow 분리
 

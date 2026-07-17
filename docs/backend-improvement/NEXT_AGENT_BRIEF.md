@@ -5,15 +5,16 @@
 
 ## Current Active Work
 
-- Issue: [#208](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/208)
-- Branch: `db/#208-flyway-baseline`
-- Status: `Done` ([PR #209](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/209))
-- Scope: manage the five domain tables with Flyway V1 and normalize legacy constraint/index names plus the article FULLTEXT index with V2
-- Safety: existing local data remains intact; V2 changes schema object names and restores a missing FULLTEXT index without rewriting domain rows
-- Test: all 49 local tests passed with `--rerun-tasks` in about 1m 10s; the 6 focused MySQL cases include fresh/legacy success plus invalid index/FK failure-repair-retry paths
-- Boundary: URL uniqueness, duplicate cleanup, feature schema changes, production deployment, and Issue #110 are excluded
+- None
 
 ## Recently Completed
+
+- #210 / PR #211: `Done`
+- Result: Flyway V3 removed 39 safe duplicate article rows and enforces exact URL uniqueness with a generated SHA-256 UNIQUE index; all 53 tests and Backend CI passed
+- Boundary: real News API/RSS E2E, `news-fetch.enabled`, distributed locks, Kafka, multi-instance deployment, and Issue #110 remain excluded
+
+- #208 / PR #209: `Done`
+- Result: Flyway V1/V2 reproduces the five-table schema, canonical constraints/indexes, and FULLTEXT across fresh and legacy databases
 
 - #206 / PR #207: `Done`
 - Result: every `develop` PR and push runs all Gradle tests, including MySQL Testcontainers, in an independent Backend CI workflow

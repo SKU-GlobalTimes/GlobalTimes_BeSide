@@ -7,6 +7,18 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## Current Active Work
 
+- 없음
+
+## Recently Completed
+
+### P1. 기사 URL 중복 정리 및 DB 유일성 제약 보강
+
+- 상태: `Done` ([#210](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/210), [PR #211](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/211))
+- AS-IS: #196 이후 수집 로직은 응답 내부와 DB 기존 URL을 제외하지만, 이전에 생성된 초과 중복 39건이 남아 있고 DB 자체 유일성 제약은 없다.
+- TO-BE: 안전한 기존 중복을 V3로 정리하고 generated SHA-256 UNIQUE로 동일 URL 저장을 DB에서 거부한다.
+- 범위: 과거 데이터 정리, DB 제약, Testcontainers 회귀 검증으로 제한한다. 실제 외부 수집, flag 변경, 분산 락·Kafka는 제외한다.
+- 검증: raw SHA-256 hash 기준 중복 정리와 case variant 보존, 삭제 전 canonical schema 검증, 실패·repair·재실행을 포함한 전체 53개 테스트와 Backend CI 통과. 로컬 기사 `9853 → 9814`, 중복 `39 → 0`, scrap/chat/source 행 수 유지.
+
 ### P1. Flyway 기반 스키마 기준선 및 Testcontainers 재현성 확보
 
 - 상태: `Done` ([#208](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/208), [PR #209](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/209))
@@ -14,8 +26,6 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 - TO-BE: V1으로 5개 도메인 테이블을 생성하고 V2로 legacy 객체 이름과 FULLTEXT를 canonical 구조로 수렴시킨 뒤 Hibernate `validate`와 Testcontainers로 자동 검증한다.
 - 범위: 현재 schema 기준선과 비파괴 local baseline으로 제한한다. URL UNIQUE, 중복 정리, 기능 schema 변경, 운영 배포는 제외한다.
 - 검증: 빈 MySQL V1→V2와 legacy baseline 1→V2, invalid index/FK 실패·repair·재실행을 재현했다. 기존 DB의 V2 적용 후 canonical FK·인덱스와 데이터 보존 및 전체 49개 테스트 통과를 확인했다.
-
-## Recently Completed
 
 ### P1. develop PR Gradle·Testcontainers 자동 테스트 및 배포 workflow 분리
 
