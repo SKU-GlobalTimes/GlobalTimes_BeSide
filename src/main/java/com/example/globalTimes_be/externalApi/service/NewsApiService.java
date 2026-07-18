@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.OffsetDateTime;
@@ -36,6 +37,9 @@ public class NewsApiService {
 
     @Value("${spring.newsapi.api-key}")
     private String apiKey;
+
+    @Value("${spring.newsapi.base-url:https://newsapi.org}")
+    private String newsApiBaseUrl;
 
     // false = 로컬 개발 중 스케줄러/초기 적재 비활성화 (API 할당량 절약)
     // 수집 테스트 시 application.yml 에서 news-fetch.enabled: true 로 변경
@@ -108,7 +112,7 @@ public class NewsApiService {
     */
 
     // Country + Category 조합으로 헤드라인 수집 (국가/카테고리는 NewsFetchConfig에서 관리)
-    private void fetchTopHeadlines(boolean isInit) {
+    void fetchTopHeadlines(boolean isInit) {
         outer:
         for (String country : newsFetchConfig.getCountries()) {
             for (String category : newsFetchConfig.getCategories()) {
@@ -117,11 +121,15 @@ public class NewsApiService {
                     break outer;
                 }
                 try {
-                    String apiUrl = "https://newsapi.org/v2/top-headlines?"
-                            + "country=" + country
-                            + "&category=" + category
-                            + "&pageSize=" + newsFetchConfig.getPageSize()
-                            + "&apiKey=" + apiKey;
+                    String apiUrl = UriComponentsBuilder.fromUriString(newsApiBaseUrl)
+                            .path("/v2/top-headlines")
+                            .queryParam("country", country)
+                            .queryParam("category", category)
+                            .queryParam("pageSize", newsFetchConfig.getPageSize())
+                            .queryParam("apiKey", apiKey)
+                            .build()
+                            .encode()
+                            .toUriString();
 
                     requestCount++;
                     processApiRequest(apiUrl, country, category);
@@ -147,10 +155,14 @@ public class NewsApiService {
                 break;
             }
             try {
-                String apiUrl = "https://newsapi.org/v2/everything?"
-                        + "domains=" + domain
-                        + "&pageSize=" + newsFetchConfig.getPageSize()
-                        + "&apiKey=" + apiKey;
+                String apiUrl = UriComponentsBuilder.fromUriString(newsApiBaseUrl)
+                        .path("/v2/everything")
+                        .queryParam("domains", domain)
+                        .queryParam("pageSize", newsFetchConfig.getPageSize())
+                        .queryParam("apiKey", apiKey)
+                        .build()
+                        .encode()
+                        .toUriString();
 
                 requestCount++;
                 // 도메인 기사는 특정 국가에 종속되지 않으므로 "global"로 처리

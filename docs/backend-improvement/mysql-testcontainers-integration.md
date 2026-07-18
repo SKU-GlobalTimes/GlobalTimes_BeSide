@@ -57,6 +57,13 @@ mock 단위 테스트나 수동 API 측정만으로는 확인하기 어려운 My
 - `uk_article_url_hash(url_hash)` UNIQUE와 신규 DB V1→V2→V3 이력 확인
 - 집중 테스트 10개와 전체 53개 테스트 통과
 
+### News API 수집 부분 실패 E2E
+
+- random-port JDK mock HTTP server에서 headline category별 200, 500, timeout 응답을 통제
+- 실제 RestTemplate, JSON 역직렬화, Source/Article JPA 저장, Flyway V3 URL UNIQUE를 MySQL 8 Testcontainer에서 검증
+- 일부 요청 실패 후에도 정상 기사 2건 저장, 같은 수집 재실행 후 기사 2건과 URL 중복 그룹 0건 유지
+- 기존 compose DB와 8080 서버, 실제 News API key를 사용하지 않으며 전체 54개 테스트 통과
+
 ### 동시 원자 증가
 
 - 같은 기사에 20개 worker가 각각 `incrementViewCount()` 실행

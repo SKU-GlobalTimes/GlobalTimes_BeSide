@@ -9,6 +9,10 @@
 
 ## Recently Completed
 
+- #212 / PR #213: `Done`
+- Result: a random-port mock upstream and MySQL Testcontainers verify 200/500/timeout isolation, two successful article saves, and zero duplicate URL groups after rerun; all 54 tests and Backend CI passed
+- Boundary: real News API/RSS calls, `news-fetch.enabled=true`, retry/circuit breaker, distributed locks, Kafka, multi-instance deployment, and Issue #110 remain excluded
+
 - #210 / PR #211: `Done`
 - Result: Flyway V3 removed 39 safe duplicate article rows and enforces exact URL uniqueness with a generated SHA-256 UNIQUE index; all 53 tests and Backend CI passed
 - Boundary: real News API/RSS E2E, `news-fetch.enabled`, distributed locks, Kafka, multi-instance deployment, and Issue #110 remain excluded
