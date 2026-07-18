@@ -34,14 +34,34 @@ public class ScrapListResDTO {
     private LocalDateTime scrappedAt;
 
     public static ScrapListResDTO from(Scrap scrap) {
+        return from(
+                scrap.getArticle().getId(),
+                scrap.getArticle().getTitle(),
+                scrap.getArticle().getSource().getSourceName(),
+                scrap.getArticle().getUrlToImage(),
+                scrap.getArticle().getDescription(),
+                scrap.getArticle().getPublishedAt(),
+                scrap.getCreatedAt()
+        );
+    }
+
+    public static ScrapListResDTO from(
+            Long articleId,
+            String title,
+            String sourceName,
+            String urlToImage,
+            String description,
+            LocalDateTime publishedAt,
+            LocalDateTime scrappedAt
+    ) {
         return ScrapListResDTO.builder()
-                .articleId(scrap.getArticle().getId())
-                .title(scrap.getArticle().getTitle())
-                .sourceName(scrap.getArticle().getSource().getSourceName())
-                .urlToImage(scrap.getArticle().getUrlToImage())
-                .description(scrap.getArticle().getDescription())
-                .publishedAt(scrap.getArticle().getPublishedAt())
-                .scrappedAt(scrap.getCreatedAt())
+                .articleId(articleId)
+                .title(title)
+                .sourceName(sourceName)
+                .urlToImage(urlToImage)
+                .description(description)
+                .publishedAt(publishedAt)
+                .scrappedAt(scrappedAt)
                 .build();
     }
 }

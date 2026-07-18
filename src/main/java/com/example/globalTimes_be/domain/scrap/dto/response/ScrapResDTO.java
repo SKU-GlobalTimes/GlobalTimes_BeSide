@@ -27,4 +27,22 @@ public class ScrapResDTO {
 
     @Schema(description = "작성일", example = "2025-03-27T19:52:00Z")
     private LocalDateTime publishedAt;
+
+    public static ScrapResDTO from(
+            Long id,
+            String sourceName,
+            String title,
+            String description,
+            String urlToImage,
+            LocalDateTime publishedAt
+    ) {
+        return ScrapResDTO.builder()
+                .id(id)
+                .sourceName(sourceName)
+                .title(title)
+                .description(description)
+                .urlToImage(urlToImage)
+                .publishedAt(publishedAt)
+                .build();
+    }
 }

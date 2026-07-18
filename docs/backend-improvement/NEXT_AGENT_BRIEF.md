@@ -9,6 +9,10 @@
 
 ## Recently Completed
 
+- #216 / PR #217: `Done`
+- Result: projection batch queries reduced authenticated scrap-list SQL from 201 to 1 and legacy ID-list SQL from 200 to 1 on a synthetic 100-row MySQL fixture; all 58 tests and Backend CI passed
+- Boundary: the local database has one scrap row; pagination, Redis, new indexes/Flyway, toggle concurrency, and Issue #110 remain excluded
+
 - #214 / PR #215: `Done`
 - Result: a MySQL 8 window-function projection replaced all-history Java grouping; on a synthetic 5,000-chat/100-article fixture SQL statements changed from 101 to 1, entity loads from 5,100 to 0, and all 55 tests plus Backend CI passed
 - Boundary: the local database has only four chat rows, so pagination, a new index/Flyway migration, Redis, anonymous chat changes, and Issue #110 remain excluded

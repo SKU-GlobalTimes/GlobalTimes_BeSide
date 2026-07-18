@@ -2,10 +2,12 @@ package com.example.globalTimes_be.domain.scrap.service;
 
 import com.example.globalTimes_be.domain.article.entity.Article;
 import com.example.globalTimes_be.domain.article.repository.ArticleRepository;
+import com.example.globalTimes_be.domain.article.repository.ArticleSummaryProjection;
 import com.example.globalTimes_be.domain.scrap.dto.response.ScrapListResDTO;
 import com.example.globalTimes_be.domain.scrap.dto.response.ScrapResDTO;
 import com.example.globalTimes_be.domain.scrap.entity.Scrap;
 import com.example.globalTimes_be.domain.scrap.exception.ScrapErrorStatus;
+import com.example.globalTimes_be.domain.scrap.repository.ScrapListProjection;
 import com.example.globalTimes_be.domain.scrap.repository.ScrapRepository;
 import com.example.globalTimes_be.domain.user.entity.User;
 import com.example.globalTimes_be.domain.user.repository.UserRepository;
@@ -15,9 +17,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -32,23 +35,20 @@ public class ScrapService {
     // 기존 API 유지 (localStorage 기반 비로그인 호환)
     @Transactional(readOnly = true)
     public List<ScrapResDTO> getScrap(List<Long> articleIds) {
-        List<ScrapResDTO> scrapResDTOs = new ArrayList<>();
-
-        for (Long articleId : articleIds) {
-            Article article = articleRepository.findById(articleId).orElse(null);
-            if (article == null) continue;
-
-            scrapResDTOs.add(ScrapResDTO.builder()
-                    .id(article.getId())
-                    .sourceName(article.getSource().getSourceName())
-                    .title(article.getTitle())
-                    .description(article.getDescription())
-                    .urlToImage(article.getUrlToImage())
-                    .publishedAt(article.getPublishedAt())
-                    .build());
+        if (articleIds.isEmpty()) {
+            return List.of();
         }
 
-        return scrapResDTOs;
+        List<Long> distinctIds = articleIds.stream().distinct().toList();
+        Map<Long, ArticleSummaryProjection> summariesById = articleRepository.findSummariesByIdIn(distinctIds)
+                .stream()
+                .collect(Collectors.toMap(ArticleSummaryProjection::getId, Function.identity()));
+
+        return articleIds.stream()
+                .map(summariesById::get)
+                .filter(summary -> summary != null)
+                .map(this::toScrapResponse)
+                .toList();
     }
 
     // 스크랩 토글 (추가/취소)
@@ -75,10 +75,33 @@ public class ScrapService {
     // 내 스크랩 목록 조회
     @Transactional(readOnly = true)
     public List<ScrapListResDTO> getScrapList(Long userId) {
-        return scrapRepository.findByUserIdOrderByCreatedAtDesc(userId)
+        return scrapRepository.findListByUserId(userId)
                 .stream()
-                .map(ScrapListResDTO::from)
+                .map(this::toScrapListResponse)
                 .collect(Collectors.toList());
+    }
+
+    private ScrapResDTO toScrapResponse(ArticleSummaryProjection article) {
+        return ScrapResDTO.from(
+                article.getId(),
+                article.getSourceName(),
+                article.getTitle(),
+                article.getDescription(),
+                article.getUrlToImage(),
+                article.getPublishedAt()
+        );
+    }
+
+    private ScrapListResDTO toScrapListResponse(ScrapListProjection scrap) {
+        return ScrapListResDTO.from(
+                scrap.getArticleId(),
+                scrap.getTitle(),
+                scrap.getSourceName(),
+                scrap.getUrlToImage(),
+                scrap.getDescription(),
+                scrap.getPublishedAt(),
+                scrap.getScrappedAt()
+        );
     }
 
     // 특정 기사 스크랩 여부 조회
