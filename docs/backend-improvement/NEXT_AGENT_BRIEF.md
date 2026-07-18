@@ -9,6 +9,10 @@
 
 ## Recently Completed
 
+- #214 / PR #215: `Done`
+- Result: a MySQL 8 window-function projection replaced all-history Java grouping; on a synthetic 5,000-chat/100-article fixture SQL statements changed from 101 to 1, entity loads from 5,100 to 0, and all 55 tests plus Backend CI passed
+- Boundary: the local database has only four chat rows, so pagination, a new index/Flyway migration, Redis, anonymous chat changes, and Issue #110 remain excluded
+
 - #212 / PR #213: `Done`
 - Result: a random-port mock upstream and MySQL Testcontainers verify 200/500/timeout isolation, two successful article saves, and zero duplicate URL groups after rerun; all 54 tests and Backend CI passed
 - Boundary: real News API/RSS calls, `news-fetch.enabled=true`, retry/circuit breaker, distributed locks, Kafka, multi-instance deployment, and Issue #110 remain excluded

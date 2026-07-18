@@ -5,6 +5,7 @@ import com.example.globalTimes_be.domain.article.repository.ArticleRepository;
 import com.example.globalTimes_be.domain.chat.dto.ChatHistoryListResDTO;
 import com.example.globalTimes_be.domain.chat.dto.ChatHistoryResDTO;
 import com.example.globalTimes_be.domain.chat.entity.ChatHistory;
+import com.example.globalTimes_be.domain.chat.repository.LatestChatHistoryProjection;
 import com.example.globalTimes_be.domain.chat.repository.ChatHistoryRepository;
 import com.example.globalTimes_be.domain.user.entity.User;
 import com.example.globalTimes_be.domain.user.repository.UserRepository;
@@ -18,9 +19,7 @@ import org.springframework.data.domain.Sort;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -51,17 +50,20 @@ public class ChatHistoryService {
     // 팝업 목록용: 사용자의 기사별 마지막 대화 미리보기
     @Transactional(readOnly = true)
     public List<ChatHistoryListResDTO> getChatList(Long userId) {
-        List<ChatHistory> all = chatHistoryRepository.findByUserIdOrderByCreatedAtDesc(userId);
-
-        // 기사별로 가장 최신 채팅 1건만 추출 (이미 최신순 정렬이므로 첫 번째가 최신)
-        Map<Long, ChatHistory> latestPerArticle = new LinkedHashMap<>();
-        for (ChatHistory chat : all) {
-            latestPerArticle.putIfAbsent(chat.getArticle().getId(), chat);
-        }
-
-        return latestPerArticle.values().stream()
-                .map(ChatHistoryListResDTO::from)
+        return chatHistoryRepository.findLatestPerArticleByUserId(userId).stream()
+                .map(this::toChatHistoryListResponse)
                 .collect(Collectors.toList());
+    }
+
+    private ChatHistoryListResDTO toChatHistoryListResponse(LatestChatHistoryProjection latestChat) {
+        return ChatHistoryListResDTO.from(
+                latestChat.getArticleId(),
+                latestChat.getArticleTitle(),
+                latestChat.getThumbnailUrl(),
+                latestChat.getLastQuestion(),
+                latestChat.getLastAnswer(),
+                latestChat.getLastChatAt()
+        );
     }
 
     // 상세 페이지용: 특정 기사의 전체 대화 내역

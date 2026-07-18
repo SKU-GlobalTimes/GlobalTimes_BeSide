@@ -9,6 +9,17 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Recently Completed
 
+### #214 - 채팅 목록 전체 이력 로딩 및 N+1 제거
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/214
+- 작업 브랜치: `perf/#214-chat-latest-per-article`
+- 상태: `Done` ([PR #215](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/215))
+- 기준선: 사용자 채팅 5,000건·기사 100개 fixture에서 전체 `ChatHistory`를 적재하고 Java로 기사별 최신 행을 선택해 SQL 101개와 entity load 5,100개가 발생했다.
+- 목표: MySQL 8 `ROW_NUMBER()`와 interface projection으로 사용자·기사별 최신 대화만 한 번에 조회하면서 목록 순서, 동률 처리, 답변 미리보기를 유지한다.
+- overengineering 판단: 로컬 실제 채팅은 4건뿐이지만 전체 이력 로딩과 N+1은 데이터 증가에 선형으로 악화되는 명확한 구조 문제다. 기존 MySQL/JPA 안에서 쿼리와 회귀 테스트만 바꾸고 근거가 부족한 신규 인덱스·Flyway·pagination·Redis는 제외했다.
+- 검증: 합성 fixture의 집중·전체 회귀 실행에서 SQL `101 → 1`, entity load `5,100 → 0`, service elapsed 실행별 `83.0~86.8%` 감소를 관측했다. 실행 계획은 대상 5,000행을 한 번 materialize해 100행을 반환했고 사용자 격리, `created_at` 동률 시 큰 `chat_id`, 100자 미리보기 규칙을 확인했다. 전체 55개 테스트와 Backend CI가 통과했다.
+- 측정 문서: `docs/backend-improvement/chat-history-latest-query.md`
+
 ### #212 - News API 수집 부분 실패 격리 및 재실행 E2E 검증
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/212

@@ -22,18 +22,31 @@ public class ChatHistoryListResDTO {
     private static final int PREVIEW_MAX_LENGTH = 100;
 
     public static ChatHistoryListResDTO from(ChatHistory latestChat) {
-        String answer = latestChat.getAnswer();
-        String preview = answer.length() > PREVIEW_MAX_LENGTH
-                ? answer.substring(0, PREVIEW_MAX_LENGTH) + "..."
-                : answer;
+        return from(
+                latestChat.getArticle().getId(),
+                latestChat.getArticle().getTitle(),
+                latestChat.getArticle().getUrlToImage(),
+                latestChat.getQuestion(),
+                latestChat.getAnswer(),
+                latestChat.getCreatedAt()
+        );
+    }
 
+    public static ChatHistoryListResDTO from(
+            Long articleId,
+            String articleTitle,
+            String thumbnailUrl,
+            String lastQuestion,
+            String lastAnswer,
+            LocalDateTime lastChatAt
+    ) {
         return ChatHistoryListResDTO.builder()
-                .articleId(latestChat.getArticle().getId())
-                .articleTitle(latestChat.getArticle().getTitle())
-                .thumbnailUrl(latestChat.getArticle().getUrlToImage())
-                .lastQuestion(latestChat.getQuestion())
-                .lastAnswerPreview(preview)
-                .lastChatAt(latestChat.getCreatedAt())
+                .articleId(articleId)
+                .articleTitle(articleTitle)
+                .thumbnailUrl(thumbnailUrl)
+                .lastQuestion(lastQuestion)
+                .lastAnswerPreview(preview(lastAnswer))
+                .lastChatAt(lastChatAt)
                 .build();
     }
 
@@ -44,18 +57,20 @@ public class ChatHistoryListResDTO {
             String lastAnswer,
             LocalDateTime lastChatAt
     ) {
-        String answer = lastAnswer != null ? lastAnswer : "";
-        String preview = answer.length() > PREVIEW_MAX_LENGTH
-                ? answer.substring(0, PREVIEW_MAX_LENGTH) + "..."
-                : answer;
-
         return ChatHistoryListResDTO.builder()
                 .articleId(article.getId())
                 .articleTitle(article.getTitle())
                 .thumbnailUrl(article.getUrlToImage())
                 .lastQuestion(lastQuestion != null ? lastQuestion : "")
-                .lastAnswerPreview(preview)
+                .lastAnswerPreview(preview(lastAnswer))
                 .lastChatAt(lastChatAt)
                 .build();
+    }
+
+    private static String preview(String answer) {
+        String safeAnswer = answer != null ? answer : "";
+        return safeAnswer.length() > PREVIEW_MAX_LENGTH
+                ? safeAnswer.substring(0, PREVIEW_MAX_LENGTH) + "..."
+                : safeAnswer;
     }
 }
