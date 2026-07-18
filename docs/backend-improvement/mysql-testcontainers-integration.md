@@ -47,6 +47,16 @@ mock 단위 테스트나 수동 API 측정만으로는 확인하기 어려운 My
 - 실패 후 구조 수정, Flyway repair, V2 재실행 및 procedure 정리를 확인
 - 집중 테스트 6개와 전체 49개 테스트 통과
 
+### 기사 URL 유일성 V3
+
+- V2 상태의 임시 DB에 동일 URL 기사 2건을 넣고 V3가 최신 `article_id` 1건만 남기는지 확인
+- 대소문자만 다른 URL은 raw SHA-256 hash가 다르므로 별도 행으로 유지되는지 확인
+- 삭제 후보에 summary 또는 scrap 참조가 있으면 V3가 실패하고 원본·참조 데이터를 유지하는지 확인
+- 잘못된 generated column에서는 삭제 전에 실패하고 구조 수정·Flyway repair·재실행이 가능한지 확인
+- V3 적용 후 동일 URL 동시 INSERT 2건 중 1건만 성공하고 최종 1행만 남는지 확인
+- `uk_article_url_hash(url_hash)` UNIQUE와 신규 DB V1→V2→V3 이력 확인
+- 집중 테스트 10개와 전체 53개 테스트 통과
+
 ### 동시 원자 증가
 
 - 같은 기사에 20개 worker가 각각 `incrementViewCount()` 실행
