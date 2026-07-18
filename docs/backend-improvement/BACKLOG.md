@@ -11,6 +11,14 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## Recently Completed
 
+### P1. 채팅 목록 전체 이력 로딩 및 N+1 제거
+
+- 상태: `Done` ([#214](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/214), [PR #215](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/215))
+- AS-IS: 사용자 전체 채팅을 entity로 적재해 Java에서 기사별 최신 행을 고르고, LAZY article 접근으로 기사 수만큼 추가 SQL을 실행했다.
+- TO-BE: MySQL 8 window 함수와 projection으로 사용자·기사별 최신 대화 1건만 단일 SQL로 조회하고 기존 DTO·정렬 의미를 유지한다.
+- 범위: 채팅 팝업 목록 query와 MySQL Testcontainers 회귀 검증으로 제한했다. pagination, 신규 인덱스/Flyway, Redis, 익명 채팅은 제외했다.
+- 검증: 5,000개 합성 채팅·100개 기사에서 SQL `101 → 1`, entity load `5,100 → 0`, 두 로컬 실행의 service elapsed `83.0~86.8%` 감소; 전체 55개 테스트와 Backend CI 통과.
+
 ### P1. News API 수집 부분 실패 격리 및 재실행 E2E 검증
 
 - 상태: `Done` ([#212](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/212), [PR #213](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/213))

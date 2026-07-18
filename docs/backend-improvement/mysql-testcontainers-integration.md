@@ -64,6 +64,14 @@ mock 단위 테스트나 수동 API 측정만으로는 확인하기 어려운 My
 - 일부 요청 실패 후에도 정상 기사 2건 저장, 같은 수집 재실행 후 기사 2건과 URL 중복 그룹 0건 유지
 - 기존 compose DB와 8080 서버, 실제 News API key를 사용하지 않으며 전체 54개 테스트 통과
 
+### 채팅 목록 latest-per-article 조회
+
+- 사용자 1명, 기사 100개, 기사별 채팅 50개의 합성 fixture로 전체 이력 로딩과 `LAZY article` N+1을 재현
+- 기존 Java 그룹화의 SQL 101개·entity load 5,100개와 MySQL 8 `ROW_NUMBER()` projection의 SQL 1개·entity load 0개를 같은 테스트에서 비교
+- 다른 사용자의 더 최신 채팅 격리, 같은 `created_at`의 `chat_id DESC` 동률 처리, 목록 순서와 100자 답변 미리보기 유지 검증
+- fixture는 구조 비교용이며 로컬 DB의 실제 채팅 4건이나 운영 latency를 나타내지 않음
+- 집중 테스트와 전체 55개 회귀 테스트 통과
+
 ### 동시 원자 증가
 
 - 같은 기사에 20개 worker가 각각 `incrementViewCount()` 실행
