@@ -11,6 +11,14 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## Recently Completed
 
+### P1. News API 수집 부분 실패 격리 및 재실행 E2E 검증
+
+- 상태: `Done` ([#212](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/212), [PR #213](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/213))
+- AS-IS: DTO와 mock repository 단위 테스트만 있어 외부 HTTP 일부 실패부터 MySQL 저장까지의 수집 경로가 자동 검증되지 않는다.
+- TO-BE: random-port mock upstream과 MySQL Testcontainers로 200·500·timeout 혼합 수집, 정상 기사 저장, 실패 격리, 재실행 중복 0건을 검증한다.
+- 범위: News API headline 수집 pipeline E2E와 base URL 설정화로 제한한다. 실제 API/RSS, flag 활성화, retry/circuit breaker, 분산 락·Kafka는 제외한다.
+- 검증: 정상 category 2건 저장, 실패 category 2건 격리, 재실행 후 기사 2건·중복 그룹 0건 유지, 전체 54개 테스트와 Backend CI 통과.
+
 ### P1. 기사 URL 중복 정리 및 DB 유일성 제약 보강
 
 - 상태: `Done` ([#210](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/210), [PR #211](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/211))

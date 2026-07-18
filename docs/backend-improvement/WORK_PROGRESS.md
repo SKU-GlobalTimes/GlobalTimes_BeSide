@@ -9,6 +9,16 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Recently Completed
 
+### #212 - News API 수집 부분 실패 격리 및 재실행 E2E 검증
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/212
+- 작업 브랜치: `test/#212-news-api-failure-e2e`
+- 상태: `Done` ([PR #213](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/213))
+- 기준선: 기존 테스트는 News API DTO 처리와 mock repository까지만 검증해 HTTP 5xx·timeout이 실제 MySQL 저장과 후속 요청에 미치는 영향을 자동 확인하지 않았다.
+- 목표: local mock upstream의 200·500·timeout 혼합 응답을 실제 RestTemplate과 MySQL Testcontainers로 통과시켜 부분 실패 격리와 재실행 중복 0건을 검증한다.
+- overengineering 판단: 기존 Spring·Testcontainers와 JDK HTTP server만 사용하고 실제 API, RSS, retry/circuit breaker, 분산 락·Kafka는 제외한다.
+- 검증: general/technology 정상 기사 2건은 저장되고 business 500과 science timeout 이후에도 수집이 계속됐다. 같은 4-category 시나리오를 두 번 실행한 뒤 기사 2건과 `url_hash` 중복 그룹 0건이 유지됐으며 전체 54개 테스트와 Backend CI가 통과했다.
+
 ### #210 - 기사 URL 중복 정리 및 DB 유일성 제약 보강
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/210
