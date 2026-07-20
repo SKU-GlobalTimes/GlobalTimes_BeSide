@@ -11,6 +11,14 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## Recently Completed
 
+### P1. 스크랩 목록 N+1 및 ID별 반복 조회 제거
+
+- 상태: `Done` ([#216](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/216), [PR #217](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/217))
+- AS-IS: 로그인 목록은 Scrap·Article·Source LAZY 조회가 연쇄되고, 비로그인 호환 목록은 요청 ID마다 article을 개별 조회했다.
+- TO-BE: 동일한 MySQL 100건 fixture에서 projection 일괄 조회로 SQL 증가 구조를 제거하고 기존 응답 의미를 유지한다.
+- 범위: 두 스크랩 조회 query와 Testcontainers 회귀 검증으로 제한했다. pagination, Redis, 신규 schema/index, toggle 동시성은 제외했다.
+- 검증: 로그인 SQL `201 → 1`·entity `300 → 0`, 비로그인 SQL `200 → 1`·entity `200 → 0`; DTO 전체 필드와 최신순·요청순·중복·누락·nullable Source 회귀 및 전체 58개 테스트·Backend CI 통과.
+
 ### P1. 채팅 목록 전체 이력 로딩 및 N+1 제거
 
 - 상태: `Done` ([#214](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/214), [PR #215](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/215))

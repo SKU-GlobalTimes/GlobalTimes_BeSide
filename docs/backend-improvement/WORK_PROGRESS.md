@@ -9,6 +9,17 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Recently Completed
 
+### #216 - 스크랩 목록 N+1 및 ID별 반복 조회 제거
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/216
+- 작업 브랜치: `perf/#216-scrap-list-query`
+- 상태: `Done` ([PR #217](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/217))
+- 기준선: 로그인 목록은 `Scrap → Article → Source` LAZY 접근으로 100건에서 SQL 201개·entity load 300개, 비로그인 호환 목록은 article ID별 `findById()` 반복으로 SQL 200개·entity load 200개가 MySQL fixture에서 발생했다.
+- 목표: MySQL 8 Testcontainers의 동일 100건 fixture에서 projection 일괄 조회로 교체하면서 DTO 전체 필드와 최신순·요청순·중복·누락 처리를 유지한다.
+- overengineering 판단: 실제 로컬 스크랩은 1건이라 현재 운영 병목으로 과장하지 않는다. 기존 JPA/MySQL query와 회귀 테스트만 사용했으며 pagination, Redis, 신규 인덱스/Flyway, toggle 동시성 변경은 제외했다.
+- 검증: 서로 다른 Source·Article·Scrap 100건 fixture에서 로그인 SQL `201 → 1`, entity load `300 → 0`, 비로그인 SQL `200 → 1`, entity load `200 → 0`을 확인했다. DTO 전체 필드, 최신순, 요청순, 중복·누락 ID, nullable Source를 회귀 검증했고 전체 58개 테스트와 Backend CI가 통과했다.
+- 측정 문서: `docs/backend-improvement/scrap-list-query-optimization.md`
+
 ### #214 - 채팅 목록 전체 이력 로딩 및 N+1 제거
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/214

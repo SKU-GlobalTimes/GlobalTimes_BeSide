@@ -72,6 +72,14 @@ mock 단위 테스트나 수동 API 측정만으로는 확인하기 어려운 My
 - fixture는 구조 비교용이며 로컬 DB의 실제 채팅 4건이나 운영 latency를 나타내지 않음
 - 집중 테스트와 전체 55개 회귀 테스트 통과
 
+### 스크랩 목록 projection 일괄 조회
+
+- 사용자 1명, 서로 다른 Source·Article·Scrap 100건의 합성 fixture로 로그인 `Scrap → Article → Source` N+1과 비로그인 ID별 `findById()`를 재현
+- 로그인 SQL `201 → 1`·entity load `300 → 0`, 비로그인 SQL `200 → 1`·entity load `200 → 0` 비교
+- DTO 전체 필드, 로그인 최신순, 비로그인 요청순·중복·누락 ID와 빈 목록 무조회 검증
+- nullable Source를 `LEFT JOIN` projection으로 보존하고 전체 58개 테스트 통과
+- fixture는 구조 비교용이며 로컬 DB의 실제 scrap 1건이나 운영 latency를 나타내지 않음
+
 ### 동시 원자 증가
 
 - 같은 기사에 20개 worker가 각각 `incrementViewCount()` 실행

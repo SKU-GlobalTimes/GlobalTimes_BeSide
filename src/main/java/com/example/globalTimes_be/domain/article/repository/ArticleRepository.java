@@ -27,6 +27,19 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
     @Query("SELECT a.url FROM Article a WHERE a.url IN :urls")
     Set<String> findExistingUrls(@Param("urls") List<String> urls);
 
+    @Query("""
+            SELECT article.id AS id,
+                   source.sourceName AS sourceName,
+                   article.title AS title,
+                   article.description AS description,
+                   article.urlToImage AS urlToImage,
+                   article.publishedAt AS publishedAt
+            FROM Article article
+            LEFT JOIN article.source source
+            WHERE article.id IN :ids
+            """)
+    List<ArticleSummaryProjection> findSummariesByIdIn(@Param("ids") List<Long> ids);
+
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Article a SET a.viewCount = a.viewCount + 1 WHERE a.id = :id")
     int incrementViewCount(@Param("id") Long id);
