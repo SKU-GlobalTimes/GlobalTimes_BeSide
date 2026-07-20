@@ -9,6 +9,10 @@
 
 ## Recently Completed
 
+- #221 / PR #222: `Done`
+- Result: Redis List append preserved 20/20 concurrent anonymous chat turns instead of 1/20, Sorted Set preserved 20/20 article entries, and `ZADD GT` prevented delayed older activity scores from replacing newer scores; all 67 tests and Backend CI passed
+- Boundary: Redis List, Sorted Set, basic Spring Data Redis commands, and Redis Testcontainers only; no Lua, MULTI/EXEC, distributed lock, Kafka, Gemini call, logged-in MySQL chat change, or Issue #110 work
+
 - #218 / PR #220: `Done`
 - Result: consolidated domain problems, changes, quantitative outcomes, validation tools, and source evidence across k6, mock, Testcontainers, EXPLAIN, and Actuator work
 - Boundary: documentation-only evidence indexing; no new measurements, production code, test, load script, technology adoption, or Issue #110 work
