@@ -5,7 +5,10 @@
 
 ## Current Active Work
 
-- None
+- #218: `In Progress`
+- Branch: `docs/#218-k6-portfolio-index`
+- Goal: consolidate domain problems, solutions, quantitative outcomes, validation tools, and evidence PRs across k6, mock, Testcontainers, EXPLAIN, and Actuator work
+- Boundary: documentation-only evidence indexing; no new measurements, production code, test, load script, technology adoption, or Issue #110 work
 
 ## Recently Completed
 

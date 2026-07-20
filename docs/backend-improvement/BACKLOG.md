@@ -7,7 +7,12 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## Current Active Work
 
-- 없음
+### P1. 백엔드 개선 정량 성과 포트폴리오 인덱스 정리
+
+- 상태: `In Progress` ([#218](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/218))
+- AS-IS: k6·Mock·Testcontainers 기반 성과와 한계가 여러 PR·문서에 분산돼 포트폴리오 문장으로 선별하기 어렵다.
+- TO-BE: 문제·개선·정량 결과·검증 도구·원본 근거를 도메인별로 연결하고 기준선과 실제 개선을 구분한다.
+- 범위: 기존 근거의 문서 인덱싱으로 제한하며 신규 측정, 코드·스크립트 변경, 신규 기술 도입은 제외한다.
 
 ## Recently Completed
 
