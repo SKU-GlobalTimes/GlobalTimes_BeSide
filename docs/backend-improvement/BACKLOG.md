@@ -7,9 +7,17 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## Current Active Work
 
-- 없음
+현재 진행 중인 작업 없음.
 
 ## Recently Completed
+
+### P1. 백엔드 개선 정량 결과 인덱스 정리
+
+- 상태: `Done` ([#218](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/218), [PR #220](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/220))
+- AS-IS: k6·Mock·Testcontainers 기반 성과와 한계가 여러 PR·문서에 분산돼 문제·조치·결과의 연결을 추적하기 어려웠다.
+- TO-BE: 문제·개선·정량 결과·검증 도구·원본 근거를 도메인별로 연결하고 기준선과 실제 개선을 구분했다.
+- 범위: 기존 근거의 문서 인덱싱으로 제한했으며 신규 측정, 코드·스크립트 변경, 신규 기술 도입은 제외했다.
+- 검증: 원본 수치와 PR 근거, 상대 Markdown 링크 17개를 교차 확인했고 Backend CI가 통과했다.
 
 ### P1. 스크랩 목록 N+1 및 ID별 반복 조회 제거
 

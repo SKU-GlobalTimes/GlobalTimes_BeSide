@@ -5,9 +5,13 @@
 
 ## Current Active Work
 
-- None
+- None.
 
 ## Recently Completed
+
+- #218 / PR #220: `Done`
+- Result: consolidated domain problems, changes, quantitative outcomes, validation tools, and source evidence across k6, mock, Testcontainers, EXPLAIN, and Actuator work
+- Boundary: documentation-only evidence indexing; no new measurements, production code, test, load script, technology adoption, or Issue #110 work
 
 - #216 / PR #217: `Done`
 - Result: projection batch queries reduced authenticated scrap-list SQL from 201 to 1 and legacy ID-list SQL from 200 to 1 on a synthetic 100-row MySQL fixture; all 58 tests and Backend CI passed

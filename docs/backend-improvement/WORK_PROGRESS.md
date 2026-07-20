@@ -5,9 +5,20 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Current Active Work
 
-- 없음
+현재 진행 중인 작업 없음.
 
 ## Recently Completed
+
+### #218 - 백엔드 개선 정량 결과 인덱스 정리
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/218
+- 작업 브랜치: `docs/#218-quantitative-improvement-index`
+- 상태: `Done` ([PR #220](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/220))
+- 기준선: k6·mock server·Testcontainers·EXPLAIN·Actuator 기반 개선 결과가 개별 PR과 측정 문서에 분산되어 문제·조치·결과의 연결을 다시 추적하기 어려웠다.
+- 결과: 실제 개선, 성능 기준선, capacity 경계, 장애·정합성 검증을 구분하고 도메인별 문제·조치·정량 결과를 원본 PR과 상세 문서로 연결했다.
+- overengineering 판단: 새 측정 시스템이나 기술을 추가하지 않고 기존 근거를 한 문서로 인덱싱했다. production code·test·k6 script·설정과 Kafka·Vector DB 도입은 변경하지 않았다.
+- 검증: 원본 문서의 환경·RPS·p95·SQL·정합성 수치와 PR 링크를 교차 확인하고 로컬·mock·합성 fixture의 표현 한계를 명시했다. 상대 Markdown 링크 17개와 Backend CI가 통과했다.
+- 결과 문서: `docs/backend-improvement/backend-improvement-quantitative-index.md`
 
 ### #216 - 스크랩 목록 N+1 및 ID별 반복 조회 제거
 
