@@ -9,6 +9,17 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Recently Completed
 
+### #221 - 익명 채팅 Redis 동시 요청 데이터 유실 방지 및 회귀 검증
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/221
+- 작업 브랜치: `fix/#221-anonymous-chat-redis-concurrency`
+- 상태: `Done` ([PR #222](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/222))
+- 기준선: 익명 대화와 최근 기사 인덱스가 Redis String JSON의 read-modify-write로 저장되어 동일 세션의 동시 SSE 완료 시 마지막 SET이 앞선 갱신을 덮어쓸 수 있었다.
+- 결과: Redis List·Sorted Set의 개별 추가 명령으로 전체 JSON 덮어쓰기를 제거하고, `ZADD GT`로 지연된 과거 최근 활동 score의 역전 갱신을 차단했다.
+- overengineering 판단: 이미 사용하는 Redis 자료구조와 Spring Data Redis 기본 명령만 활용했다. Lua, MULTI/EXEC, 분산 락, Kafka, 로그인 MySQL 채팅 변경, 실제 Gemini 호출은 제외했다.
+- 검증: 통제된 동시 요청 20건에서 기존 JSON은 1건 보존·19건 유실, List는 20건 보존·0건 유실을 3회 반복 확인했다. 서로 다른 기사 인덱스도 20/20건을 3회 보존했고 score 200 이후 도착한 score 100을 거부했다. Redis 집중 테스트 9개, 전체 67개 테스트, Backend CI가 통과했으며 AI Reviewer는 Blocking 없음·MERGE_READY로 판정했다.
+- 측정 문서: `docs/backend-improvement/anonymous-chat-redis-concurrency.md`
+
 ### #218 - 백엔드 개선 정량 결과 인덱스 정리
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/218

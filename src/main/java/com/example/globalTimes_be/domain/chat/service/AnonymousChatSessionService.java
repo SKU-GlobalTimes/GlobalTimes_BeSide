@@ -5,7 +5,6 @@ import com.example.globalTimes_be.domain.article.repository.ArticleRepository;
 import com.example.globalTimes_be.domain.chat.dto.ChatHistoryListResDTO;
 import com.example.globalTimes_be.domain.chat.dto.ChatMessagePair;
 import com.example.globalTimes_be.global.redis.RedisUtil;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +16,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,9 +27,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AnonymousChatSessionService {
 
-    private static final String KEY_PREFIX = "chat:anon:";
+    private static final String KEY_PREFIX = "chat:anon:v2:";
     /** 세션별 기사 ID → 마지막 활동 시각(epoch ms), TTL은 기사 키와 동일 */
-    private static final String INDEX_PREFIX = "chat:anon:index:";
+    private static final String INDEX_PREFIX = "chat:anon:index:v2:";
 
     private final RedisUtil redisUtil;
     private final ObjectMapper objectMapper;
@@ -86,15 +84,20 @@ public class AnonymousChatSessionService {
             return Collections.emptyList();
         }
         String sid = sessionId.trim();
-        Map<Long, Long> index = loadIndexMap(sid);
+        List<RedisUtil.ScoredValue> index = loadIndex(sid);
         if (index.isEmpty()) {
             return Collections.emptyList();
         }
 
-        List<Long> orderedArticleIds = index.entrySet().stream()
-                .sorted(Map.Entry.<Long, Long>comparingByValue().reversed())
-                .map(Map.Entry::getKey)
-                .toList();
+        Map<Long, Long> lastActivityByArticleId = new LinkedHashMap<>();
+        for (RedisUtil.ScoredValue value : index) {
+            try {
+                lastActivityByArticleId.put(Long.parseLong(value.value()), (long) value.score());
+            } catch (NumberFormatException e) {
+                log.warn("[AnonymousChat] 잘못된 articleId 인덱스 sessionId={}, value={}", sid, value.value());
+            }
+        }
+        List<Long> orderedArticleIds = new ArrayList<>(lastActivityByArticleId.keySet());
 
         List<Article> articles = articleRepository.findAllById(orderedArticleIds);
         Map<Long, Article> byId = articles.stream().collect(Collectors.toMap(Article::getId, a -> a, (a, b) -> a));
@@ -111,7 +114,7 @@ public class AnonymousChatSessionService {
                 continue;
             }
             ChatMessagePair last = history.get(history.size() - 1);
-            Long epochMs = index.get(articleId);
+            Long epochMs = lastActivityByArticleId.get(articleId);
             LocalDateTime lastChatAt = epochMs != null
                     ? LocalDateTime.ofInstant(Instant.ofEpochMilli(epochMs), zone)
                     : LocalDateTime.now(zone);
@@ -127,13 +130,8 @@ public class AnonymousChatSessionService {
         }
         String key = buildKey(sessionId, articleId);
         try {
-            List<ChatMessagePair> list = new ArrayList<>(loadAll(sessionId, articleId));
-            list.add(new ChatMessagePair(question, answer));
-            if (maxTurns > 0 && list.size() > maxTurns) {
-                list = new ArrayList<>(list.subList(list.size() - maxTurns, list.size()));
-            }
-            String json = objectMapper.writeValueAsString(list);
-            redisUtil.setData(key, json, ttlSeconds);
+            String json = objectMapper.writeValueAsString(new ChatMessagePair(question, answer));
+            redisUtil.appendListData(key, json, maxTurns, ttlSeconds);
             touchIndex(sessionId.trim(), articleId);
         } catch (Exception e) {
             log.error("[AnonymousChat] 저장 실패 sessionId={}, articleId={}", sessionId, articleId, e);
@@ -146,12 +144,15 @@ public class AnonymousChatSessionService {
         }
         String key = buildKey(sessionId, articleId);
         try {
-            String json = redisUtil.getData(key);
-            if (json == null || json.isBlank()) {
+            List<String> values = redisUtil.getListData(key);
+            if (values.isEmpty()) {
                 return Collections.emptyList();
             }
-            return objectMapper.readValue(json, new TypeReference<>() {
-            });
+            List<ChatMessagePair> history = new ArrayList<>();
+            for (String value : values) {
+                history.add(objectMapper.readValue(value, ChatMessagePair.class));
+            }
+            return history;
         } catch (Exception e) {
             log.warn("[AnonymousChat] 조회 실패 sessionId={}, articleId={}: {}", sessionId, articleId, e.getMessage());
             return Collections.emptyList();
@@ -166,39 +167,19 @@ public class AnonymousChatSessionService {
         return INDEX_PREFIX + sessionId.trim();
     }
 
-    private Map<Long, Long> loadIndexMap(String sessionId) {
-        String key = buildIndexKey(sessionId);
+    private List<RedisUtil.ScoredValue> loadIndex(String sessionId) {
         try {
-            String json = redisUtil.getData(key);
-            if (json == null || json.isBlank()) {
-                return new HashMap<>();
-            }
-            Map<String, Long> raw = objectMapper.readValue(json, new TypeReference<>() {
-            });
-            Map<Long, Long> out = new HashMap<>();
-            for (Map.Entry<String, Long> e : raw.entrySet()) {
-                out.put(Long.parseLong(e.getKey()), e.getValue());
-            }
-            return out;
+            return redisUtil.getReverseSortedSetData(buildIndexKey(sessionId));
         } catch (Exception e) {
-            log.warn("[AnonymousChat] 인덱스 파싱 실패 sessionId={}: {}", sessionId, e.getMessage());
-            return new HashMap<>();
+            log.warn("[AnonymousChat] 인덱스 조회 실패 sessionId={}: {}", sessionId, e.getMessage());
+            return Collections.emptyList();
         }
-    }
-
-    private void saveIndexMap(String sessionId, Map<Long, Long> map) throws Exception {
-        String key = buildIndexKey(sessionId);
-        Map<String, Long> forJson = new LinkedHashMap<>();
-        map.forEach((k, v) -> forJson.put(String.valueOf(k), v));
-        String json = objectMapper.writeValueAsString(forJson);
-        redisUtil.setData(key, json, ttlSeconds);
     }
 
     private void touchIndex(String sessionId, Long articleId) {
         try {
-            Map<Long, Long> map = loadIndexMap(sessionId);
-            map.put(articleId, System.currentTimeMillis());
-            saveIndexMap(sessionId, map);
+            redisUtil.addSortedSetDataIfGreater(
+                    buildIndexKey(sessionId), String.valueOf(articleId), System.currentTimeMillis(), ttlSeconds);
         } catch (Exception e) {
             log.warn("[AnonymousChat] 인덱스 갱신 실패 sessionId={}, articleId={}", sessionId, articleId, e);
         }
@@ -206,11 +187,8 @@ public class AnonymousChatSessionService {
 
     private void ensureIndexContains(String sessionId, Long articleId) {
         try {
-            Map<Long, Long> map = loadIndexMap(sessionId);
-            if (!map.containsKey(articleId)) {
-                map.put(articleId, System.currentTimeMillis());
-                saveIndexMap(sessionId, map);
-            }
+            redisUtil.addSortedSetDataIfAbsent(
+                    buildIndexKey(sessionId), String.valueOf(articleId), System.currentTimeMillis(), ttlSeconds);
         } catch (Exception e) {
             log.warn("[AnonymousChat] 인덱스 보정 실패 sessionId={}, articleId={}", sessionId, articleId, e);
         }

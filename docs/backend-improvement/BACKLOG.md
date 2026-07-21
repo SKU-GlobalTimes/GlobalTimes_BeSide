@@ -11,6 +11,14 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## Recently Completed
 
+### P1. 익명 채팅 Redis 동시 요청 데이터 유실 방지 및 회귀 검증
+
+- 상태: `Done` ([#221](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/221), [PR #222](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/222))
+- AS-IS: 세션·기사별 대화와 세션별 최근 기사 인덱스를 String JSON으로 조회·수정·재저장해 동시 갱신이 서로를 덮어쓸 수 있었다.
+- TO-BE: Redis List·Sorted Set의 개별 추가 명령으로 전체 JSON 덮어쓰기를 제거하고 `ZADD GT`로 지연된 과거 최근 활동 score의 역전 갱신을 차단했다.
+- 범위: 익명 채팅 Redis 저장 경로와 Redis Testcontainers 회귀 테스트로 제한했다. Lua, MULTI/EXEC, 분산 락, Kafka, Gemini 호출, 로그인 MySQL 채팅은 제외했다.
+- 검증: 동시 20건에서 기존 JSON 1건·List 20건 보존, 서로 다른 기사 인덱스 20/20건 보존을 각각 3회 확인했다. score 200 이후 도착한 score 100을 거부했고 Redis 집중 테스트 9개·전체 67개 테스트·Backend CI가 통과했다.
+
 ### P1. 백엔드 개선 정량 결과 인덱스 정리
 
 - 상태: `Done` ([#218](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/218), [PR #220](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/220))

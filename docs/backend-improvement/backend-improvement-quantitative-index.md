@@ -35,6 +35,7 @@
 | 채팅 팝업이 전체 이력 5,000건을 적재하고 Article N+1 수행 | MySQL `ROW_NUMBER()` latest-per-article projection | SQL `101 → 1`, entity loads `5,100 → 0`, service elapsed 실행별 `83.0~86.8%` 감소 | Testcontainers + Hibernate Statistics + EXPLAIN | [PR #215](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/215), [상세](chat-history-latest-query.md) |
 | 로그인 스크랩의 2단계 N+1과 비로그인 ID별 반복 조회 | DTO projection 일괄 조회와 요청 ID 순서 복원 | 로그인 SQL `201 → 1`·entity `300 → 0`, 비로그인 SQL `200 → 1`·entity `200 → 0` | Testcontainers + Hibernate Statistics + EXPLAIN | [PR #217](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/217), [상세](scrap-list-query-optimization.md) |
 | 수집 로직만으로는 과거·동시 기사 URL 중복을 최종 차단할 수 없음 | SHA-256 generated column UNIQUE와 안전한 Flyway 중복 정리 | 기사 `9,853 → 9,814`, 초과 중복 `39 → 0`; 동일 URL 동시 INSERT 1건 성공·1건 거부 | Testcontainers + Flyway + local MySQL | [PR #211](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/211), [상세](article-url-uniqueness.md) |
+| 익명 채팅 JSON 전체 덮어쓰기로 동일 세션의 동시 대화·최근 기사 유실 가능 | Redis List 턴별 append와 Sorted Set 기사별 갱신 | 통제된 동시 20건에서 대화 보존 `1 → 20`, 유실 `19 → 0`; 서로 다른 기사 인덱스 `20/20` 보존 | Redis Testcontainers | [PR #222](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/222), [상세](anonymous-chat-redis-concurrency.md) |
 
 ## 측정으로 확인한 효과와 기준선
 
