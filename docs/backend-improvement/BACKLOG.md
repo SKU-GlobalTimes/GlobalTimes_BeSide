@@ -7,9 +7,18 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## Current Active Work
 
-현재 진행 중인 작업 없음.
+- 없음
 
 ## Recently Completed
+
+### P1. RSS·News API source별 freshness·coverage 기준선 및 수집 통계 보강
+
+- 상태: `Done` ([#223](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/223), [PR #224](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/224))
+- AS-IS: 백엔드 scheduler 주기는 알 수 있지만 source별 실제 갱신 시점·신규 기사 수·언어 및 국가 coverage가 측정되지 않아 매칭 결과 부족의 원인을 분리하기 어려웠다.
+- TO-BE: 기존 DB snapshot SQL과 수집 batch 로그에 source·country·language·category 분포, 최초·최신 발행 시각, freshness를 기록했다.
+- 범위: 기존 컬럼·로그·mock fixture·문서로 제한했다. 실제 외부 호출, 신규 schema·관측 stack, 기사 번역, ranking, retry·Kafka는 제외했다.
+- 검증: mock batch 통계 fixture와 전체 71개 테스트 및 Backend CI가 통과했고 AI Reviewer는 Blocking 없음·MERGE_READY로 판정했다. 실행 중인 compose DB가 없어 실데이터 snapshot 수치는 주장하지 않았다.
+- 근거: `docs/backend-improvement/collection-freshness-coverage-baseline.md`, `docs/backend-improvement/sql/collection-coverage-snapshot.sql`
 
 ### P1. 익명 채팅 Redis 동시 요청 데이터 유실 방지 및 회귀 검증
 

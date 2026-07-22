@@ -5,9 +5,14 @@
 
 ## Current Active Work
 
-- None.
+- None
 
 ## Recently Completed
+
+- #223 / PR #224: `Done`
+- Result: News API/RSS batch logs now expose source dimensions, received/invalid/duplicate/saved counts, publication range, and freshness; a read-only SQL snapshot separates local coverage gaps from matching failures
+- Validation: fixtures report 4 received, 1 invalid, 2 duplicate, 1 saved, and the 09:00-11:00 UTC range; all 71 tests and Backend CI passed, and the AI Reviewer reported no Blocking and MERGE_READY
+- Boundary: no real external call, populated compose DB claim, schema, translation, ranking, retry, Kafka, APM, or Issue #110 work
 
 - #221 / PR #222: `Done`
 - Result: Redis List append preserved 20/20 concurrent anonymous chat turns instead of 1/20, Sorted Set preserved 20/20 article entries, and `ZADD GT` prevented delayed older activity scores from replacing newer scores; all 67 tests and Backend CI passed
