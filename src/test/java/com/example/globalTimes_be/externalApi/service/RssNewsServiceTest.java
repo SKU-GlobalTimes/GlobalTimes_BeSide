@@ -11,6 +11,7 @@ import org.jsoup.select.Elements;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.StreamSupport;
@@ -70,6 +71,29 @@ class RssNewsServiceTest {
     }
 
     @Test
+    void processItemsWithStats_reportsCountsAndPublicationRange() {
+        Source source = Source.createSource("Test RSS", null);
+        Elements items = items(
+                item("https://news.example/new", "new", "Wed, 15 Jul 2026 10:00:00 GMT"),
+                item("https://news.example/new", "repeated", "Wed, 15 Jul 2026 11:00:00 GMT"),
+                item("https://news.example/existing", "existing", "Wed, 15 Jul 2026 09:00:00 GMT"),
+                item("https://news.example/invalid", "invalid", "not-a-date")
+        );
+        when(articleRepository.findExistingUrls(anyList()))
+                .thenReturn(Set.of("https://news.example/existing"));
+        when(sourceService.getOrCreateSource("Test RSS", null)).thenReturn(source);
+
+        CollectionBatchStats stats = service.processItemsWithStats(feed, items);
+
+        assertThat(stats.receivedCount()).isEqualTo(4);
+        assertThat(stats.invalidCount()).isEqualTo(1);
+        assertThat(stats.duplicateCount()).isEqualTo(2);
+        assertThat(stats.savedCount()).isEqualTo(1);
+        assertThat(stats.oldestPublishedAt()).isEqualTo(Instant.parse("2026-07-15T09:00:00Z"));
+        assertThat(stats.latestPublishedAt()).isEqualTo(Instant.parse("2026-07-15T11:00:00Z"));
+    }
+
+    @Test
     void collectionEntryPoints_doNothingWhenNewsFetchIsDisabled() {
         ReflectionTestUtils.setField(service, "fetchEnabled", false);
 
@@ -85,8 +109,12 @@ class RssNewsServiceTest {
     }
 
     private String item(String url, String title) {
+        return item(url, title, "Wed, 15 Jul 2026 10:00:00 GMT");
+    }
+
+    private String item(String url, String title, String publishedAt) {
         return "<item><link>" + url + "</link><title>" + title + "</title>"
-                + "<pubDate>Wed, 15 Jul 2026 10:00:00 GMT</pubDate>"
+                + "<pubDate>" + publishedAt + "</pubDate>"
                 + "<description>description</description></item>";
     }
 

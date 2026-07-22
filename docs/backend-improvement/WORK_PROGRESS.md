@@ -5,9 +5,21 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Current Active Work
 
-현재 진행 중인 작업 없음.
+- 없음
 
 ## Recently Completed
+
+### #223 - RSS·News API source별 freshness·coverage 기준선 및 수집 통계 보강
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/223
+- 작업 브랜치: `obs/#223-collection-freshness-coverage`
+- 상태: `Done` ([PR #224](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/224))
+- 기준선: 백엔드 poll 주기는 News API headline 4시간·Everything 1일·RSS 6시간으로 정해져 있지만 외부 source의 실제 갱신 시점과 신규 기사 수는 보장할 수 없다. 기존 로그는 응답·invalid·중복·저장 수만 제공해 Perspectives 결과 부족이 데이터 부재인지 매칭 실패인지 구분하기 어려웠다.
+- 결과: News API·RSS batch 로그에 source·country·language·category, 응답·invalid·중복·저장 수, 최초·최신 발행 시각과 freshness를 추가하고 기존 DB 분포를 확인하는 read-only SQL을 남겼다.
+- overengineering 판단: 기존 컬럼·로그·fixture를 활용하고 신규 schema·수집 이력 테이블·Prometheus/APM은 추가하지 않았다. 실제 News API/RSS·번역 API 호출, 영어 번역 저장, ranking·retry·Kafka 변경도 제외했다.
+- 검증: fixture별 응답 4·invalid 1·중복 2·저장 1과 발행 시각 09:00~11:00 UTC를 확인했고 MySQL·Redis Testcontainers 포함 전체 71개 테스트와 Backend CI가 통과했다. 실행 중인 compose DB가 없어 실데이터 분포 수치는 주장하지 않았으며 AI Reviewer는 Blocking 없음·MERGE_READY로 판정했다.
+- 작업 문서: `docs/backend-improvement/collection-freshness-coverage-baseline.md`
+- 재현 SQL: `docs/backend-improvement/sql/collection-coverage-snapshot.sql`
 
 ### #221 - 익명 채팅 Redis 동시 요청 데이터 유실 방지 및 회귀 검증
 

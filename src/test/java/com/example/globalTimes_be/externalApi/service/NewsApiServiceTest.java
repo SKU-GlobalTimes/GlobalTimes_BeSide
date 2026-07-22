@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -76,6 +77,32 @@ class NewsApiServiceTest {
     }
 
     @Test
+    void processArticlesWithStats_reportsCountsAndPublicationRange() {
+        Source source = Source.createSource("Test Source", null);
+        NewsApiArticleDto newArticle = article(
+                "https://news.example/new", "new", "2026-07-15T10:00:00Z");
+        NewsApiArticleDto repeated = article(
+                "https://news.example/new", "repeated", "2026-07-15T11:00:00Z");
+        NewsApiArticleDto existing = article(
+                "https://news.example/existing", "existing", "2026-07-15T09:00:00Z");
+        NewsApiArticleDto invalid = article("", "invalid", "2026-07-15T12:00:00Z");
+        when(articleRepository.findExistingUrls(anyList()))
+                .thenReturn(Set.of("https://news.example/existing"));
+        when(sourceService.preloadSources(List.of("Test Source")))
+                .thenReturn(Map.of("Test Source", source));
+
+        CollectionBatchStats stats = service.processArticlesWithStats(
+                List.of(newArticle, repeated, existing, invalid), "us", "general");
+
+        assertThat(stats.receivedCount()).isEqualTo(4);
+        assertThat(stats.invalidCount()).isEqualTo(1);
+        assertThat(stats.duplicateCount()).isEqualTo(2);
+        assertThat(stats.savedCount()).isEqualTo(1);
+        assertThat(stats.oldestPublishedAt()).isEqualTo(Instant.parse("2026-07-15T09:00:00Z"));
+        assertThat(stats.latestPublishedAt()).isEqualTo(Instant.parse("2026-07-15T11:00:00Z"));
+    }
+
+    @Test
     void collectionEntryPoints_doNothingWhenNewsFetchIsDisabled() {
         ReflectionTestUtils.setField(service, "fetchEnabled", false);
 
@@ -88,6 +115,10 @@ class NewsApiServiceTest {
     }
 
     private NewsApiArticleDto article(String url, String title) {
+        return article(url, title, "2026-07-15T10:00:00Z");
+    }
+
+    private NewsApiArticleDto article(String url, String title, String publishedAt) {
         NewsApiSourceDto source = new NewsApiSourceDto();
         source.setName("Test Source");
 
@@ -98,7 +129,7 @@ class NewsApiServiceTest {
         article.setContent("content");
         article.setUrl(url);
         article.setUrlToImage("https://news.example/image.jpg");
-        article.setPublishedAt("2026-07-15T10:00:00Z");
+        article.setPublishedAt(publishedAt);
         article.setSource(source);
         return article;
     }

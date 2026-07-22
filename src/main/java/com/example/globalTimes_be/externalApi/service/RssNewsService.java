@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -106,6 +107,10 @@ public class RssNewsService {
     }
 
     int processItems(RssFeedConfig.FeedSource feed, Elements items) {
+        return processItemsWithStats(feed, items).savedCount();
+    }
+
+    CollectionBatchStats processItemsWithStats(RssFeedConfig.FeedSource feed, Elements items) {
         try {
             List<String> urls = items.stream()
                     .map(item -> item.select("link").text().trim())
@@ -118,9 +123,12 @@ public class RssNewsService {
 
             // feed.sourceName()은 하드코딩된 RSS 피드 설정값이므로 null/empty 가능성 없음
             Source source = sourceService.getOrCreateSource(feed.sourceName(), null);
-            if (source == null) return 0;
+            if (source == null) {
+                return CollectionBatchStats.from(items.size(), items.size(), 0, 0, List.of());
+            }
 
             List<Article> toSave = new ArrayList<>();
+            List<Instant> validPublishedAtValues = new ArrayList<>();
             Set<String> seenUrls = new HashSet<>();
             int invalidCount = 0;
             int duplicateCount = 0;
@@ -141,11 +149,12 @@ public class RssNewsService {
                 }
 
                 // 날짜 파싱
-                LocalDateTime publishedAt = parseRssDate(pubDateStr);
+                ParsedRssDate publishedAt = parseRssDate(pubDateStr);
                 if (publishedAt == null) {
                     invalidCount++;
                     continue;
                 }
+                validPublishedAtValues.add(publishedAt.instant());
 
                 // 중복 체크
                 if (!seenUrls.add(url) || existingUrls.contains(url)) {
@@ -159,7 +168,7 @@ public class RssNewsService {
 
                 Article article = Article.createRssArticle(
                         source, author, title, description, null,
-                        url, urlToImage, publishedAt,
+                        url, urlToImage, publishedAt.localDateTime(),
                         feed.country(), feed.category(), feed.language()
                 );
                 toSave.add(article);
@@ -169,26 +178,34 @@ public class RssNewsService {
                 articleRepository.saveAll(toSave);
             }
 
-            log.info("[수집 통계] {} | 응답:{}, invalid:{}, 중복:{}, 저장:{}",
-                    feed.sourceName(), items.size(), invalidCount, duplicateCount, toSave.size());
+            CollectionBatchStats stats = CollectionBatchStats.from(
+                    items.size(), invalidCount, duplicateCount, toSave.size(), validPublishedAtValues);
+            log.info("[수집 통계] provider=rss source={} country={} language={} category={} response={} invalid={} duplicate={} saved={} oldestPublishedAt={} latestPublishedAt={} freshnessSeconds={}",
+                    feed.sourceName(), feed.country(), feed.language(), feed.category(), stats.receivedCount(),
+                    stats.invalidCount(), stats.duplicateCount(), stats.savedCount(), stats.oldestPublishedAt(),
+                    stats.latestPublishedAt(), stats.freshnessSeconds(Instant.now()));
 
-            return toSave.size();
+            return stats;
 
         } catch (Exception e) {
             log.error("[RSS 수집 처리 오류] {} 처리 중 오류 발생", feed.sourceName(), e);
-            return 0;
+            return CollectionBatchStats.from(items.size(), items.size(), 0, 0, List.of());
         }
     }
 
-    private LocalDateTime parseRssDate(String pubDateStr) {
+    private ParsedRssDate parseRssDate(String pubDateStr) {
         for (DateTimeFormatter formatter : DATE_FORMATTERS) {
             try {
-                return ZonedDateTime.parse(pubDateStr, formatter).toLocalDateTime();
+                ZonedDateTime parsed = ZonedDateTime.parse(pubDateStr, formatter);
+                return new ParsedRssDate(parsed.toLocalDateTime(), parsed.toInstant());
             } catch (DateTimeParseException ignored) {
             }
         }
         log.warn("[RSS 날짜 파싱 실패] pubDate: {}", pubDateStr);
         return null;
+    }
+
+    private record ParsedRssDate(LocalDateTime localDateTime, Instant instant) {
     }
 
     private String extractAuthor(Element item) {

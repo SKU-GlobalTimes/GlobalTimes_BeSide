@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -201,8 +202,14 @@ public class NewsApiService {
     }
 
     int processArticles(List<NewsApiArticleDto> articles, String country, String category) {
+        return processArticlesWithStats(articles, country, category).savedCount();
+    }
+
+    CollectionBatchStats processArticlesWithStats(
+            List<NewsApiArticleDto> articles, String country, String category) {
         Set<String> seenUrls = new HashSet<>();
         List<NewsApiArticleDto> uniqueValidArticles = new ArrayList<>();
+        List<Instant> validPublishedAtValues = new ArrayList<>();
         int invalidCount = 0;
         int duplicateCount = 0;
 
@@ -211,6 +218,7 @@ public class NewsApiService {
                 invalidCount++;
                 continue;
             }
+            validPublishedAtValues.add(OffsetDateTime.parse(article.getPublishedAt()).toInstant());
             if (!seenUrls.add(article.getUrl())) {
                 duplicateCount++;
                 continue;
@@ -247,9 +255,18 @@ public class NewsApiService {
             totalNewArticles += articleList.size();
         }
 
-        log.info("[수집 통계] {}/{} | 응답:{}, invalid:{}, 중복:{}, 저장:{}",
-                country, category, articles.size(), invalidCount, duplicateCount, articleList.size());
-        return articleList.size();
+        CollectionBatchStats stats = CollectionBatchStats.from(
+                articles.size(), invalidCount, duplicateCount, articleList.size(), validPublishedAtValues);
+        long sourceCount = uniqueValidArticles.stream()
+                .map(NewsApiArticleDto::getSource)
+                .map(NewsApiSourceDto::getName)
+                .distinct()
+                .count();
+        log.info("[수집 통계] provider=news-api sourceCount={} country={} language=en category={} response={} invalid={} duplicate={} saved={} oldestPublishedAt={} latestPublishedAt={} freshnessSeconds={}",
+                sourceCount, country, category, stats.receivedCount(), stats.invalidCount(),
+                stats.duplicateCount(), stats.savedCount(), stats.oldestPublishedAt(), stats.latestPublishedAt(),
+                stats.freshnessSeconds(Instant.now()));
+        return stats;
     }
 
     private boolean isInvalid(NewsApiArticleDto dto) {
