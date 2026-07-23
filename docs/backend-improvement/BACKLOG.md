@@ -11,6 +11,15 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## Recently Completed
 
+### P1. Perspectives 다국어 번역·FULLTEXT 경로 원인 분리 회귀 검증
+
+- 상태: `Done` ([#225](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/225), [PR #226](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/226))
+- AS-IS: 번역 실패 fallback은 mock 단위 테스트만 있고 비영어 기사에서 번역·원문 키워드가 실제 MySQL FULLTEXT를 거쳐 병합되는 경로는 자동 검증되지 않았다.
+- TO-BE: 통제된 fixture에서 관련 데이터 존재 여부와 mock 번역 결과를 분리해 coverage 부재·matching 실패·fallback·중복 제거 조건을 실제 MySQL로 검증했다.
+- 범위: 테스트와 검증 문서로 제한했고 운영 코드·schema·API·ranking·번역 저장, 실제 외부 API·compose DB, 신규 검색 기술은 제외했다.
+- 검증: MySQL FULLTEXT 기반 5개 통제 시나리오와 전체 76개 테스트 및 Backend CI가 통과했고 AI Reviewer는 Blocking 없음·MERGE_READY로 판정했다. 실제 번역 품질·source coverage·semantic similarity 개선은 주장하지 않는다.
+- 근거: `docs/backend-improvement/perspectives-multilingual-fulltext-integration.md`
+
 ### P1. RSS·News API source별 freshness·coverage 기준선 및 수집 통계 보강
 
 - 상태: `Done` ([#223](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/223), [PR #224](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/224))

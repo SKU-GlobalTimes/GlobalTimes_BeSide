@@ -9,6 +9,17 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Recently Completed
 
+### #225 - Perspectives 다국어 번역·FULLTEXT 경로 원인 분리 회귀 검증
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/225
+- 작업 브랜치: `test/#225-perspectives-multilingual-fulltext`
+- 상태: `Done` ([PR #226](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/226))
+- 기준선: 기존 `PerspectivesServiceTest`는 번역 실패 fallback을 mock repository로만 확인하며, 비영어 기준 기사에서 mock 번역·실제 MySQL FULLTEXT·원문 검색·결과 병합까지 이어지는 성공 경로는 자동 검증하지 않았다.
+- 결과: 통제된 Testcontainers fixture에서 관련 기사 존재 여부와 mock 번역 결과만 바꿔 coverage 부재와 번역·matching 실패 조건을 분리하고, fallback·결과 병합·중복 제거·국가별 응답 회귀를 고정했다.
+- overengineering 판단: 기존 MySQL Testcontainers·Flyway·Mockito를 재사용하고 운영 코드·schema·API·ranking·번역 저장은 변경하지 않았다. 실제 Google Translation API, News API/RSS, compose DB, Elasticsearch·Vector DB·Kafka도 사용하지 않았다.
+- 검증: 5개 통제 시나리오에서 번역 성공 1건 반환, coverage 부재 0건, 오역 0건, 번역 실패 원문 fallback 1건, 번역·원문 중복 최종 1건을 확인했다. 전체 76개 테스트와 Backend CI가 통과했고 AI Reviewer는 Blocking 없음·MERGE_READY로 판정했다. 실제 유사도 정확성이나 외부 번역 품질 개선은 주장하지 않는다.
+- 검증 문서: `docs/backend-improvement/perspectives-multilingual-fulltext-integration.md`
+
 ### #223 - RSS·News API source별 freshness·coverage 기준선 및 수집 통계 보강
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/223
