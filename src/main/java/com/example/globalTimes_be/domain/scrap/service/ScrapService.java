@@ -54,7 +54,7 @@ public class ScrapService {
     // 스크랩 토글 (추가/취소)
     @Transactional
     public boolean toggle(Long userId, Long articleId) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdForUpdate(userId)
                 .orElseThrow(() -> new BaseException(ScrapErrorStatus._SCRAP_USER_NOT_FOUND.getResponse()));
         Article article = articleRepository.findById(articleId)
                 .orElseThrow(() -> new BaseException(ScrapErrorStatus._SCRAP_ARTICLE_NOT_FOUND.getResponse()));

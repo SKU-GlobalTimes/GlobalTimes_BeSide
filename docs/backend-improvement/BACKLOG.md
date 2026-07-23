@@ -11,6 +11,15 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## Recently Completed
 
+### P1. 스크랩 토글 동시 요청 직렬화 및 정합성 보강
+
+- 상태: `Done` ([#229](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/229), [PR #230](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/230))
+- AS-IS: 동일 user/article의 동시 POST toggle 20건에서 unique INSERT 경쟁으로 성공 2건·실패 18건이 발생했다.
+- TO-BE: user 행 pessimistic lock으로 기존 toggle 의미를 직렬화해 성공 20건·실패 0건, `true/false` 각 10건, 최종 scrap 0건을 확인했다.
+- 범위: `ScrapService`, `UserRepository`, MySQL Testcontainers와 문서로 제한했다. 멱등 PUT/DELETE API, 프론트 변경, Redis 분산 락·Kafka·queue는 제외했다.
+- 검증: 스크랩 집중 테스트 7개, 전체 80개 테스트, Backend CI 통과, AI Reviewer Blocking 없음·MERGE_READY.
+- 근거: `docs/backend-improvement/scrap-toggle-concurrency.md`
+
 ### P1. Perspectives 실제 DB 정답 표본 Precision@5 기준선
 
 - 상태: `Done` ([#227](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/227), [PR #228](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/228))

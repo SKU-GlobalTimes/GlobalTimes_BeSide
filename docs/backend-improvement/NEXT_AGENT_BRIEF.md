@@ -9,6 +9,12 @@
 
 ## Recently Completed
 
+- #229 / PR #230: `Done`
+- 결과: 동일 user/article 동시 POST toggle 20건의 성공 2·실패 18을 user 행 `PESSIMISTIC_WRITE`로 성공 20·실패 0, `true/false` 각 10건, 최종 scrap 0건으로 개선했다.
+- 잠금·API 경계: 서로 다른 사용자의 같은 기사 요청은 각각 저장되며 POST toggle의 비멱등 의미는 유지했다. PUT/DELETE·프론트 변경·Redis 분산 락·Kafka·queue는 제외했다.
+- 검증: 스크랩 집중 테스트 7개, 전체 80개 테스트, Backend CI 통과, AI Reviewer Blocking 없음·MERGE_READY.
+- 범위: `ScrapService`, `UserRepository`, MySQL Testcontainers와 문서만 변경했으며 Issue #110은 제외했다.
+
 - #227 / PR #228: `Done`
 - 결과: 선행 작업에서 이어받은 실제 DB 고정 표본 6건에서 strict Precision@5 `0.267`, Useful Precision@5 `0.467`, Hit@5 `0.500`, 평균 반환 국가 수 `1.67`을 기록했다.
 - 해석 경계: 전체 9,814건의 정확도가 아니며 8148·8468의 candidate 0건은 coverage 또는 retrieval 원인 미확정으로 유지했다.

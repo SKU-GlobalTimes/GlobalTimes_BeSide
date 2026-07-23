@@ -9,6 +9,19 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Recently Completed
 
+### #229 - 스크랩 토글 동시 요청 직렬화 및 정합성 보강
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/229
+- 작업 브랜치: `fix/#229-scrap-toggle-concurrency`
+- 상태: `Done` ([PR #230](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/230))
+- 기준선: 동일 user/article 동시 POST toggle 20건에서 unique INSERT 경쟁으로 성공 2건·실패 18건이 발생했다.
+- 결과: user 행 `PESSIMISTIC_WRITE`로 동일 사용자의 toggle을 직렬화해 같은 조건에서 성공 20건·실패 0건, `true` 10건·`false` 10건, 최종 scrap 0건을 확인했다.
+- 잠금 경계: 서로 다른 사용자 두 명은 같은 기사를 동시에 추가해 각각 한 행을 유지한다. article 전역 경합은 만들지 않는다.
+- API 경계: POST toggle의 비멱등 `추가 → 취소` 의미를 유지했다. 멱등 `PUT 추가 / DELETE 취소`와 프론트 계약 변경은 제외했다.
+- overengineering 판단: 기존 MySQL row lock과 Testcontainers만 사용했으며 Redis 분산 락·Kafka·queue는 도입하지 않았다.
+- 검증: 스크랩 집중 테스트 7개, 전체 80개 테스트, Backend CI가 통과했고 AI Reviewer는 Blocking 없음·MERGE_READY로 판정했다.
+- 작업 문서: `docs/backend-improvement/scrap-toggle-concurrency.md`
+
 ### #227 - Perspectives 실제 DB 정답 표본 Precision@5 기준선
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/227
