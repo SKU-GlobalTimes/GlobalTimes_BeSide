@@ -4,6 +4,7 @@ import com.example.globalTimes_be.domain.article.entity.Article;
 import com.example.globalTimes_be.domain.scrap.dto.response.ScrapListResDTO;
 import com.example.globalTimes_be.domain.scrap.dto.response.ScrapResDTO;
 import com.example.globalTimes_be.domain.scrap.entity.Scrap;
+import com.example.globalTimes_be.global.exception.BaseException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import org.hibernate.SessionFactory;
@@ -31,8 +32,15 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -168,6 +176,130 @@ class ScrapQueryIntegrationTest {
         assertThat(statistics.getPrepareStatementCount()).isEqualTo(1L);
         assertThat(statistics.getEntityLoadCount()).isZero();
         System.out.println("SCRAP_LIST_OPTIMIZED_PLAN type=legacy " + legacyPlan());
+    }
+
+    @Test
+    void concurrentToggleSerializesRequestsForSameUserAndArticle() throws Exception {
+        long articleId = articleIds.get(0);
+        int requestCount = 20;
+        jdbcTemplate.update(
+                "DELETE FROM scrap WHERE user_id = ? AND article_id = ?",
+                userId,
+                articleId
+        );
+
+        ExecutorService executor = Executors.newFixedThreadPool(requestCount);
+        CountDownLatch start = new CountDownLatch(1);
+        List<Future<Boolean>> toggles = new ArrayList<>();
+
+        try {
+            for (int i = 0; i < requestCount; i++) {
+                toggles.add(executor.submit(() -> {
+                    start.await();
+                    return scrapService.toggle(userId, articleId);
+                }));
+            }
+            start.countDown();
+
+            int successes = 0;
+            int failures = 0;
+            int added = 0;
+            int canceled = 0;
+            for (Future<Boolean> toggle : toggles) {
+                try {
+                    if (toggle.get(30, TimeUnit.SECONDS)) {
+                        added++;
+                    } else {
+                        canceled++;
+                    }
+                    successes++;
+                } catch (ExecutionException e) {
+                    failures++;
+                }
+            }
+
+            Integer finalRows = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM scrap WHERE user_id = ? AND article_id = ?",
+                    Integer.class,
+                    userId,
+                    articleId
+            );
+            System.out.printf(
+                    "SCRAP_TOGGLE_IMPROVED requests=%d, successes=%d, failures=%d, " +
+                            "added=%d, canceled=%d, finalRows=%d%n",
+                    requestCount,
+                    successes,
+                    failures,
+                    added,
+                    canceled,
+                    finalRows
+            );
+
+            assertThat(successes).isEqualTo(requestCount);
+            assertThat(failures).isZero();
+            assertThat(added).isEqualTo(requestCount / 2);
+            assertThat(canceled).isEqualTo(requestCount / 2);
+            assertThat(finalRows).isZero();
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    void sequentialTogglePreservesAddThenCancelBehavior() {
+        long articleId = articleIds.get(0);
+        jdbcTemplate.update(
+                "DELETE FROM scrap WHERE user_id = ? AND article_id = ?",
+                userId,
+                articleId
+        );
+
+        assertThat(scrapService.toggle(userId, articleId)).isTrue();
+        assertThat(scrapCount(userId, articleId)).isEqualTo(1);
+
+        assertThat(scrapService.toggle(userId, articleId)).isFalse();
+        assertThat(scrapCount(userId, articleId)).isZero();
+    }
+
+    @Test
+    void differentUsersCanScrapSameArticleConcurrently() throws Exception {
+        long articleId = articleIds.get(0);
+        long anotherUserId = insertAdditionalUser();
+        jdbcTemplate.update("DELETE FROM scrap WHERE article_id = ?", articleId);
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        CountDownLatch start = new CountDownLatch(1);
+
+        try {
+            Future<Boolean> first = executor.submit(() -> {
+                start.await();
+                return scrapService.toggle(userId, articleId);
+            });
+            Future<Boolean> second = executor.submit(() -> {
+                start.await();
+                return scrapService.toggle(anotherUserId, articleId);
+            });
+
+            start.countDown();
+
+            assertThat(first.get(30, TimeUnit.SECONDS)).isTrue();
+            assertThat(second.get(30, TimeUnit.SECONDS)).isTrue();
+            assertThat(scrapCount(userId, articleId)).isEqualTo(1);
+            assertThat(scrapCount(anotherUserId, articleId)).isEqualTo(1);
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    void togglePreservesMissingUserAndArticleErrors() {
+        assertThatThrownBy(() -> scrapService.toggle(Long.MAX_VALUE, articleIds.get(0)))
+                .isInstanceOf(BaseException.class)
+                .hasMessage("존재하지 않는 사용자입니다.");
+
+        assertThatThrownBy(() -> scrapService.toggle(userId, Long.MAX_VALUE))
+                .isInstanceOf(BaseException.class)
+                .hasMessage("존재하지 않는 기사입니다.");
     }
 
     @Test
@@ -311,6 +443,30 @@ class ScrapQueryIntegrationTest {
                 "SELECT user_id FROM users WHERE email = ?",
                 Long.class,
                 "scrap-query@example.com"
+        );
+    }
+
+    private long insertAdditionalUser() {
+        jdbcTemplate.update(
+                "INSERT INTO users(created_at, email, nickname, provider, provider_id) VALUES (NOW(6), ?, ?, ?, ?)",
+                "scrap-query-2@example.com",
+                "scrap-query-user-2",
+                "test",
+                "scrap-query-provider-id-2"
+        );
+        return jdbcTemplate.queryForObject(
+                "SELECT user_id FROM users WHERE email = ?",
+                Long.class,
+                "scrap-query-2@example.com"
+        );
+    }
+
+    private int scrapCount(long targetUserId, long targetArticleId) {
+        return jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM scrap WHERE user_id = ? AND article_id = ?",
+                Integer.class,
+                targetUserId,
+                targetArticleId
         );
     }
 
