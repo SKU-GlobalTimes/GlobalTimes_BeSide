@@ -11,6 +11,16 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## Recently Completed
 
+### P1. Perspectives 실제 DB 정답 표본 Precision@5 기준선
+
+- 상태: `Done` ([#227](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/227), [PR #228](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/228))
+- AS-IS: 실제 DB sample은 정성 분류만 있고 기대 관련 기사 ID와 Precision@5·Hit@5가 없어 품질과 실패 원인을 반복 비교하기 어려웠다.
+- TO-BE: 선행 측정에서 이어받은 대표 기사 6건과 FULLTEXT 상위 5개 결과를 고정 라벨로 판정했다. candidate 0건은 coverage 또는 retrieval 원인 미확정으로 남겼다.
+- 측정 결과: strict `Precision@5=0.267`, `Useful Precision@5=0.467`, `Hit@5=0.500`을 확인했다. 전체 9,814건의 정확도로 해석하지 않는다.
+- 번역 경계: 일일 general-model quota를 1,000자로 제한하고 비영어 표본 2건·총 52자만 실제 번역했으며 추가 호출은 하지 않는다.
+- 검증: read-only SQL 전체 MySQL 8 실행, Backend CI 통과, AI Reviewer Blocking 없음·MERGE_READY.
+- 근거: `docs/backend-improvement/perspectives-labeled-quality-baseline.md`, `docs/backend-improvement/sql/perspectives-labeled-quality-sample.sql`
+
 ### P1. Perspectives 다국어 번역·FULLTEXT 경로 원인 분리 회귀 검증
 
 - 상태: `Done` ([#225](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/225), [PR #226](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/226))
