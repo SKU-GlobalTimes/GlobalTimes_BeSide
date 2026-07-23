@@ -9,6 +9,11 @@
 
 ## Recently Completed
 
+- #225 / PR #226: `Done`
+- Result: controlled MySQL fixtures now verify translated search, absent-data and wrong-translation zero-result conditions, original-keyword fallback, and translated/original result deduplication
+- Validation: five focused scenarios, all 76 tests, and Backend CI passed; the AI Reviewer reported no Blocking and MERGE_READY
+- Boundary: backend orchestration only; no claim about real translation quality, source coverage, semantic similarity, production code, schema, API, ranking, translation persistence, real external API, compose DB, new search technology, or Issue #110
+
 - #223 / PR #224: `Done`
 - Result: News API/RSS batch logs now expose source dimensions, received/invalid/duplicate/saved counts, publication range, and freshness; a read-only SQL snapshot separates local coverage gaps from matching failures
 - Validation: fixtures report 4 received, 1 invalid, 2 duplicate, 1 saved, and the 09:00-11:00 UTC range; all 71 tests and Backend CI passed, and the AI Reviewer reported no Blocking and MERGE_READY
