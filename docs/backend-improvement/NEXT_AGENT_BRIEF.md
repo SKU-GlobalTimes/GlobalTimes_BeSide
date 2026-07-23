@@ -5,9 +5,15 @@
 
 ## Current Active Work
 
-- None
+- 없음
 
 ## Recently Completed
+
+- #227 / PR #228: `Done`
+- 결과: 선행 작업에서 이어받은 실제 DB 고정 표본 6건에서 strict Precision@5 `0.267`, Useful Precision@5 `0.467`, Hit@5 `0.500`, 평균 반환 국가 수 `1.67`을 기록했다.
+- 해석 경계: 전체 9,814건의 정확도가 아니며 8148·8468의 candidate 0건은 coverage 또는 retrieval 원인 미확정으로 유지했다.
+- 번역·검증: 일일 quota 1,000자 아래에서 2회·52자만 호출했고 read-only SQL MySQL 8 실행과 Backend CI를 통과했다. AI Reviewer는 Blocking 없음·MERGE_READY로 판정했다.
+- 범위: 측정·문서·read-only SQL만 변경했으며 운영 코드·schema·query·ranking·수집·번역 저장·신규 검색 기술·Issue #110은 제외했다.
 
 - #225 / PR #226: `Done`
 - Result: controlled MySQL fixtures now verify translated search, absent-data and wrong-translation zero-result conditions, original-keyword fallback, and translated/original result deduplication

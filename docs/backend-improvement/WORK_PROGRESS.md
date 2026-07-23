@@ -9,6 +9,19 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Recently Completed
 
+### #227 - Perspectives 실제 DB 정답 표본 Precision@5 기준선
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/227
+- 작업 브랜치: `measure/#227-perspectives-quality-labeled-sample`
+- 상태: `Done` ([PR #228](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/228))
+- 기준선: 기존 실제 DB snapshot은 일부 결과를 good·partial·weak·no-match로 분류했지만 기대 관련 기사 ID, 고정 라벨 기준, Precision@5·Hit@5가 없어 실제 품질과 실패 원인을 수치로 반복 비교하기 어려웠다.
+- 결과: 실제 DB 6건의 strict `Precision@5=0.267`, `Useful Precision@5=0.467`, `Hit@5=0.500`, 평균 반환 국가 수 `1.67`을 기록했다. 6건은 #146·#156·#160에서 이어받은 고정 진단 표본이며 전체 9,814건의 정확도로 해석하지 않는다.
+- 원인 경계: 8148·8468은 candidate 0건이지만 coverage와 retrieval 원인을 확정하지 않으며, 후보가 없어 ranking은 평가하지 않았다.
+- 번역 경로: 일일 general-model quota를 1,000자로 제한하고 비영어 표본 2건·총 52자만 호출했다. 프랑스어 표본은 710ms에 2개 국가·3개 same-event 기사를 반환했고 한국어 표본은 2,220ms에 candidate 0건이었다.
+- 검증: read-only SQL 전체를 MySQL 8에서 실행했고 Backend CI가 통과했다. AI Reviewer는 Blocking 없음·MERGE_READY로 판정했다.
+- 측정 문서: `docs/backend-improvement/perspectives-labeled-quality-baseline.md`
+- 재현 SQL: `docs/backend-improvement/sql/perspectives-labeled-quality-sample.sql`
+
 ### #225 - Perspectives 다국어 번역·FULLTEXT 경로 원인 분리 회귀 검증
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/225
