@@ -9,7 +9,39 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 현재 진행 중인 backend improvement Issue는 없다.
 
+## Phase 1 Exit Roadmap
+
+### P1. Trend Gemini prompt·timeout·오류 정책 보강
+
+- 상태: `Backlog`
+- 근거: 사용자 요청 경로의 `TrendAiService` system prompt가 `?` 문자로 손상돼 있고, Gemini `.block()` 호출에 timeout과 upstream·timeout·내부 오류 분리가 없다.
+- 범위: prompt 복구, configurable timeout, mock WebClient 회귀 테스트와 오류 정책으로 제한한다. 실제 Gemini, async 전환, queue·Kafka는 제외한다.
+
+### P1. Trend Redis 갱신 시 기존 데이터 보존
+
+- 상태: `Backlog`
+- 근거: scheduler가 국가별 기존 trend key를 DELETE한 뒤 새 값을 SET하므로 직렬화·저장 실패 사이에 기존 데이터가 사라질 수 있다.
+- 범위: 선행 DELETE 제거, 성공 시 단일 SET 교체, 실패 시 기존 값 보존 회귀 테스트로 제한한다. Redis 자료구조 변경과 분산 락은 제외한다.
+
+### P1. Phase 1 백엔드 구조·정량 근거 맵 및 README 최신화
+
+- 상태: `Backlog`
+- 근거: 상세 PR·측정 문서는 남아 있지만 정량 인덱스에 #223 이후 작업이 빠져 있고 README의 legacy CI/CD 설명과 학습 진입 링크가 현재 상태를 반영하지 못한다.
+- 범위: 도메인별 `진입점 → Service → DB/Redis/외부 API → 문제 → 해결 → 수치 → 테스트/PR` 맵, 정량 인덱스, README 링크 최신화로 제한한다.
+
 ## Recently Completed
+
+### P1. RSS/News API 수집 배치 처리량 및 지연 전파 기준선
+
+- 상태: `Done` ([#233](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/233), [PR #234](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/234))
+- AS-IS: 수집 중복 방지·재실행 안전성·부분 실패 격리는 검증했지만 100·500·1,000건의 실제 MySQL 처리량과 순차 source 지연 전파는 수치가 없었다.
+- TO-BE: fixture와 mock upstream, MySQL Testcontainers로 신규 저장·중복 재실행·혼합 데이터·지연/5xx 조건을 측정하고 후속 기술 검토 근거를 남겼다.
+- 범위: 테스트와 측정 문서로 제한했다. 실제 API, `news-fetch.enabled=true`, 운영 DB, schema/index, scheduler, Kafka·별도 queue·retry는 변경하지 않았다.
+- 측정: 신규 1,000건은 News API 4,244.38ms·1,022 statements, RSS 2,860.14ms·1,003 statements였다. 재실행은 53.83ms·1 statement, 56.15ms·2 statements와 저장 0건이었다.
+- 지연 전파: all-fast 506.69ms 대비 300ms 지연 source 포함 790.89ms로 284.20ms 증가했고, 중간 5xx 이후에도 총 75건 저장을 유지했다.
+- 판단: 현재 4/6시간 scheduler 대비 배치 처리 여유가 있어 Kafka는 보류했다. 지속 backlog·replay·독립 consumer·scale-out 요구가 생길 때 Phase 2에서 검토한다.
+- 검증: 집중 4개·전체 91개 테스트와 Backend CI가 통과했고 AI Reviewer는 Blocking 수정 재검토 후 MERGE_READY로 판정했다.
+- 근거: `docs/backend-improvement/collection-batch-throughput-baseline.md`
 
 ### P1. SSE 완료 후 채팅 이력 저장 실패 격리 및 트랜잭션 예외 가시성
 
