@@ -9,6 +9,18 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Recently Completed
 
+### #235 - Trend Gemini 프롬프트 인코딩 및 timeout·오류 정책 보강
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/235
+- 작업 브랜치: `fix/#235-trend-gemini-error-policy`
+- 상태: `Done` ([PR #236](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/236))
+- 기준선: Trend 기사 요약의 system prompt가 손상돼 있고 외부 Gemini 호출에 timeout과 오류 원인별 HTTP 계약이 없었다.
+- 결과: 요청 언어와 2문장 조건을 포함한 prompt를 복구하고 기존 `gemini.timeout-ms`를 재사용해 Gemini non-2xx 502, timeout 504, 응답 처리 실패 500으로 구분했다.
+- 캐시 경계: cache hit는 외부 호출을 생략하고 Redis read 실패는 Gemini로 fallback하며, write 실패는 생성된 summary 응답을 유지한다.
+- 검증: mock HTTP·Redis 집중 테스트 7개와 Docker 비의존 58개 테스트, GitHub Backend CI 전체 테스트가 통과했다. AI Reviewer는 Blocking 없음·MERGE_READY로 판정했다.
+- overengineering 판단: 실제 Gemini, 비동기 전환, retry·circuit breaker, queue·Kafka, 캐시 키·TTL 변경과 Issue #110은 제외했다.
+- 작업 문서: `docs/backend-improvement/trend-gemini-error-policy.md`
+
 ### #233 - RSS/News API 수집 배치 처리량 및 지연 전파 기준선 측정
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/233
