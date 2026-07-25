@@ -9,12 +9,19 @@
 
 ## Recently Completed
 
+- #235 / PR #236: `Done`
+- 결과: 손상된 Trend Gemini prompt를 복구하고 기존 `gemini.timeout-ms`를 적용해 non-2xx 502, timeout 504, 내부 응답 처리 오류 500 계약을 고정했다.
+- 캐시: cache hit는 Gemini를 생략하며 Redis read 실패 fallback과 write 실패 시 정상 summary 반환을 유지했다.
+- 검증: mock HTTP·Redis 집중 테스트 7개, Docker 비의존 58개 테스트와 Backend CI 전체 테스트가 통과했고 AI Reviewer는 Blocking 없음·MERGE_READY로 판정했다.
+- 범위: 실제 Gemini·async·retry·circuit breaker·queue·Kafka·캐시 정책·Issue #110은 제외했다.
+- Phase 1 잔여 순서: Trend Redis 갱신 데이터 보존 → Phase 1 구조·정량 근거 맵과 README 최신화.
+
 - #233 / PR #234: `Done`
 - 결과: RSS/News API의 100·500·1,000건 신규 저장·중복 재실행과 mock upstream 순차 지연 전파를 MySQL Testcontainers에서 측정했다.
 - 측정: 신규 1,000건은 News API 4,244.38ms·1,022 statements, RSS 2,860.14ms·1,003 statements였다. 재실행은 각각 53.83ms·1 statement, 56.15ms·2 statements와 저장 0건이었다.
 - 지연 전파: 동일 4요청·75저장·5xx 1건에서 all-fast 506.69ms, 300ms 지연 source 포함 790.89ms, 차이 284.20ms였다. 5xx 이후 source는 계속 처리됐다.
 - 판단: 4/6시간 scheduler와 겹칠 근거가 없어 Kafka·durable queue는 보류했다. 집중 4개·전체 91개 테스트와 Backend CI가 통과했고 AI Reviewer는 Blocking 수정 재검토 후 MERGE_READY로 판정했다.
-- Phase 1 잔여 순서: Trend Gemini prompt·timeout·오류 정책 → Trend Redis 갱신 데이터 보존 → Phase 1 구조·정량 근거 맵과 README 최신화.
+- Phase 1 종료선은 위 #235 완료 결과와 잔여 순서를 기준으로 판단한다.
 - 범위: 테스트·fixture·측정 문서만 변경했으며 실제 API, flag, 운영 DB, production code, schema/index, scheduler, Kafka·queue·retry·Issue #110은 제외했다.
 
 - #231 / PR #232: `Done`

@@ -13,9 +13,10 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ### P1. Trend Gemini prompt·timeout·오류 정책 보강
 
-- 상태: `Backlog`
+- 상태: `Done` ([#235](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/235), [PR #236](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/236))
 - 근거: 사용자 요청 경로의 `TrendAiService` system prompt가 `?` 문자로 손상돼 있고, Gemini `.block()` 호출에 timeout과 upstream·timeout·내부 오류 분리가 없다.
 - 범위: prompt 복구, configurable timeout, mock WebClient 회귀 테스트와 오류 정책으로 제한한다. 실제 Gemini, async 전환, queue·Kafka는 제외한다.
+- 결과: 기존 `gemini.timeout-ms`를 재사용하고 Gemini non-2xx 502, timeout 504, 응답 처리 실패 500으로 구분했다. cache hit와 Redis 장애 fallback을 포함한 집중 테스트 7개 및 Backend CI 전체 테스트가 통과했다.
 
 ### P1. Trend Redis 갱신 시 기존 데이터 보존
 
