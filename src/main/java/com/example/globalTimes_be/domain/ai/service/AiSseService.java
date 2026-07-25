@@ -162,25 +162,46 @@ public class AiSseService {
                         log.warn("[Gemini SSE] JSON 파싱 오류: {}", e.getMessage());
                     }
                 })
-                .doOnComplete(() -> {
-                    // 스트리밍 완료 후 히스토리 저장
-                    if (userId != null && articleId != null && question != null) {
-                        chatHistoryService.save(userId, articleId, question, resultBuilder.toString());
-                    } else if (anonymousSessionId != null && articleId != null && question != null) {
-                        anonymousChatSessionService.appendTurn(
-                                anonymousSessionId, articleId, question, resultBuilder.toString(), contextWindowSize);
-                    }
-                    try {
-                        emitter.complete();
-                    } catch (Exception e) {
-                        log.warn("[Gemini SSE] emitter complete 오류: {}", e.getMessage());
-                    }
-                })
+                .doOnComplete(() -> completeStreaming(
+                        emitter,
+                        question,
+                        userId,
+                        articleId,
+                        anonymousSessionId,
+                        resultBuilder.toString()
+                ))
                 .doOnError(error -> {
                     log.error("[Gemini SSE] 처리 중 오류 발생", error);
                     emitter.completeWithError(error);
                 })
                 .subscribe();
+    }
+
+    void completeStreaming(SseEmitter emitter, String question, Long userId, Long articleId,
+                           String anonymousSessionId, String answer) {
+        if (userId != null && articleId != null && question != null) {
+            try {
+                chatHistoryService.save(userId, articleId, question, answer);
+                log.info("[Gemini SSE] 채팅 이력 저장 완료 - userId={}, articleId={}", userId, articleId);
+            } catch (Exception e) {
+                log.error(
+                        "[Gemini SSE] 채팅 이력 저장 실패 - userId={}, articleId={}, exception={}",
+                        userId,
+                        articleId,
+                        e.getClass().getSimpleName(),
+                        e
+                );
+            }
+        } else if (anonymousSessionId != null && articleId != null && question != null) {
+            anonymousChatSessionService.appendTurn(
+                    anonymousSessionId, articleId, question, answer, contextWindowSize);
+        }
+
+        try {
+            emitter.complete();
+        } catch (Exception e) {
+            log.warn("[Gemini SSE] emitter complete 오류: {}", e.getMessage());
+        }
     }
 
 

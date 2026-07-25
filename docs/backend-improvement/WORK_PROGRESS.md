@@ -5,9 +5,21 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Current Active Work
 
-- 없음
+현재 진행 중인 backend improvement Issue는 없다.
 
 ## Recently Completed
+
+### #231 - SSE 완료 후 채팅 이력 저장 실패 격리 및 트랜잭션 예외 가시성
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/231
+- 작업 브랜치: `fix/#231-chat-history-transaction-boundary`
+- 상태: `Done` ([PR #232](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/232))
+- 기준선: `ChatHistoryService.save()`는 `@Transactional` 메서드 내부에서 모든 예외를 삼키지만, JPA flush·commit은 대상 메서드 반환 후 transaction proxy에서 실패할 수 있어 이 catch가 저장 실패 전체를 보장하지 않는다.
+- 결과: transactional 저장 메서드는 실패를 호출자까지 전달하고, proxy 바깥의 `AiSseService` 완료 callback이 로그인 이력 저장 실패를 best-effort로 격리해 이미 전달된 Gemini SSE 답변을 정상 완료한다.
+- overengineering 판단: mock `SseEmitter`와 경량 MySQL Testcontainers로 검증했으며 실제 Gemini 호출, retry, outbox, Kafka, 별도 저장 queue는 도입하지 않았다.
+- 정책 경계: 로그인 이력 저장은 답변 생성 후 부가 기능으로 취급한다. 실패한 turn은 다음 context에 포함되지 않지만 현재 답변 스트림은 성공으로 유지한다. 익명 Redis 저장 경로는 변경하지 않았다.
+- 검증: mock SSE 완료 callback 4개, MySQL 저장 통합 테스트 3개, 전체 87개 테스트와 Backend CI가 통과했다. 실제 Gemini·Translation 호출은 0회이며 AI Reviewer는 Blocking 없음·MERGE_READY로 판정했다.
+- 작업 문서: `docs/backend-improvement/chat-history-sse-persistence-boundary.md`
 
 ### #229 - 스크랩 토글 동시 요청 직렬화 및 정합성 보강
 
