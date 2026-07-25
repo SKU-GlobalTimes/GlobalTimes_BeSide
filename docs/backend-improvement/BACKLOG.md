@@ -41,6 +41,14 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## Recently Completed
 
+### P1 문서 후속. 검색·Perspectives 근거 문서 한국어 재정리
+
+- 상태: `Done` ([#241](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/241), [PR #242](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/242))
+- 결과: 영어 중심 문서 10개의 설명과 결론을 한국어로 재정리하되 SQL·명령·로그·metric 식별자, 수치, 표본 ID와 해석 한계를 유지했다.
+- 판단: Phase 1 기술 범위는 `Completed`를 유지한다. 이번 작업은 신규 구현이나 측정이 아니라 기존 근거의 학습 접근성을 높이는 후속 문서 정리다.
+- 검증: 숫자 token·code fence 수 원문 대조, 상대 링크, `git diff --check`, Backend CI가 통과했다.
+- 제외: production code·test·schema·workflow·신규 측정·신규 기술과 Issue #110.
+
 ### P1. RSS/News API 수집 배치 처리량 및 지연 전파 기준선
 
 - 상태: `Done` ([#233](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/233), [PR #234](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/234))

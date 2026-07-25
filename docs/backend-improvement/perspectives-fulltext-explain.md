@@ -1,13 +1,13 @@
-# Perspectives FULLTEXT EXPLAIN analysis
+# Perspectives FULLTEXT EXPLAIN 분석
 
-## Purpose
+## 목적
 
-This document records the current MySQL execution plan for the Perspectives API cache-miss query.
-The goal is to check whether the query uses the intended FULLTEXT index before introducing heavier search technologies or additional caching layers.
+이 문서는 Perspectives API에서 캐시가 적중하지 않았을 때 실행되는 MySQL 쿼리의 현재 실행 계획을 기록한다.
+더 무거운 검색 기술이나 추가 캐시 계층을 도입하기 전에 의도한 FULLTEXT 인덱스가 사용되는지 확인하는 것이 목적이다.
 
-## Target query
+## 대상 쿼리
 
-`ArticleRepository.findPerspectives` uses this native query:
+`ArticleRepository.findPerspectives`는 다음 native query를 사용한다.
 
 ```sql
 SELECT *
@@ -18,33 +18,33 @@ ORDER BY published_at DESC
 LIMIT 50;
 ```
 
-The query is used by:
+이 쿼리는 다음 API에서 사용한다.
 
 ```text
 GET /api/news/{id}/perspectives
 ```
 
-## Related index
+## 관련 인덱스
 
-`FullTextIndexConfig` creates this index if it does not already exist:
+`FullTextIndexConfig`는 인덱스가 없을 때 다음 인덱스를 생성한다.
 
 ```sql
 CREATE FULLTEXT INDEX ft_article_title_description
 ON article(title, description);
 ```
 
-Local dev DB check:
+로컬 개발 DB 확인 결과:
 
-| Item | Value |
+| 항목 | 값 |
 | --- | --- |
-| Table | `article` |
-| Total rows | `9853` |
-| FULLTEXT index | `ft_article_title_description` |
-| Indexed columns | `title`, `description` |
+| 테이블 | `article` |
+| 전체 행 | `9853` |
+| FULLTEXT 인덱스 | `ft_article_title_description` |
+| 인덱스 대상 컬럼 | `title`, `description` |
 
-## EXPLAIN result
+## EXPLAIN 결과
 
-Representative query:
+대표 쿼리:
 
 ```sql
 EXPLAIN
@@ -56,9 +56,9 @@ ORDER BY published_at DESC
 LIMIT 50;
 ```
 
-Result summary:
+결과 요약:
 
-| Field | Value |
+| 필드 | 값 |
 | --- | --- |
 | `type` | `fulltext` |
 | `possible_keys` | `PRIMARY`, `ft_article_title_description` |
@@ -66,24 +66,24 @@ Result summary:
 | `rows` | `1` |
 | `Extra` | `Using where; Ft_hints: no_ranking; Using filesort` |
 
-Interpretation:
+해석:
 
-- MySQL uses the intended FULLTEXT index.
-- The query does not fall back to a full table scan.
-- `Using filesort` appears because results are ordered by `published_at DESC` after FULLTEXT matching.
-- The optimizer row estimate is not reliable for these FULLTEXT examples: `rows=1` was estimated even when actual matches were larger.
+- MySQL은 의도한 FULLTEXT 인덱스를 사용한다.
+- 쿼리는 전체 테이블 스캔으로 대체되지 않는다.
+- FULLTEXT 매칭 후 `published_at DESC`로 정렬하므로 `Using filesort`가 나타난다.
+- 이 FULLTEXT 예시에서 옵티마이저의 예상 행 수는 신뢰하기 어렵다. 실제 매칭 수가 더 많아도 `rows=1`로 예상했다.
 
-## EXPLAIN ANALYZE result
+## EXPLAIN ANALYZE 결과
 
-### Keyword: `+war`
+### 키워드: `+war`
 
-Match count:
+매칭 수:
 
 ```text
 404 rows
 ```
 
-Execution plan summary:
+실행 계획 요약:
 
 ```text
 Full-text index search on article using ft_article_title_description
@@ -99,15 +99,15 @@ Limit: 50
 actual time=10.2..10.3 rows=50
 ```
 
-### Keyword: `+economy`
+### 키워드: `+economy`
 
-Match count:
+매칭 수:
 
 ```text
 39 rows
 ```
 
-Execution plan summary:
+실행 계획 요약:
 
 ```text
 Full-text index search on article using ft_article_title_description
@@ -123,30 +123,30 @@ Limit: 50
 actual time=1.22..1.37 rows=39
 ```
 
-## Decision
+## 결정
 
-Do not change the query or index in this PR.
+이 PR에서는 쿼리나 인덱스를 변경하지 않는다.
 
-Reasons:
+근거:
 
-- The intended FULLTEXT index is being used.
-- For the current local dataset, representative queries complete in low milliseconds.
-- The current cold cache latency measured in #127 is not explained by this query alone.
-- Query changes that affect ranking, recency, or multilingual matching should be handled with separate quality and performance criteria.
+- 의도한 FULLTEXT 인덱스를 사용하고 있다.
+- 현재 로컬 데이터셋에서 대표 쿼리는 낮은 밀리초 범위로 완료된다.
+- #127에서 측정한 cold cache 지연은 이 쿼리만으로 설명되지 않는다.
+- 순위, 최신성, 다국어 매칭에 영향을 주는 쿼리 변경은 별도의 품질 및 성능 기준으로 다뤄야 한다.
 
-## Follow-up candidates
+## 후속 후보
 
-- Measure more article IDs and extracted keywords, not only manual keywords.
-- Compare FULLTEXT search time with the service log fields `translatedSearchMs` and `originalSearchMs`.
-- Investigate `Using filesort` only if match counts grow enough to make sort time visible in p95.
-- Analyze `searchByDescriptionOrTitleWithExploreFilters` separately because it combines FULLTEXT with optional country/category/date filters.
-- Consider Elasticsearch or vector search only after documenting concrete FULLTEXT quality gaps, such as missing related articles across languages.
+- 수동 키워드뿐 아니라 더 많은 기사 ID와 추출 키워드로 측정한다.
+- FULLTEXT 검색 시간을 서비스 로그의 `translatedSearchMs`, `originalSearchMs`와 비교한다.
+- 매칭 수가 증가해 정렬 시간이 p95에 드러날 때만 `Using filesort`를 조사한다.
+- `searchByDescriptionOrTitleWithExploreFilters`는 국가·카테고리·날짜 선택 조건과 FULLTEXT를 결합하므로 별도로 분석한다.
+- 언어 간 관련 기사 누락처럼 구체적인 FULLTEXT 품질 한계를 문서화한 뒤에만 Elasticsearch나 vector search를 검토한다.
 
-## Safe command template
+## 안전한 명령 템플릿
 
-Use local development credentials from the local environment, not production secrets.
-Avoid placing the password directly in the command because shell history can keep it.
-Use `-p` without the password and enter the password interactively.
+운영 비밀 값이 아니라 로컬 환경의 개발용 인증 정보를 사용한다.
+셸 기록에 비밀번호가 남을 수 있으므로 명령에 비밀번호를 직접 넣지 않는다.
+비밀번호 없이 `-p`를 사용하고 대화형으로 입력한다.
 
 ```powershell
 docker exec -it globaltimes_beside-mysql-1 mysql -uroot -p <database> -e "EXPLAIN SELECT * FROM article WHERE article_id != 8449 AND MATCH(title, description) AGAINST('+war' IN BOOLEAN MODE) ORDER BY published_at DESC LIMIT 50"
