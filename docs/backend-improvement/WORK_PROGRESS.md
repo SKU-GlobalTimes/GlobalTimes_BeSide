@@ -9,6 +9,20 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Recently Completed
 
+### #233 - RSS/News API 수집 배치 처리량 및 지연 전파 기준선 측정
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/233
+- 작업 브랜치: `measure/#233-collection-batch-baseline`
+- 상태: `Done` ([PR #234](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/234))
+- 기준선: RSS/News API 수집은 URL 일괄 중복 조회와 `saveAll`, source별 실패 격리와 통계를 갖췄지만 배치 규모별 실제 MySQL 처리량과 순차 source 지연 전파 수치가 없었다.
+- overengineering 판단: 실제 외부 API와 운영 DB를 사용하지 않고 fixture, random-port mock HTTP server, MySQL Testcontainers로 측정했다. Kafka·별도 queue·schema/index·scheduler 변경은 제외했다.
+- 측정: 신규 1,000건은 News API fixture 4,244.38ms·1,022 statements, RSS fixture 2,860.14ms·1,003 statements였다. 동일 배치 재실행은 각각 53.83ms·1 statement, 56.15ms·2 statements이며 추가 저장은 0건이었다.
+- 지연 전파: 동일 4요청·75저장·5xx 1건 조건에서 all-fast 506.69ms, 300ms 지연 source 포함 790.89ms로 284.20ms 증가했다. 5xx 이후 source 저장은 계속됐다.
+- 판단: 통제된 1,000건 배치가 4/6시간 scheduler와 겹칠 근거가 없어 Kafka 도입은 보류했다. 지속 backlog, replay, 독립 consumer scale-out, 수만 건 DB 병목이 확인될 때 Phase 2에서 재검토한다.
+- 검증: 집중 테스트 4개와 전체 91개 테스트, Backend CI가 통과했다. AI Reviewer의 측정 경계 문서 Blocking을 수정했고 최신 HEAD 재검토에서 Blocking 없음·MERGE_READY로 판정됐다.
+- Phase 1 종료선: Trend Gemini prompt·timeout·오류 정책, Trend Redis 갱신 데이터 보존, Phase 1 구조·정량 근거 맵과 README 최신화를 순서대로 완료한다. 그 전에는 신규 기술을 운영 경로에 도입하지 않는다.
+- 측정 문서: `docs/backend-improvement/collection-batch-throughput-baseline.md`
+
 ### #231 - SSE 완료 후 채팅 이력 저장 실패 격리 및 트랜잭션 예외 가시성
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/231
