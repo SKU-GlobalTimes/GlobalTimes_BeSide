@@ -2,6 +2,7 @@
 
 - Issue: [#218](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/218)
 - 상태: `Done` ([PR #220](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/220))
+- 최근 갱신: [#239](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/239), [PR #240](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/240)
 
 ## 목적
 
@@ -12,6 +13,8 @@
 ```
 
 도구 자체는 성과가 아니다. k6는 HTTP 부하와 응답을, mock server는 외부 의존성 조건을, Testcontainers는 실제 MySQL 동작을 통제해 개선 결과를 검증하는 수단이다.
+
+현재 코드 구조와 도메인별 학습 순서는 [Backend Phase 1 구조·근거 맵](backend-phase1-evidence-map.md)에서 확인한다.
 
 ## 검증 도구의 역할
 
@@ -36,6 +39,7 @@
 | 로그인 스크랩의 2단계 N+1과 비로그인 ID별 반복 조회 | DTO projection 일괄 조회와 요청 ID 순서 복원 | 로그인 SQL `201 → 1`·entity `300 → 0`, 비로그인 SQL `200 → 1`·entity `200 → 0` | Testcontainers + Hibernate Statistics + EXPLAIN | [PR #217](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/217), [상세](scrap-list-query-optimization.md) |
 | 수집 로직만으로는 과거·동시 기사 URL 중복을 최종 차단할 수 없음 | SHA-256 generated column UNIQUE와 안전한 Flyway 중복 정리 | 기사 `9,853 → 9,814`, 초과 중복 `39 → 0`; 동일 URL 동시 INSERT 1건 성공·1건 거부 | Testcontainers + Flyway + local MySQL | [PR #211](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/211), [상세](article-url-uniqueness.md) |
 | 익명 채팅 JSON 전체 덮어쓰기로 동일 세션의 동시 대화·최근 기사 유실 가능 | Redis List 턴별 append와 Sorted Set 기사별 갱신 | 통제된 동시 20건에서 대화 보존 `1 → 20`, 유실 `19 → 0`; 서로 다른 기사 인덱스 `20/20` 보존 | Redis Testcontainers | [PR #222](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/222), [상세](anonymous-chat-redis-concurrency.md) |
+| 동일 user/article 스크랩 toggle 동시 INSERT 경쟁 | user row `PESSIMISTIC_WRITE`로 같은 사용자의 toggle 직렬화 | 20개 동시 요청 성공 `2 → 20`, 실패 `18 → 0`; true/false 각 10건, 최종 scrap 0건 | MySQL Testcontainers + 동시 executor | [PR #230](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/230), [상세](scrap-toggle-concurrency.md) |
 
 ## 측정으로 확인한 효과와 기준선
 
@@ -51,6 +55,9 @@
 | Servlet thread 전파 | summary 20 VU에서 busy `20/20`, popular p95 `154.46ms → 2.86초`, RPS `24.55 → 3.71` | DB보다 request-thread 대기가 다른 API로 전파 | [PR #187](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/187), [상세](gemini-servlet-thread-saturation-baseline.md) |
 | 검색 FULLTEXT | 검색어별 p95 `24.78~103.41ms`, failure 0%; 한국어·AI 샘플 결과 0건 | latency보다 다국어 recall이 후속 품질 문제 | [PR #169](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/169), [상세](search-fulltext-term-baseline.md) |
 | 기사 summary hit | p95 `332.6ms`, failure 0%, crawler fallback 0%, summary success 100% | 저장 summary가 외부 crawl·AI를 우회하는 warm 기준선 | [PR #171](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/171), [상세](article-crawl-latency-baseline.md) |
+| Perspectives 실제 DB 검색 품질 | 고정 표본 6건 strict Precision@5 `0.267`, Useful Precision@5 `0.467`, Hit@5 `0.500`, 평균 반환 국가 수 `1.67` | 전체 9,814건 정확도가 아닌 Phase 2 비교용 labeled baseline | [PR #228](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/228), [상세](perspectives-labeled-quality-baseline.md) |
+| 수집 batch 처리량 | 신규 1,000건 News `4,244.38ms`·1,022 statements, RSS `2,860.14ms`·1,003 statements; 재실행 `53.83/56.15ms`, 추가 저장 0건 | 현재 4/6시간 scheduler와 겹칠 근거가 없어 Kafka·durable queue 보류 | [PR #234](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/234), [상세](collection-batch-throughput-baseline.md) |
+| 순차 수집 upstream 지연 전파 | 동일 4요청·75저장·5xx 1건에서 all-fast `506.69ms`, 300ms slow source 포함 `790.89ms`, 차이 `284.20ms` | source 지연이 순차 batch에 더해지지만 중간 5xx 이후 source 저장은 계속됨 | [PR #234](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/234), [상세](collection-batch-throughput-baseline.md) |
 
 ## 장애 격리와 재현성
 
@@ -58,6 +65,10 @@
 | --- | --- | --- | --- |
 | 실제 News API로 500·timeout을 반복 재현하기 어려움 | random-port mock upstream의 200·500·timeout 혼합에서 정상 기사 2건 저장, 실패 category 격리, 재실행 후 URL 중복 0건 | mock HTTP + Testcontainers | [PR #213](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/213), [상세](news-api-ingestion-failure-e2e.md) |
 | DB별 schema 차이와 수동 회귀 위험 | Flyway V1~V3와 Hibernate validate, MySQL Testcontainers를 CI에서 반복 | 전체 schema·FK·FULLTEXT·URL UNIQUE 재현 | [PR #209](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/209), [PR #207](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/207), [상세](flyway-schema-baseline.md) |
+| 번역·FULLTEXT 결과 0건의 원인을 실제 API 비용 없이 분리하기 어려움 | controlled fixture로 번역 성공, 원문 fallback, 잘못된 번역, 데이터 부재, 중복 제거 5개 경로 고정 | mock Translation + MySQL Testcontainers | [PR #226](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/226), [상세](perspectives-multilingual-fulltext-integration.md) |
+| SSE 답변 완료 후 로그인 이력 transaction commit 실패가 내부 catch 밖에서 발생 가능 | transactional save는 예외를 전달하고 proxy 밖 완료 callback에서 history 실패를 best-effort 격리 | mock SSE + MySQL Testcontainers | [PR #232](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/232), [상세](chat-history-sse-persistence-boundary.md) |
+| Trend Gemini 손상 prompt와 무제한 외부 대기·오류 혼합 | prompt 복구, 기존 timeout 재사용, non-2xx 502·timeout 504·내부 500 분리 | random-port Gemini mock + mock Redis | [PR #236](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/236), [상세](trend-gemini-error-policy.md) |
+| Trend 갱신의 선행 DELETE가 직렬화·write 실패 시 기존 값을 제거할 위험 | JSON 직렬화 후 Redis SET 한 번으로 교체하고 삭제 API 제거 | mock Redis interaction·기존 JSON fixture | [PR #238](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/238), [상세](trend-redis-refresh-preservation.md) |
 
 ## 핵심 개선 결과 요약
 
@@ -69,6 +80,8 @@
 - 채팅·스크랩 목록의 전체 entity 로딩과 N+1을 projection query로 개선해 SQL을 각각 101→1, 201→1로 감소
 - 로컬 Docker 단일 인스턴스의 mixed API arrival-rate를 20→120 RPS로 높여 100 RPS부터 Hikari pending과 MySQL CPU 압박이 증가하는 첫 병목 신호 식별
 - mock upstream과 MySQL Testcontainers로 News API 500·timeout 부분 실패를 재현하고 정상 기사 저장 및 재실행 URL 중복 0건을 자동 검증
+- 동일 user/article 스크랩 toggle을 user row 잠금으로 직렬화해 20개 동시 요청 성공을 2건에서 20건으로 높이고 실패를 18건에서 0건으로 제거
+- RSS·News API 1,000건 batch와 동일 batch 재실행을 MySQL에서 측정해 현재 scheduler 주기 내 처리와 추가 저장 0건을 확인하고 Kafka 도입을 보류
 ```
 
 Redis cache는 직접 구현 범위를 확인한 뒤 다음처럼 보수적으로 사용한다.
