@@ -7,9 +7,18 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## Current Active Work
 
-- 없음
+현재 진행 중인 backend improvement Issue는 없다.
 
 ## Recently Completed
+
+### P1. SSE 완료 후 채팅 이력 저장 실패 격리 및 트랜잭션 예외 가시성
+
+- 상태: `Done` ([#231](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/231), [PR #232](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/232))
+- AS-IS: transactional 채팅 저장 메서드 내부의 광범위 catch가 사용자·기사 누락은 숨기면서도 메서드 반환 뒤 commit 실패는 안정적으로 격리하지 못했다.
+- TO-BE: 저장 실패를 transaction proxy 바깥 SSE 완료 callback에서 best-effort로 처리하고 실패와 관계없이 이미 생성된 로그인 답변 stream을 완료한다.
+- 범위: `AiSseService`, `ChatHistoryService`, mock SSE 및 MySQL Testcontainers와 문서로 제한했다. 실제 Gemini·retry·outbox·Kafka·queue·익명 Redis 변경은 제외했다.
+- 검증: mock SSE 4개, MySQL 저장 3개, 전체 87개 테스트와 Backend CI 통과. 정상 1건 저장, 누락 리소스·70,000자 DB 실패 전달 및 rollback, 실패 후 emitter complete를 확인했다. AI Reviewer는 Blocking 없음·MERGE_READY로 판정했다.
+- 근거: `docs/backend-improvement/chat-history-sse-persistence-boundary.md`
 
 ### P1. 스크랩 토글 동시 요청 직렬화 및 정합성 보강
 

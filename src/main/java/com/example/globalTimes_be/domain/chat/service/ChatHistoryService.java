@@ -10,7 +10,6 @@ import com.example.globalTimes_be.domain.chat.repository.ChatHistoryRepository;
 import com.example.globalTimes_be.domain.user.entity.User;
 import com.example.globalTimes_be.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,7 +21,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ChatHistoryService {
@@ -34,17 +32,12 @@ public class ChatHistoryService {
     // GPT 질의 완료 시 저장 (AiSseService에서 호출)
     @Transactional
     public void save(Long userId, Long articleId, String question, String answer) {
-        try {
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자: " + userId));
-            Article article = articleRepository.findById(articleId)
-                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 기사: " + articleId));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자: " + userId));
+        Article article = articleRepository.findById(articleId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 기사: " + articleId));
 
-            chatHistoryRepository.save(ChatHistory.create(user, article, question, answer));
-            log.info("[ChatHistory] 저장 완료 - userId: {}, articleId: {}", userId, articleId);
-        } catch (Exception e) {
-            log.error("[ChatHistory] 저장 실패 - userId: {}, articleId: {}, error: {}", userId, articleId, e.getMessage());
-        }
+        chatHistoryRepository.save(ChatHistory.create(user, article, question, answer));
     }
 
     // 팝업 목록용: 사용자의 기사별 마지막 대화 미리보기

@@ -5,9 +5,15 @@
 
 ## Current Active Work
 
-- 없음
+현재 진행 중인 backend improvement Issue는 없다.
 
 ## Recently Completed
+
+- #231 / PR #232: `Done`
+- 결과: transactional save 내부 catch와 commit 전 성공 로그를 제거하고, `AiSseService`가 transaction proxy 호출 반환 뒤 성공 또는 실패를 기록해 로그인 이력 저장 실패와 이미 전달된 SSE 답변 완료를 분리했다.
+- 정책: 로그인 이력 저장은 답변 생성 후 best-effort 부가 기능이며 실패한 turn은 다음 context에서 빠지지만 현재 답변 성공은 유지한다. 익명 Redis 경로는 변경하지 않았다.
+- 검증: mock SSE 4개, MySQL 저장 3개, 전체 87개 테스트와 Backend CI 통과. 실제 외부 API 호출 0회이며 AI Reviewer는 Blocking 없음·MERGE_READY로 판정했다.
+- 범위: `AiSseService`, `ChatHistoryService`, mock SSE, MySQL Testcontainers와 문서만 변경했다. 실제 Gemini·retry·outbox·Kafka·queue·익명 Redis·Issue #110은 제외했다.
 
 - #229 / PR #230: `Done`
 - 결과: 동일 user/article 동시 POST toggle 20건의 성공 2·실패 18을 user 행 `PESSIMISTIC_WRITE`로 성공 20·실패 0, `true/false` 각 10건, 최종 scrap 0건으로 개선했다.
