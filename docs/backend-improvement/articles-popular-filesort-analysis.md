@@ -1,4 +1,14 @@
-# Articles popular filesort analysis
+# 인기 기사 Using filesort 분석
+
+## 한국어 학습 안내
+
+이 문서는 인기 기사 쿼리의 `Using filesort`가 실제 병목인지 부하 테스트 HTTP 결과와 MySQL EXPLAIN ANALYZE로 확인한다. `Using filesort`는 결과 정렬을 위해 별도 정렬 단계가 있다는 표시이며 발견 즉시 복합 index를 추가해야 한다는 뜻이 아니다.
+
+핵심 개념은 **실행 계획**, **actual time**, **examined row**, **top-N sort**, **HTTP latency와 DB query latency 분리**다. DB 정렬 시간이 낮은데 전체 상위 응답시간만 높다면 index보다 application, connection wait, 로컬 자원을 먼저 조사해야 한다.
+
+아래 결과에서는 VU 증가에 따라 HTTP 상위 응답시간이 크게 상승했지만 EXPLAIN ANALYZE의 정렬 비용만으로 전체 지연을 설명하기 어려웠다. 현재 데이터 규모에서 쓰기 비용과 저장공간을 늘리는 새 index는 보류하고, match row와 DB 시간이 커지는 조건을 후속 기준으로 남긴다.
+
+## 원본 분석 기록
 
 ## Purpose
 
@@ -7,7 +17,7 @@ This document records the follow-up measurement for the `GET /api/articles/popul
 The goal is not to add an index immediately.
 The goal is to combine k6 high-load API data with MySQL `EXPLAIN ANALYZE` and decide whether the current `Using filesort` signal is strong enough to justify a DB index/query change.
 
-## Portfolio Summary Candidate
+## 핵심 결과 요약
 
 ```text
 기사 popular 조회 API의 고부하 p95와 MySQL EXPLAIN ANALYZE를 함께 분석해 filesort 병목 여부를 검증하고, 인덱스 적용 여부를 수치 기반으로 판단했습니다.

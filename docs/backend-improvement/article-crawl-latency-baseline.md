@@ -1,4 +1,14 @@
-# Article crawl latency baseline
+# 기사 본문 크롤링 지연 기준선
+
+## 한국어 학습 안내
+
+이 문서는 기사 요약 API의 전체 응답시간을 크롤링, Gemini 요약, 기존 summary 재사용 단계로 나눠 해석하기 위한 기준선이다. 응답이 느리다는 사실만으로 외부 AI를 병목으로 단정하지 않고, 저장된 summary가 있는 경우와 본문 크롤링·외부 호출이 필요한 경우를 분리한다.
+
+핵심 개념은 **단계별 latency**, **fallback**, **cache 또는 저장 결과 재사용**이다. 부하 테스트의 상위 응답시간 경계는 사용자 관점의 전체 시간이고, 애플리케이션 log field는 내부 단계 시간을 설명한다. 두 값을 함께 봐야 crawler 지연, Gemini 지연, 로컬 자원 압박을 구분할 수 있다.
+
+현재 기록은 기존 summary가 있는 smoke 조건이며 crawler와 Gemini 경로의 처리량을 증명하지 않는다. 아래 원본 측정 기록은 후속 mock 외부 호출 기준선과 연결하기 위한 실행 조건·명령·표를 보존한다.
+
+## 원본 측정 기록
 
 ## Purpose
 
@@ -7,7 +17,7 @@ It connects #137/#138 timeout/fallback and transaction-boundary work to API-leve
 
 This work does not change crawler behavior, timeout values, API response shape, DB schema, Redis policy, Gemini calls, or async processing.
 
-## Portfolio Summary Candidate
+## 핵심 결과 요약
 
 ```text
 기사 요약 요청에서 동기 원문 크롤링으로 인한 응답 지연을 cold/warm/fallback 조건으로 분리 측정하고, 외부 호출 개선 기준선을 수립했습니다.

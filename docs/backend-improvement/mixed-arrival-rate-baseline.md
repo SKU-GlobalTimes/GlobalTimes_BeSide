@@ -1,4 +1,14 @@
-# Mixed API constant-arrival-rate baseline
+# 혼합 API constant-arrival-rate 기준선
+
+## 한국어 학습 안내
+
+이 문서는 한 endpoint만 반복하는 closed-model VU 테스트에서 벗어나 latest, popular, detail, search, summary 요청을 실제 사용 비율에 가깝게 섞고 목표 도착률을 유지한다. arrival-rate는 요청의 응답 완료시간이 아니라 초당 몇 개 요청을 새로 시작할지 정하는 부하 모델이다.
+
+핵심 개념은 **open workload**, **constant-arrival-rate**, **dropped iteration**, **endpoint별 상위 응답시간**, **공유 자원 상관관계**다. 요청이 느려져도 목표 arrival을 보내려면 충분한 VU가 필요하며, 준비된 VU가 부족하면 dropped iteration이 발생한다.
+
+전체 평균만 보면 느린 summary와 빠른 조회 API가 섞여 원인을 놓칠 수 있으므로 endpoint별 상위 응답시간, summary 수락·거절, Tomcat, Hikari, executor 지표를 함께 기록한다. 아래 기준선은 안정 구간을 확인한 것이며 포화 경계는 후속 문서에서 더 높은 arrival로 조사한다.
+
+## 원본 측정 기록
 
 ## Status
 

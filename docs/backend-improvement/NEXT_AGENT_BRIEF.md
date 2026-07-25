@@ -9,6 +9,11 @@
 
 ## Recently Completed
 
+- #243 / PR #244: `Done`
+- 결과: Gemini·외부 호출·부하·DB·관측·수집 문서 13개에 한국어 학습 안내를 추가하고 원본 측정 기록을 보존했다. Phase 1 작업·학습 여정에서 실제 협업 절차, 작업 연대기, 문제·개념·수행·검증·다음 선택 이유를 Issue/PR 링크와 연결했다.
+- 검증: 대상 문서 숫자 token·code fence 원문 대조, 상대 링크, `git diff --check`, Backend CI가 통과했다.
+- 범위: production code·test·schema·workflow·신규 측정·신규 기술과 Issue #110은 제외했다.
+
 - #241 / PR #242: `Done`
 - 결과: 검색 API와 Perspectives의 영어 중심 근거 문서 10개를 한국어 중심으로 재정리했다. SQL·명령·로그·metric 식별자, 측정 수치, 표본 ID와 해석 한계는 유지했다.
 - 검증: 숫자 token과 code fence 수 원문 대조, 상대 링크, `git diff --check`, Backend CI가 통과했다.

@@ -41,6 +41,14 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## Recently Completed
 
+### P1 문서 후속. 영어 근거 문서 한국어 재정리 및 작업·학습 여정
+
+- 상태: `Done` ([#243](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/243), [PR #244](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/244))
+- 결과: Gemini·외부 호출·부하·DB·관측·수집 문서 13개의 한국어 학습 안내와 Phase 1 실제 협업·작업 연대기를 포함한 학습 여정을 추가했다.
+- 판단: 개념별 구조와 시간 순 Issue/PR 추적을 함께 제공하되 원본 raw 측정 기록은 보존했다. 문서 한국어 진입부 정리를 마치고 Phase 2 후보 조사로 전환한다.
+- 검증: 숫자 token·code fence 수 원문 대조, 상대 링크, `git diff --check`, Backend CI가 통과했다.
+- 제외: production code·test·schema·workflow·신규 측정·신규 기술과 Issue #110.
+
 ### P1 문서 후속. 검색·Perspectives 근거 문서 한국어 재정리
 
 - 상태: `Done` ([#241](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/241), [PR #242](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/242))

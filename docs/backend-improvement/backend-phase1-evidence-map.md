@@ -509,6 +509,8 @@ Phase 2는 기술 목록을 구현하는 단계가 아니라 Phase 1에서 남�
 
 ## 13. 권장 학습 순서
 
+Phase 1의 작업이 왜 다음 단계로 이어졌는지 시간 순으로 학습하려면 [Backend Phase 1 작업·학습 여정](backend-phase1-learning-journey.md)을 먼저 읽는다. 아래 목록은 관심 개념별 원본 문서 읽기 순서다.
+
 ### A. 성능 개선 흐름
 
 1. [부하 테스트 기준선](load-test-baseline.md)
@@ -553,6 +555,7 @@ Phase 2는 기술 목록을 구현하는 단계가 아니라 Phase 1에서 남�
 | 문서 | 역할 |
 | --- | --- |
 | 이 문서 | 코드 구조와 Phase 1 문제·해결·근거를 탑다운으로 연결 |
+| [작업·학습 여정](backend-phase1-learning-journey.md) | 문제 발견부터 다음 작업 선택까지의 이유·개념·수행·검증을 시간 순으로 연결 |
 | [정량 인덱스](backend-improvement-quantitative-index.md) | 개선 전후 수치와 기준선을 빠르게 찾는 표 |
 | [WORK_PROGRESS](WORK_PROGRESS.md) | Issue 순서와 상세 작업 이력 |
 | [BACKLOG](BACKLOG.md) | 완료·보류·후속 후보와 overengineering 판단 |

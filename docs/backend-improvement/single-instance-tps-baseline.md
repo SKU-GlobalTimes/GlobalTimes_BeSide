@@ -1,4 +1,14 @@
-# Single instance TPS baseline
+# 단일 instance TPS 기준선
+
+## 한국어 학습 안내
+
+이 문서는 하나의 로컬 Spring Boot instance가 인기 기사 조회를 어느 정도 처리하는지 점진적으로 부하를 높여 관찰한다. 목표는 운영 TPS를 보증하는 것이 아니라 처리량 증가가 멈추고 상위 응답시간이 커지는 지점을 찾아 다음 조사 대상을 정하는 것이다.
+
+핵심 개념은 **throughput plateau**, **latency 증가**, **단일 instance capacity**, **고정 환경의 필요성**이다. VU를 늘렸는데 RPS가 거의 늘지 않고 응답시간만 증가하면 요청이 내부 자원을 기다리는 포화 신호다. 다만 로컬 OS와 IDE, Docker 자원이 고정되지 않았으므로 이 수치를 Pod 수로 단순 곱해 운영 용량을 주장할 수 없다.
+
+아래 표는 동일 endpoint와 데이터셋에서 VU 단계별 request, RPS, 상위 응답시간과 MySQL·Redis·app 자원을 함께 기록한다. 이 기준선이 이후 mixed arrival-rate와 포화 경계 측정의 출발점이다.
+
+## 원본 측정 기록
 
 ## Purpose
 
@@ -14,7 +24,7 @@ The goal is to establish a portfolio-friendly baseline:
 
 This issue does not change production code, API responses, repository queries, DB schema/indexes, Redis/cache policy, async processing, or Kubernetes settings.
 
-## Portfolio Summary Candidate
+## 핵심 결과 요약
 
 ```text
 로컬 Docker 기반 단일 인스턴스 환경에서 주요 기사 조회 API의 점진 부하 테스트를 수행해 20 VU 구간 약 87 RPS까지 안정적으로 처리되고, 50 VU에서는 RPS가 증가하지 않은 채 p95가 456ms로 상승하는 포화 신호를 확인했습니다.
