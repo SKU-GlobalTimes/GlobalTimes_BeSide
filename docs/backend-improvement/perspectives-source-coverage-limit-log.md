@@ -1,97 +1,96 @@
-# Perspectives source coverage limit log
+# Perspectives 수집 범위 한계 기록
 
-## Purpose
+## 목적
 
-This log records a data-side limitation that must be considered when interpreting Perspectives matching quality.
+이 기록은 Perspectives 매칭 품질을 해석할 때 고려해야 하는 데이터 측 한계를 남긴다.
 
-Perspectives matching is affected not only by keyword extraction, MySQL FULLTEXT, translation, ranking, or future semantic similarity.
-It is also constrained by the article data that has actually been collected from RSS and News API sources.
+Perspectives 매칭은 키워드 추출, MySQL FULLTEXT, 번역, 순위 또는 향후 semantic similarity뿐 아니라 RSS와 News API에서 실제 수집된 기사 데이터에도 제한된다.
 
-This document is a measurement and ADR interpretation aid.
-It does not change crawler behavior, RSS feeds, DB schema, FULLTEXT query shape, ranking, or cache policy.
+이 문서는 측정 및 ADR 해석을 돕는다.
+크롤러 동작, RSS feed, DB schema, FULLTEXT query 형태, 순위 또는 캐시 정책은 변경하지 않는다.
 
-## Background
+## 배경
 
-The project collects articles from multiple external sources.
-Those sources do not behave like a balanced event dataset:
+프로젝트는 여러 외부 출처에서 기사를 수집한다.
+이 출처들은 균형 잡힌 사건 데이터셋처럼 동작하지 않는다.
 
-- each RSS feed can have a different update interval
-- each media source can choose different stories for its RSS feed
-- some countries, languages, or categories can have more collected articles than others
-- a same global issue can appear in one source earlier than another
-- some sources may publish a related article outside the categories or feeds currently collected
-- News API free-plan limitations and RSS feed coverage affect which articles enter the DB
+- RSS feed마다 갱신 주기가 다를 수 있다.
+- 각 언론사는 RSS feed에 서로 다른 기사를 선택할 수 있다.
+- 국가·언어·카테고리별 수집 기사 수가 다를 수 있다.
+- 같은 국제 이슈도 출처마다 게시 시점이 다를 수 있다.
+- 관련 기사가 현재 수집하는 카테고리나 feed 밖에 게시될 수 있다.
+- News API 무료 요금제 제한과 RSS feed 범위가 DB에 들어오는 기사에 영향을 준다.
 
-Therefore, Perspectives quality is bounded by both search quality and data coverage.
+따라서 Perspectives 품질은 검색 품질과 데이터 수집 범위 모두에 제한된다.
 
-## Interpretation Rule
+## 해석 규칙
 
-When measuring FULLTEXT, keyword, vector, embedding, or future issue-clustering quality, separate these two causes:
+FULLTEXT, keyword, vector, embedding 또는 향후 issue clustering 품질을 측정할 때 다음 두 원인을 분리한다.
 
-| Observation | Search-side interpretation | Data-side interpretation |
+| 관찰 | 검색 측 해석 | 데이터 측 해석 |
 | --- | --- | --- |
-| `0` matches | Query terms, language, tokenization, or ranking may be poor. | Related articles may not exist in the collected DB yet. |
-| Low country diversity | Matching may over-focus on one language or source. | Some country feeds may not have supplied the issue. |
-| No related non-English result | Translation or multilingual search may be insufficient. | Non-English sources may not have published or been collected for that issue. |
-| Noisy matches | Keywords may be too broad or ordering may be recency-biased. | The DB may contain many broad-topic articles but few exact same-issue articles. |
-| Apparent improvement after query tuning | Search terms may be better. | The sample may simply have better available coverage than other issues. |
+| `0` matches | Query term, language, tokenization 또는 ranking이 좋지 않을 수 있다. | 관련 기사가 아직 수집 DB에 없을 수 있다. |
+| 낮은 국가 다양성 | 한 언어나 출처에 매칭이 치우칠 수 있다. | 일부 국가 feed가 해당 이슈를 제공하지 않았을 수 있다. |
+| 영어 외 관련 결과 없음 | 번역 또는 다국어 검색이 불충분할 수 있다. | 비영어 출처가 기사를 게시하지 않았거나 수집되지 않았을 수 있다. |
+| 잡음 결과 | 키워드가 너무 넓거나 최신순 정렬에 치우칠 수 있다. | DB에 넓은 주제 기사는 많고 정확히 같은 이슈 기사는 적을 수 있다. |
+| 쿼리 조정 후 겉보기 개선 | 검색어가 개선됐을 수 있다. | 해당 표본의 수집 범위가 다른 이슈보다 좋았을 뿐일 수 있다. |
 
-## FULLTEXT-Specific Limit
+## FULLTEXT 고유 한계
 
-MySQL FULLTEXT can only search text that exists in the local `article` table.
-It cannot find:
+MySQL FULLTEXT는 로컬 `article` 테이블에 존재하는 텍스트만 검색할 수 있다.
+다음 기사는 찾을 수 없다.
 
-- articles that have not been collected yet
-- articles from feeds that do not expose the issue
-- articles from sources outside the configured RSS/News API list
-- same-issue articles written with words that do not overlap enough with the generated query
+- 아직 수집되지 않은 기사
+- feed가 해당 이슈를 노출하지 않은 기사
+- 설정된 RSS/News API 목록 밖의 출처 기사
+- 생성 쿼리와 단어가 충분히 겹치지 않는 동일 이슈 기사
 
-For this reason, a FULLTEXT result change measurement should not conclude "the algorithm is bad" or "the algorithm is fixed" from match count alone.
-It should record returned examples and distinguish search failure from possible source coverage gaps.
+따라서 FULLTEXT 결과 변화 측정에서 매칭 수만으로 "알고리즘이 나쁘다" 또는 "알고리즘을 해결했다"고 결론 내리면 안 된다.
+반환 예시를 기록하고 검색 실패와 수집 범위 부족 가능성을 구분해야 한다.
 
-## ADR Implication
+## ADR에 미치는 영향
 
-Future ADRs for Elasticsearch, vector search, embeddings, RAG, or issue clustering should use this boundary:
+Elasticsearch, vector search, embeddings, RAG 또는 issue clustering ADR은 다음 경계를 사용해야 한다.
 
-| Candidate | Can help with | Cannot solve by itself |
+| 후보 | 개선 가능한 부분 | 단독으로 해결할 수 없는 부분 |
 | --- | --- | --- |
-| FULLTEXT tuning | Token/query shape, index use, simple keyword recall | Missing articles or uncollected sources |
-| Better keyword extraction | Noisy title tokens and weak required terms | Source update delay or feed selection bias |
-| Elasticsearch | Search analyzers, ranking, multilingual text handling | Lack of collected same-issue articles |
-| Vector/embedding search | Different wording for the same issue | Articles absent from the DB |
-| Issue clustering | Stable grouping of collected articles | External source coverage and freshness |
-| RAG | Explanation over retrieved content | Retrieval gaps caused by missing source data |
+| FULLTEXT tuning | Token/query 형태, index 사용, 단순 keyword recall | 누락 기사 또는 수집하지 않은 출처 |
+| 더 나은 keyword extraction | 불필요한 제목 token과 약한 필수 검색어 | 출처 갱신 지연 또는 feed 선택 편향 |
+| Elasticsearch | Search analyzer, ranking, 다국어 text 처리 | 수집된 동일 이슈 기사 자체의 부재 |
+| Vector/embedding search | 같은 이슈의 서로 다른 표현 | DB에 없는 기사 |
+| Issue clustering | 수집 기사의 안정적인 그룹화 | 외부 출처 범위와 최신성 |
+| RAG | 검색된 콘텐츠에 대한 설명 | 원본 데이터 누락으로 인한 retrieval gap |
 
-If a representative issue is absent from the collected dataset, search-layer technology cannot recover it.
-The correct follow-up may be source coverage analysis, ingestion scheduling, feed expansion, or data freshness tracking rather than search ranking.
+대표 이슈가 수집 데이터셋에 없다면 검색 계층 기술로 복원할 수 없다.
+올바른 후속 작업은 검색 순위가 아니라 출처 범위 분석, 수집 일정, feed 확장 또는 데이터 최신성 추적일 수 있다.
 
-## Measurement Guidance
+## 측정 지침
 
-For every future Perspectives quality snapshot, record:
+향후 모든 Perspectives 품질 snapshot에는 다음을 기록한다.
 
-- measurement date and local dataset size
-- sample article ID, country, language, category, source, and published time when available
-- generated keyword before and after the change
-- match count and returned country/language spread
-- a few returned title notes for manual quality review
-- whether `0` or low-diversity results may be caused by source coverage rather than search behavior
+- 측정일과 로컬 데이터셋 크기
+- 가능한 경우 표본 기사 ID, 국가, 언어, 카테고리, 출처, 게시 시각
+- 변경 전후 생성 keyword
+- 매칭 수와 반환 국가/언어 분포
+- 수동 품질 검토를 위한 일부 반환 제목 메모
+- `0`건 또는 낮은 다양성이 검색 동작이 아닌 수집 범위에서 비롯됐을 가능성
 
-Avoid using match count alone as the success metric.
-Prefer a short interpretation that says whether the result looks like:
+매칭 수만 성공 지표로 사용하지 않는다.
+결과가 다음 중 어디에 가까운지 짧게 해석한다.
 
-- search/query limitation
-- data coverage limitation
-- mixed limitation
-- insufficient evidence
+- 검색/쿼리 한계
+- 데이터 수집 범위 한계
+- 혼합 한계
+- 근거 부족
 
-## Link To Current P3 Flow
+## 현재 P3 흐름과의 연결
 
-Current P3 work has already created:
+현재 P3 작업에서 이미 다음을 만들었다.
 
-- a matching quality baseline
-- a local FULLTEXT sample snapshot
-- `KeywordExtractor` regression tests
-- BOOLEAN MODE formatting normalization
-- sample-based generic-token filtering
+- 매칭 품질 기준선
+- 로컬 FULLTEXT 표본 snapshot
+- `KeywordExtractor` 회귀 테스트
+- BOOLEAN MODE 형식 정규화
+- 표본 기반 일반 token 필터링
 
-The next DB-level FULLTEXT result measurement should use this log as an interpretation guardrail before deciding whether keyword tuning is enough or whether an ADR is needed.
+다음 DB 수준 FULLTEXT 결과 측정에서는 keyword 조정으로 충분한지 ADR이 필요한지 결정하기 전에 이 기록을 해석 guardrail로 사용해야 한다.

@@ -1,29 +1,29 @@
-# Perspectives matching sample snapshot
+# Perspectives 매칭 표본 snapshot
 
-## Purpose
+## 목적
 
-This document records a first local snapshot for the Perspectives matching quality baseline.
-It follows `perspectives-matching-quality-baseline.md` and uses the local development MySQL data to identify representative samples before introducing heavier search technology.
+이 문서는 Perspectives 매칭 품질 기준선의 첫 로컬 snapshot을 기록한다.
+`perspectives-matching-quality-baseline.md`를 따르며, 더 무거운 검색 기술을 도입하기 전에 로컬 개발 MySQL 데이터에서 대표 표본을 찾는다.
 
-This snapshot does not change API behavior, DB schema, Redis policy, or search logic.
-Interpret this snapshot together with `perspectives-source-coverage-limit-log.md`, because some low-match cases can be caused by source coverage or feed freshness rather than only FULLTEXT behavior.
+이 snapshot은 API 동작, DB schema, Redis 정책 또는 검색 로직을 변경하지 않는다.
+매칭이 적은 사례 일부는 FULLTEXT뿐 아니라 출처 범위나 feed 최신성에서 비롯될 수 있으므로 `perspectives-source-coverage-limit-log.md`와 함께 해석한다.
 
-## Environment
+## 환경
 
-| Item | Value |
+| 항목 | 값 |
 | --- | --- |
-| Date | 2026-07-03 |
-| Dataset | Local development MySQL |
-| Article rows | 9853 |
-| Query path | MySQL FULLTEXT query shaped like `ArticleRepository.findPerspectives` |
-| External translation API | Not called |
-| Redis cache | Not used for this snapshot |
+| 날짜 | 2026-07-03 |
+| 데이터셋 | 로컬 개발 MySQL |
+| 기사 행 | 9853 |
+| 쿼리 경로 | `ArticleRepository.findPerspectives` 형태의 MySQL FULLTEXT query |
+| 외부 번역 API | 호출하지 않음 |
+| Redis cache | 이 snapshot에서 사용하지 않음 |
 
-Sensitive local `.env` values and external API responses are intentionally excluded.
+민감한 로컬 `.env` 값과 외부 API 응답은 의도적으로 제외했다.
 
-## Dataset Distribution
+## 데이터셋 분포
 
-Top local article groups:
+로컬 기사 상위 그룹:
 
 | Country | Language | Category | Count |
 | --- | --- | --- | ---: |
@@ -40,12 +40,12 @@ Top local article groups:
 | de | de | general | 272 |
 | jp | ja | sports | 248 |
 
-The dataset is large enough to test English and non-English candidate behavior, but this snapshot is still a local development sample and should not be treated as production quality evidence.
-It also does not prove that every country/source had a comparable opportunity to publish and be collected for the same issue.
+영어와 비영어 후보 동작을 확인하기에 충분하지만 로컬 개발 표본이므로 운영 품질 근거로 해석하면 안 된다.
+또한 모든 국가와 출처가 동일 이슈를 게시하고 수집될 기회를 비슷하게 가졌음을 증명하지 않는다.
 
-## Method
+## 방법
 
-For each sample, this snapshot uses:
+각 표본에 다음 쿼리를 사용했다.
 
 ```sql
 SELECT *
@@ -56,35 +56,35 @@ ORDER BY published_at DESC
 LIMIT 50;
 ```
 
-Keywords were manually derived from the title using the same broad rule as `KeywordExtractor`:
+`KeywordExtractor`와 같은 넓은 규칙으로 제목에서 키워드를 수동 도출했다.
 
-- split by whitespace and punctuation
-- remove tokens of length 2 or less
-- remove configured English stop words
-- keep up to 4 distinct tokens
-- make the first 2 tokens required with `+`
+- 공백과 문장부호로 분리
+- 길이가 2 이하인 token 제거
+- 설정된 영어 stop word 제거
+- 중복 없는 token 최대 4개 유지
+- 앞의 2개 token에 `+`를 붙여 필수화
 
-For non-English samples, this snapshot records original keyword behavior only.
-The full API path may translate non-English plain keywords to English, but that requires external API calls and is intentionally left for a separate measurement.
+비영어 표본은 원문 키워드 동작만 기록한다.
+전체 API 경로에서는 비영어 plain keyword를 영어로 번역할 수 있지만 외부 API 호출이 필요하므로 별도 측정으로 남겼다.
 
-## Sample Summary
+## 표본 요약
 
 | Base article ID | Country | Language | Category | Keyword used | Match count | Country/language spread | Initial classification | Notes |
 | --- | --- | --- | --- | --- | ---: | --- | --- | --- |
-| 8146 | gb | en | general | `+First +round Iran talks` | 25 | us/en 14, us/null 5, cn/zh 4, gb/en 2 | `weak_match` | Required terms `First` and `round` produce broad sports and unrelated matches despite an Iran diplomacy base article. |
-| 8148 | gb | en | general | `+Russian +troop build threatens` | 0 | none | `no_match` | A Ukraine/Donbas topic returns no matches with the extracted title keywords. |
-| 8149 | gb | en | general | `+BTS +fans losing thousands` | 8 | cn/zh 4, gb/en 2, us/en 1, fr/fr 1 | `good_match` | BTS-related results appear across countries/languages. |
-| 8147 | gb | en | general | `+Trump +backed political outsider` | 4 | cn/zh 2, us/null 1, gb/en 1 | `partial_match` | Includes a directly related Colombia election article, but also broader Trump/Iran noise. |
-| 9638 | cn | zh | general | `+China +defends role global` | 0 | none | `no_match` | English title text exists, but required terms are too specific for current FULLTEXT recall. |
-| 8468 | kr | ko | general | `+AI +반도체 붐에` | 0 | none | `no_match` | Korean FULLTEXT behavior and short token handling make original keyword matching ineffective. |
-| 8461 | kr | ko | general | `+이란 +원유시장 복귀 합의에` | 0 | none | `no_match` | Korean original keywords do not produce related Iran/oil matches in this query shape. |
-| 9440 | fr | fr | general | `+Entre +Meloni Trump divorce` | 0 | none | `no_match` | A general French token becomes required and blocks potentially relevant Trump/Meloni matches. |
+| 8146 | gb | en | general | `+First +round Iran talks` | 25 | us/en 14, us/null 5, cn/zh 4, gb/en 2 | `weak_match` | 이란 외교 기사지만 필수어 `First`, `round`가 스포츠 등 관련 없는 결과를 만든다. |
+| 8148 | gb | en | general | `+Russian +troop build threatens` | 0 | none | `no_match` | Ukraine/Donbas 주제가 추출 키워드로 결과를 얻지 못한다. |
+| 8149 | gb | en | general | `+BTS +fans losing thousands` | 8 | cn/zh 4, gb/en 2, us/en 1, fr/fr 1 | `good_match` | 여러 국가와 언어에서 BTS 관련 결과가 나타난다. |
+| 8147 | gb | en | general | `+Trump +backed political outsider` | 4 | cn/zh 2, us/null 1, gb/en 1 | `partial_match` | 직접 관련된 Colombia 선거 기사와 넓은 Trump/Iran 잡음이 함께 있다. |
+| 9638 | cn | zh | general | `+China +defends role global` | 0 | none | `no_match` | 영어 제목이 있지만 필수어가 너무 구체적이어서 현재 FULLTEXT recall이 없다. |
+| 8468 | kr | ko | general | `+AI +반도체 붐에` | 0 | none | `no_match` | 한국어 FULLTEXT 동작과 짧은 token 처리 때문에 원문 매칭이 유효하지 않다. |
+| 8461 | kr | ko | general | `+이란 +원유시장 복귀 합의에` | 0 | none | `no_match` | 한국어 원문 키워드로 관련 Iran/oil 결과가 나오지 않는다. |
+| 9440 | fr | fr | general | `+Entre +Meloni Trump divorce` | 0 | none | `no_match` | 일반적인 프랑스어 token이 필수어가 되어 관련 Trump/Meloni 결과를 막는다. |
 
-## Returned Examples
+## 반환 예시
 
 ### 8146: `+First +round Iran talks`
 
-This base article is about US-Iran talks, but the latest returned rows include unrelated sports or broad-topic matches.
+기준 기사는 US-Iran 회담을 다루지만 최신 반환 행에는 관련 없는 스포츠나 넓은 주제 결과가 포함된다.
 
 | Returned article ID | Country | Language | Title note |
 | --- | --- | --- | --- |
@@ -93,11 +93,11 @@ This base article is about US-Iran talks, but the latest returned rows include u
 | 9744 | cn | zh | China AI rivalry funding |
 | 7667 | cn | zh | New Zealand players facing Iran |
 
-This is a useful example where match count is non-zero but issue quality is weak.
+매칭 결과가 있어도 이슈 품질이 약한 유용한 사례다.
 
 ### 8149: `+BTS +fans losing thousands`
 
-This sample returns BTS-related results across multiple countries and languages.
+여러 국가와 언어에서 BTS 관련 결과가 반환된다.
 
 | Returned article ID | Country | Language | Title note |
 | --- | --- | --- | --- |
@@ -107,11 +107,11 @@ This sample returns BTS-related results across multiple countries and languages.
 | 3008 | us | en | BTS comeback concert |
 | 2104 | fr | fr | BTS album comeback |
 
-This is a useful example where current FULLTEXT behavior can find a coherent topic.
+현재 FULLTEXT가 일관된 주제를 찾는 긍정 표본이다.
 
 ### 8147: `+Trump +backed political outsider`
 
-This sample returns a small mix of related and noisy results.
+관련 결과와 잡음이 소수 섞여 반환된다.
 
 | Returned article ID | Country | Language | Title note |
 | --- | --- | --- | --- |
@@ -120,41 +120,41 @@ This sample returns a small mix of related and noisy results.
 | 3258 | gb | en | Trump-backed television merger |
 | 778 | us | null | Trump allies and Iran |
 
-This is a useful partial-match sample for evaluating future ranking or entity filtering.
+향후 순위 또는 entity filter를 평가하기 좋은 partial-match 표본이다.
 
-## Findings
+## 관찰 결과
 
-- Current FULLTEXT count alone is not enough to judge quality.
-- Required first tokens can be too generic, for example `First` and `round`.
-- English samples can still produce weak matches when title-leading tokens are not core entities.
-- BTS is a good positive sample because the extracted keyword is a strong entity.
-- Korean and French original keyword samples often return zero in this local query snapshot.
-- Some `language='zh'` rows contain English titles, so the `language` field alone does not fully describe search text language.
-- The manual keyword examples in this snapshot are measurement aids, not a replacement for the Java policy.
-  `KeywordExtractorTest` fixes the current Java behavior before any token policy changes are attempted.
-- The regression tests exposed formatting/tokenization quirks, such as compacted `+first+second` BOOLEAN MODE output and Korean tokens joined by the Unicode ellipsis character.
-  The compacted BOOLEAN MODE formatting is normalized in #150; token policy changes remain separate follow-up work.
+- 현재 FULLTEXT 매칭 수만으로 품질을 판단할 수 없다.
+- `First`, `round`처럼 앞쪽 필수 token이 너무 일반적일 수 있다.
+- 영어 표본도 제목 앞 token이 핵심 entity가 아니면 약한 결과가 나올 수 있다.
+- BTS는 추출 키워드가 강한 entity이므로 좋은 긍정 표본이다.
+- 이 로컬 쿼리 snapshot에서 한국어와 프랑스어 원문 표본은 자주 결과를 반환하지 않는다.
+- 일부 `language='zh'` 행은 영어 제목을 가지므로 `language` field만으로 검색 text 언어를 완전히 설명할 수 없다.
+- 이 snapshot의 수동 키워드 예시는 Java 정책을 대체하지 않는 측정 보조 자료다.
+  `KeywordExtractorTest`가 token 정책 변경 전의 Java 동작을 고정한다.
+- 회귀 테스트에서 붙어 있는 `+first+second` BOOLEAN MODE 출력과 Unicode ellipsis로 연결된 한국어 token 같은 형식·tokenization 특성이 드러났다.
+  붙어 있는 BOOLEAN MODE 형식은 #150에서 정규화했으며 token 정책 변경은 별도 후속 작업이다.
 
-## Java Policy Follow-up
+## Java 정책 후속 결과
 
-The snapshot table above preserves the original local measurement keywords and match counts.
-After #150 and #152, the Java `KeywordExtractor` policy changes the generated keywords for the weakest generic-token samples:
+위 snapshot 표는 최초 로컬 측정 키워드와 매칭 수를 보존한다.
+#150과 #152 이후 Java `KeywordExtractor` 정책은 가장 약한 일반 token 표본의 생성 키워드를 다음과 같이 변경한다.
 
 | Base article ID | Previous keyword | #152 Java keyword | Reason |
 | --- | --- | --- | --- |
-| 8146 | `+First +round Iran talks` | `+Iran +talks ends encouraging` | `First` and `round` are filtered as sample-based generic tokens. |
-| 9440 | `+Entre +Meloni Trump divorce` | `+Meloni +Trump divorce italienne` | `Entre` is filtered as a sample-based generic token. |
+| 8146 | `+First +round Iran talks` | `+Iran +talks ends encouraging` | 표본 기반 일반 token인 `First`, `round`를 제거한다. |
+| 9440 | `+Entre +Meloni Trump divorce` | `+Meloni +Trump divorce italienne` | 표본 기반 일반 token인 `Entre`를 제거한다. |
 
-This section documents generated keyword changes only.
-It does not replace the original match counts, because DB-level FULLTEXT result quality should be measured separately after the code change is merged.
-If all extracted candidates are removed by the generic-token filter, both `extract()` and `extractPlain()` return an empty string instead of falling back to the original title.
-The DB-level FULLTEXT result change after #152 is recorded in `perspectives-fulltext-generic-token-filter-result.md`.
+이 절은 생성 키워드 변경만 기록한다.
+DB 수준 FULLTEXT 결과 품질은 코드 변경 merge 후 별도로 측정해야 하므로 최초 매칭 수를 대체하지 않는다.
+일반 token filter로 추출 후보가 모두 제거되면 원래 제목으로 fallback하지 않고 `extract()`와 `extractPlain()` 모두 빈 문자열을 반환한다.
+#152 이후 DB 수준 FULLTEXT 결과 변화는 `perspectives-fulltext-generic-token-filter-result.md`에 기록한다.
 
-## Follow-up Candidates
+## 후속 후보
 
-1. Measure the full API path for the same samples, including translation behavior, with external API usage explicitly approved.
-2. Measure DB-level result changes for #152 generic-token filtering on the representative samples.
-3. Add entity-aware keyword extraction only after comparing against the fixed regression tests.
-4. Compare the current recency ordering with a relevance-first or hybrid ranking strategy.
-5. Define expected countries per sample before trying vector search or Elasticsearch.
-6. Keep `issue_id` or clustering as an ADR-level option until concrete sample failures justify the added model.
+1. 외부 API 사용을 명시적으로 승인한 뒤 동일 표본으로 번역을 포함한 전체 API 경로를 측정한다.
+2. 대표 표본에서 #152 일반 token filtering의 DB 수준 결과 변화를 측정한다.
+3. 고정된 회귀 테스트와 비교한 뒤에만 entity-aware keyword extraction을 추가한다.
+4. 현재 최신순 정렬과 relevance-first 또는 hybrid ranking을 비교한다.
+5. Vector search나 Elasticsearch를 시도하기 전에 표본별 기대 국가를 정의한다.
+6. 구체적인 표본 실패가 추가 모델을 정당화할 때까지 `issue_id` 또는 clustering은 ADR 선택지로 유지한다.

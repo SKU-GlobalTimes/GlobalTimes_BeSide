@@ -1,122 +1,122 @@
-# Perspectives Redis cache policy
+# Perspectives Redis 캐시 정책
 
-## Purpose
+## 목적
 
-`GET /api/news/{id}/perspectives` groups related articles by country after keyword extraction, optional translation, and MySQL FULLTEXT search.
-Because this path is more expensive than a simple article lookup, `PerspectivesService` stores the computed response in Redis.
+`GET /api/news/{id}/perspectives`는 키워드 추출, 선택적 번역, MySQL FULLTEXT 검색 후 관련 기사를 국가별로 묶는다.
+이 경로는 단순 기사 조회보다 비용이 크므로 `PerspectivesService`가 계산 결과를 Redis에 저장한다.
 
-This document records the current cache policy, failure behavior, and stale data trade-off so later performance work can change it deliberately.
+이 문서는 이후 성능 작업에서 의도적으로 정책을 변경할 수 있도록 현재 캐시 정책, 실패 동작, stale data의 trade-off를 기록한다.
 
-## Terms
+## 용어
 
-| Term | Meaning in this project |
+| 용어 | 이 프로젝트에서의 의미 |
 | --- | --- |
-| Cache deletion | Directly removing a Redis key, for example deleting `perspectives:article:8449`. This is useful for tests or manual cleanup. |
-| Cache invalidation | Removing or refreshing cache automatically when source data changes in a way that makes the cached value outdated. |
-| Stale cache | A cached response that is still served even though the underlying DB data changed after it was cached. |
-| Stale allowance | A deliberate decision to tolerate stale cache for a bounded time, usually controlled by TTL, because the data is read-heavy and not mission critical. |
+| Cache deletion | `perspectives:article:8449` 삭제처럼 Redis key를 직접 제거한다. 테스트나 수동 정리에 유용하다. |
+| Cache invalidation | 원본 데이터가 변경돼 캐시가 오래된 값이 될 때 자동으로 제거하거나 갱신한다. |
+| Stale cache | 캐시 저장 후 DB 데이터가 바뀌었지만 계속 제공되는 캐시 응답이다. |
+| Stale allowance | 조회가 많고 핵심 정합성 데이터가 아닐 때, 보통 TTL로 제한된 시간 동안 오래된 값을 허용하는 의도적인 결정이다. |
 
-## Current policy
+## 현재 정책
 
-| Item | Current behavior |
+| 항목 | 현재 동작 |
 | --- | --- |
 | Key prefix | `perspectives:article:` |
-| Key shape | `perspectives:article:{articleId}` |
-| Value | Serialized `PerspectivesResDTO` JSON |
+| Key 형태 | `perspectives:article:{articleId}` |
+| Value | 직렬화한 `PerspectivesResDTO` JSON |
 | TTL property | `perspectives.cache-ttl-seconds` |
-| Default TTL | `3600` seconds |
-| Cache disabled condition | `perspectives.cache-ttl-seconds=0` |
-| Explicit invalidation | Not implemented |
+| 기본 TTL | `3600` seconds |
+| 캐시 비활성 조건 | `perspectives.cache-ttl-seconds=0` |
+| 명시적 invalidation | 구현하지 않음 |
 
-Configuration:
+설정:
 
 ```yaml
 perspectives:
   cache-ttl-seconds: 3600
 ```
 
-## Runtime flow
+## 실행 흐름
 
 ### Cache hit
 
-1. Read `perspectives:article:{articleId}` from Redis.
-2. Deserialize JSON into `PerspectivesResDTO`.
-3. Return the cached response.
-4. Log `cacheHit=true`, `cacheReadMs`, `totalMs`, `countriesFound`, and `totalArticles`.
+1. Redis에서 `perspectives:article:{articleId}`를 읽는다.
+2. JSON을 `PerspectivesResDTO`로 역직렬화한다.
+3. 캐시 응답을 반환한다.
+4. `cacheHit=true`, `cacheReadMs`, `totalMs`, `countriesFound`, `totalArticles`를 로그로 남긴다.
 
 ### Cache miss
 
-1. Load base article from MySQL.
-2. Extract plain and FULLTEXT boolean keywords from the title.
-3. Translate non-English article keywords to English.
-4. Search related articles with MySQL FULLTEXT.
-5. Group results by country and limit each country to 3 articles.
-6. Serialize the response and store it in Redis with TTL.
-7. Log `cacheHit=false` and step-level timings.
+1. MySQL에서 기준 기사를 조회한다.
+2. 제목에서 일반 키워드와 FULLTEXT boolean 키워드를 추출한다.
+3. 영어가 아닌 기사 키워드를 영어로 번역한다.
+4. MySQL FULLTEXT로 관련 기사를 검색한다.
+5. 결과를 국가별로 묶고 국가당 기사 수를 3개로 제한한다.
+6. 응답을 직렬화해 TTL과 함께 Redis에 저장한다.
+7. `cacheHit=false`와 단계별 시간을 로그로 남긴다.
 
-## Failure behavior
+## 실패 동작
 
-| Failure case | Current behavior | API impact |
+| 실패 상황 | 현재 동작 | API 영향 |
 | --- | --- | --- |
-| Redis read failure | Warn and recompute from DB/FULLTEXT | Response can still succeed |
-| Cache JSON deserialize failure | Warn and recompute from DB/FULLTEXT | Response can still succeed |
-| Redis write failure | Warn and ignore | Response succeeds, next request may be cold again |
-| Base article missing | Throw domain exception | Response fails as before |
+| Redis 읽기 실패 | 경고 후 DB/FULLTEXT에서 재계산 | 응답 성공 가능 |
+| Cache JSON 역직렬화 실패 | 경고 후 DB/FULLTEXT에서 재계산 | 응답 성공 가능 |
+| Redis 쓰기 실패 | 경고 후 무시 | 응답은 성공하고 다음 요청도 cold일 수 있음 |
+| 기준 기사 없음 | 도메인 예외 발생 | 기존과 동일하게 응답 실패 |
 
-Redis is treated as an optimization layer, not the source of truth.
-The source of truth remains MySQL.
+Redis는 원본 데이터가 아니라 최적화 계층으로 취급한다.
+원본 데이터의 기준은 MySQL이다.
 
-## Stale cache analysis
+## Stale cache 분석
 
-The current service is mostly read-heavy after news ingestion.
-For this reason, bounded stale cache is acceptable for Perspectives responses as long as TTL remains short enough for the product expectation.
+현재 서비스는 뉴스 수집 후 조회 비중이 높다.
+따라서 TTL이 제품 기대에 맞게 충분히 짧다면 Perspectives 응답의 제한된 stale cache를 허용할 수 있다.
 
-| Data change | Can affect Perspectives response? | Current handling | Notes |
+| 데이터 변경 | Perspectives 응답에 영향? | 현재 처리 | 참고 |
 | --- | --- | --- | --- |
-| New related articles inserted | Yes | Existing cache remains until TTL expires | Newly inserted related articles may not appear immediately. |
-| Base article title changed | Yes | Existing cache remains until TTL expires | Keyword extraction result can become outdated. |
-| Article country/category changed | Yes | Existing cache remains until TTL expires | Country grouping can become outdated. |
-| Article source changed | Maybe | Existing cache remains until TTL expires | Source name is included in child article DTOs. |
-| View count increased | No | No invalidation needed | View count is not part of Perspectives response. |
-| Summary updated | No | No invalidation needed | Summary is not part of Perspectives response. |
-| Crawled content updated | No | No invalidation needed | Crawled content is not part of Perspectives response. |
-| Scrap/chat data changed | No | No invalidation needed | Not used by Perspectives response. |
+| 새 관련 기사 삽입 | 예 | TTL 만료까지 기존 캐시 유지 | 새 관련 기사가 즉시 나타나지 않을 수 있다. |
+| 기준 기사 제목 변경 | 예 | TTL 만료까지 기존 캐시 유지 | 키워드 추출 결과가 오래된 값일 수 있다. |
+| 기사 국가/카테고리 변경 | 예 | TTL 만료까지 기존 캐시 유지 | 국가 그룹이 오래된 값일 수 있다. |
+| 기사 출처 변경 | 가능 | TTL 만료까지 기존 캐시 유지 | 하위 기사 DTO에 출처 이름이 포함된다. |
+| 조회 수 증가 | 아니요 | invalidation 불필요 | 조회 수는 Perspectives 응답에 없다. |
+| 요약 갱신 | 아니요 | invalidation 불필요 | 요약은 Perspectives 응답에 없다. |
+| 크롤링 본문 갱신 | 아니요 | invalidation 불필요 | 크롤링 본문은 Perspectives 응답에 없다. |
+| 스크랩/채팅 데이터 변경 | 아니요 | invalidation 불필요 | Perspectives 응답에서 사용하지 않는다. |
 
-## Decision
+## 결정
 
-For the current project stage, keep TTL-based stale allowance instead of adding explicit invalidation.
+현재 프로젝트 단계에서는 명시적 invalidation을 추가하지 않고 TTL 기반 stale allowance를 유지한다.
 
-Reasons:
+근거:
 
-- Perspectives is a read-heavy derived response.
-- Article edits that affect Perspectives appear rare in the current API surface.
-- News ingestion can add related articles, but showing them after at most the TTL window is acceptable for this feature.
-- Explicit invalidation would require wiring cache deletion into every write path that can affect related article matching.
-- The current 1-hour TTL bounds stale responses while preserving the measured warm cache benefit.
+- Perspectives는 조회가 많은 파생 응답이다.
+- 현재 API 표면에서 Perspectives에 영향을 주는 기사 수정은 드물다.
+- 뉴스 수집으로 관련 기사가 추가될 수 있지만, 이 기능에서는 최대 TTL 시간 뒤 노출되어도 허용할 수 있다.
+- 명시적 invalidation은 관련 기사 매칭에 영향을 주는 모든 쓰기 경로에 캐시 삭제를 연결해야 한다.
+- 현재 1시간 TTL은 측정된 warm cache 이점을 유지하면서 오래된 응답 시간을 제한한다.
 
-## When to add invalidation
+## Invalidation 추가 조건
 
-Add explicit invalidation if one of these becomes true:
+다음 중 하나가 성립하면 명시적 invalidation을 추가한다.
 
-- Admin APIs start editing article title, country, category, source, or language.
-- News ingestion becomes frequent enough that newly inserted related articles must appear immediately.
-- Users report stale Perspectives results as a correctness issue.
-- Cache TTL needs to be raised significantly beyond the current 1-hour window.
+- 관리 API가 기사 제목, 국가, 카테고리, 출처 또는 언어를 수정하기 시작한다.
+- 뉴스 수집이 잦아져 새 관련 기사를 즉시 표시해야 한다.
+- 사용자가 오래된 Perspectives 결과를 정합성 문제로 보고한다.
+- Cache TTL을 현재 1시간보다 크게 늘려야 한다.
 
-Potential invalidation targets:
+invalidation 대상 후보:
 
 ```text
 perspectives:article:{baseArticleId}
 ```
 
-Full correctness is harder than deleting only the changed article key.
-If a newly inserted article is related to many existing base articles, those existing base article caches can also become stale.
-That broader invalidation problem should be handled in a separate design issue.
+변경된 기사 key만 삭제하는 것으로 완전한 정합성을 보장하기는 어렵다.
+새 기사가 기존 여러 기준 기사와 관련 있다면 해당 기준 기사 캐시도 오래된 값이 된다.
+이 광범위한 invalidation 문제는 별도 설계 이슈로 다뤄야 한다.
 
-## Follow-up candidates
+## 후속 후보
 
-- Measure cold cache with multiple article IDs to understand FULLTEXT variance.
-- Use MySQL `EXPLAIN` on `ArticleRepository.findPerspectives`.
-- Revisit TTL after measuring warm cache hit ratio and stale tolerance.
-- Consider local cache only if Redis hit path itself becomes a bottleneck.
-- Consider asynchronous precomputation only if cold cache latency becomes user-visible at higher traffic.
+- 여러 기사 ID로 cold cache를 측정해 FULLTEXT 편차를 파악한다.
+- `ArticleRepository.findPerspectives`에 MySQL `EXPLAIN`을 수행한다.
+- Warm cache hit ratio와 stale 허용 범위를 측정한 뒤 TTL을 재검토한다.
+- Redis hit 경로 자체가 병목이 될 때만 local cache를 검토한다.
+- 높은 트래픽에서 cold cache 지연이 사용자에게 드러날 때만 비동기 사전 계산을 검토한다.

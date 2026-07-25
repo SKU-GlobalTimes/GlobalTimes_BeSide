@@ -9,6 +9,16 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Recently Completed
 
+### #241 - 검색·Perspectives 영어 문서 한국어 재정리
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/241
+- 작업 브랜치: `docs/#241-search-perspectives-ko`
+- 상태: `Done` ([PR #242](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/242))
+- 결과: 검색 API와 Perspectives의 FULLTEXT 분석·기준선·표본·정렬·캐시·수집 범위·다국어 검증 문서 10개를 한국어 중심으로 재정리했다.
+- 보존 기준: SQL·명령·로그·metric 식별자, 측정 숫자, 표본 ID, code fence와 원래 해석 경계를 유지했다. 일반 검색 경로와 Perspectives 경로도 구분했다.
+- 검증: 대상 문서별 숫자 token과 code fence 수 원문 대조, 상대 링크, `git diff --check`, Backend CI가 통과했다.
+- 범위: production code·test·schema·workflow·신규 측정·신규 기술과 Issue #110은 제외했다.
+
 ### #239 - Phase 1 백엔드 구조·정량 근거 맵 및 README 최신화
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/239

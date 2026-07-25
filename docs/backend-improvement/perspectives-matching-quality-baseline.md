@@ -1,16 +1,16 @@
-# Perspectives matching quality baseline
+# Perspectives 매칭 품질 기준선
 
-## Purpose
+## 목적
 
-`GET /api/news/{id}/perspectives` is intended to show articles from multiple countries about a similar issue.
-The current implementation uses title keywords, optional English translation, and MySQL FULLTEXT search.
+`GET /api/news/{id}/perspectives`는 유사한 이슈를 다루는 여러 국가의 기사를 보여주기 위한 API다.
+현재 구현은 제목 키워드, 선택적 영어 번역, MySQL FULLTEXT 검색을 사용한다.
 
-This document defines a small baseline for measuring the current matching quality before introducing heavier search layers such as Elasticsearch, vector search, RAG, or issue clustering.
+이 문서는 Elasticsearch, vector search, RAG, issue clustering처럼 더 무거운 검색 계층을 도입하기 전에 현재 매칭 품질을 측정할 작은 기준선을 정의한다.
 
-The first local MySQL snapshot is recorded in `perspectives-matching-sample-snapshot.md`.
-When interpreting any snapshot, also apply `perspectives-source-coverage-limit-log.md` to separate search quality from source coverage and freshness limits.
+첫 로컬 MySQL snapshot은 `perspectives-matching-sample-snapshot.md`에 기록한다.
+Snapshot을 해석할 때는 `perspectives-source-coverage-limit-log.md`도 적용해 검색 품질과 출처 범위·최신성 한계를 분리한다.
 
-## Current Flow
+## 현재 흐름
 
 ```text
 PerspectivesService.getPerspectives(articleId)
@@ -26,9 +26,9 @@ PerspectivesService.getPerspectives(articleId)
 -> cache response in Redis
 ```
 
-## Current Search Shape
+## 현재 검색 형태
 
-`ArticleRepository.findPerspectives` uses the following FULLTEXT query:
+`ArticleRepository.findPerspectives`는 다음 FULLTEXT 쿼리를 사용한다.
 
 ```sql
 SELECT *
@@ -39,55 +39,55 @@ ORDER BY published_at DESC
 LIMIT 50;
 ```
 
-Known behavior:
+확인된 동작:
 
-- The query uses the `ft_article_title_description(title, description)` FULLTEXT index on the local development dataset.
-- Results are ordered by `published_at DESC`, not by semantic similarity.
-- `KeywordExtractor` keeps at most 4 title tokens and makes the first 2 required terms in BOOLEAN MODE.
-- Non-English base articles are searched once with translated English keywords and, when different, once with original keywords.
-- The response groups the retrieved articles by country and keeps up to 3 articles per country.
+- 로컬 개발 데이터셋에서 `ft_article_title_description(title, description)` FULLTEXT 인덱스를 사용한다.
+- 결과는 의미 유사도가 아니라 `published_at DESC`로 정렬한다.
+- `KeywordExtractor`는 제목 token을 최대 4개 유지하고 BOOLEAN MODE에서 앞의 2개를 필수 검색어로 만든다.
+- 영어가 아닌 기준 기사는 번역한 영어 키워드로 검색하고, 원문과 다르면 원문 키워드로도 검색한다.
+- 검색 기사를 국가별로 묶고 국가당 최대 3개를 유지한다.
 
-## Known Limits
+## 확인된 한계
 
-- Similar issues can be missed when titles use different expressions, entities, or languages.
-- FULLTEXT matching does not guarantee that articles describe the same event.
-- Search results can be recent but weakly related because the final ordering is recency-based.
-- The current model has no stable `issue_id` or article cluster identity.
-- Translating only the extracted base keywords to English favors English matching and does not fully cover all article languages.
-- Matching quality is bounded by collected source coverage; missing or delayed RSS/News API articles cannot be recovered by FULLTEXT or semantic search alone.
+- 제목의 표현, entity 또는 언어가 다르면 유사한 이슈를 놓칠 수 있다.
+- FULLTEXT 매칭은 기사가 동일 사건을 설명한다고 보장하지 않는다.
+- 최종 정렬이 최신순이므로 결과가 최신이지만 관련성이 약할 수 있다.
+- 현재 모델에는 안정적인 `issue_id`나 기사 cluster 식별자가 없다.
+- 기준 기사에서 추출한 키워드만 영어로 번역하므로 영어 매칭에 유리하고 모든 기사 언어를 완전히 다루지 못한다.
+- 매칭 품질은 수집 출처 범위에도 제한된다. 누락되거나 늦게 들어온 RSS/News API 기사는 FULLTEXT나 semantic search만으로 복구할 수 없다.
 
-## Sample Selection Criteria
+## 표본 선정 기준
 
-Use representative article samples instead of cherry-picking only successful matches.
+성공 사례만 의도적으로 고르지 않고 대표 기사 표본을 사용한다.
 
-Recommended sample set:
+권장 표본:
 
-| Sample type | Minimum count | Why |
+| 표본 유형 | 최소 개수 | 이유 |
 | --- | ---: | --- |
-| English global issue | 2 | Checks common high-volume FULLTEXT behavior. |
-| Korean or other non-English base article | 2 | Checks translation plus original keyword fallback. |
-| Low-match or zero-match issue | 2 | Exposes recall gaps. |
-| Multi-country breaking/news topic | 2 | Checks whether different country sources appear. |
-| Broad category term issue | 1 | Exposes noisy matches and recency bias. |
+| 영어 국제 이슈 | 2 | 일반적인 대량 FULLTEXT 동작을 확인한다. |
+| 한국어 또는 다른 비영어 기준 기사 | 2 | 번역과 원문 키워드 fallback을 확인한다. |
+| 매칭이 적거나 없는 이슈 | 2 | recall 한계를 드러낸다. |
+| 여러 국가의 속보/뉴스 주제 | 2 | 서로 다른 국가 출처가 나타나는지 확인한다. |
+| 넓은 카테고리 용어 이슈 | 1 | 잡음 매칭과 최신순 편향을 드러낸다. |
 
-For each sample, record the base article ID, title, country, language, category, extracted keywords, and observed result summary.
-Do not include private data, API keys, or full external API responses.
+표본마다 기준 기사 ID, 제목, 국가, 언어, 카테고리, 추출 키워드와 관찰 결과를 기록한다.
+개인정보, API key 또는 외부 API 전체 응답은 포함하지 않는다.
 
-## Measurement Procedure
+## 측정 절차
 
-1. Clear the Redis key for the sample article when measuring the cold path:
+1. Cold path를 측정할 때 표본 기사의 Redis key를 삭제한다.
 
 ```text
 perspectives:article:{articleId}
 ```
 
-2. Call the API:
+2. API를 호출한다.
 
 ```http
 GET /api/news/{articleId}/perspectives
 ```
 
-3. Capture the response summary and service log fields:
+3. 응답 요약과 서비스 log field를 수집한다.
 
 ```text
 keywordLength
@@ -101,39 +101,39 @@ totalArticles
 totalMs
 ```
 
-4. Review the returned country groups manually and classify each sample:
+4. 반환 국가 그룹을 수동 검토하고 각 표본을 분류한다.
 
-| Classification | Meaning |
+| 분류 | 의미 |
 | --- | --- |
-| `good_match` | Most returned articles appear to describe the same issue. |
-| `partial_match` | Some useful related articles appear, but important countries or articles are missing. |
-| `weak_match` | Results are mostly broad-topic matches rather than the same issue. |
-| `no_match` | The API returns no useful related articles. |
+| `good_match` | 반환 기사 대부분이 동일 이슈를 다루는 것으로 보인다. |
+| `partial_match` | 유용한 관련 기사가 있지만 중요한 국가나 기사가 누락된다. |
+| `weak_match` | 동일 이슈보다 넓은 주제 매칭이 대부분이다. |
+| `no_match` | API가 유용한 관련 기사를 반환하지 않는다. |
 
-## Baseline Result Template
+## 기준선 결과 템플릿
 
 | Article ID | Base country | Language | Category | Keyword | countriesFound | totalArticles | Classification | Notes |
 | --- | --- | --- | --- | --- | ---: | ---: | --- | --- |
 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 
-Country breakdown template:
+국가별 결과 템플릿:
 
 | Article ID | Country | Returned count | Match notes |
 | --- | --- | ---: | --- |
 | TBD | TBD | TBD | TBD |
 
-## Decision Boundary
+## 결정 경계
 
-This baseline does not introduce Elasticsearch, vector search, RAG, Kafka, or a new schema.
-Those options should be considered only after the baseline shows concrete quality gaps that cannot be addressed with small FULLTEXT or keyword improvements.
+이 기준선에서는 Elasticsearch, vector search, RAG, Kafka 또는 새 schema를 도입하지 않는다.
+작은 FULLTEXT 또는 키워드 개선으로 해결할 수 없는 구체적인 품질 한계가 기준선에서 확인된 뒤에만 검토한다.
 
-Potential follow-up decisions:
+후속 결정 후보:
 
-| Option | Consider when |
+| 선택지 | 검토 조건 |
 | --- | --- |
-| FULLTEXT query tuning | Good keywords exist but query shape or ordering loses useful results. |
-| Better keyword extraction | Current title tokens are too noisy or miss entities. |
-| Multilingual query expansion | Non-English article recall is consistently poor. |
-| Vector search or embeddings | Same-issue articles use different wording and FULLTEXT misses them. |
-| Issue clustering / `issue_id` | The product needs stable event-level grouping across article ingestion. |
-| Elasticsearch | Keyword search, filtering, ranking, and multilingual analysis need a dedicated search layer. |
+| FULLTEXT query tuning | 좋은 키워드가 있지만 query 형태나 정렬이 유용한 결과를 놓친다. |
+| 더 나은 keyword extraction | 현재 제목 token의 잡음이 크거나 entity를 놓친다. |
+| Multilingual query expansion | 비영어 기사 recall이 일관되게 낮다. |
+| Vector search 또는 embeddings | 같은 이슈의 표현이 달라 FULLTEXT가 놓친다. |
+| Issue clustering / `issue_id` | 수집 전반에서 안정적인 사건 단위 그룹이 필요하다. |
+| Elasticsearch | 키워드 검색, 필터, 순위, 다국어 분석에 전용 검색 계층이 필요하다. |

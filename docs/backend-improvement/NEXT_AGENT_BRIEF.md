@@ -9,6 +9,11 @@
 
 ## Recently Completed
 
+- #241 / PR #242: `Done`
+- 결과: 검색 API와 Perspectives의 영어 중심 근거 문서 10개를 한국어 중심으로 재정리했다. SQL·명령·로그·metric 식별자, 측정 수치, 표본 ID와 해석 한계는 유지했다.
+- 검증: 숫자 token과 code fence 수 원문 대조, 상대 링크, `git diff --check`, Backend CI가 통과했다.
+- 범위: production code·test·schema·workflow·신규 측정·신규 기술과 Issue #110은 제외했다.
+
 - #239 / PR #240: `Done`, Backend Phase 1 `Completed`
 - 결과: 14개 섹션의 구조·근거 맵으로 수집부터 CI까지 실행 경로를 문제·해결·수치·검증·원본 MD/PR/코드에 연결하고, #223 이후 정량 인덱스와 README 현재 상태를 갱신했다.
 - 검증: 상대 Markdown·Java·SQL·workflow 링크 150개와 수치·코드 경로를 대조했다. 검색 API 경로 Blocking 수정 후 Backend CI 성공, AI Reviewer Blocking 없음·MERGE_READY.
