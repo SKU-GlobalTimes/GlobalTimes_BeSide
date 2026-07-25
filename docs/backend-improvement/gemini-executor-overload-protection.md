@@ -1,4 +1,14 @@
-# Gemini executor overload protection baseline
+# Gemini executor overload 보호 기준선
+
+## 한국어 학습 안내
+
+이 문서는 전용 Gemini executor의 worker와 bounded queue가 모두 찼을 때 새 요청을 빠르게 거절하고, 이미 수락한 작업과 다른 API를 보호하는 동작을 검증한다. queue를 제한하지 않으면 서버가 처리할 수 없는 요청을 메모리에 계속 쌓아 timeout과 장애 복구 시간을 키울 수 있다.
+
+핵심 개념은 **bounded queue**, **rejection policy**, **backpressure**, **fast failure**, **recovery**다. HTTP 거절은 서버 결함을 숨기는 것이 아니라 현재 처리 용량을 넘었다는 계약이다. 거절된 요청과 수락된 요청의 상위 응답시간을 분리해야 빠른 보호와 실제 작업 대기를 혼동하지 않는다.
+
+queue 크기와 worker 수는 영구적인 정답이 아니다. 배포 instance의 CPU·memory, 외부 API 동시성 제한, 목표 latency와 실패 허용률을 같은 환경에서 측정해 조정해야 한다. 아래 기록은 작은 queue로 포화·거절·회복을 재현한 로컬 기준선이다.
+
+## 원본 측정 기록
 
 ## Purpose
 
@@ -126,7 +136,7 @@ This verifies functional recovery of the executor and summary path. The recovery
 - Size each future instance from measured arrival RPS, external-call latency, acceptable wait, and total Gemini quota.
 - Re-run the same script in a fixed EC2/container environment before making production capacity claims.
 
-## Portfolio wording candidate
+## 핵심 결과 요약
 
 ```text
 Gemini 외부 호출용 bounded executor를 5 workers/queue 10으로 축소한 포화 실험에서 20 VU부터 초과 요청을 p95 34~50ms의 503으로 차단하고 queue 상한을 유지했으며, 동시 popular API p95를 약 255ms로 격리하고 부하 종료 후 25/25 정상 응답 회복을 검증했습니다.

@@ -1,4 +1,14 @@
-# Gemini mock latency baseline
+# Gemini mock 지연 기준선
+
+## 한국어 학습 안내
+
+이 문서는 실제 Gemini 요금과 rate limit을 사용하지 않고, 통제된 mock HTTP server가 일정한 지연이나 오류를 반환하게 해 외부 호출 대기 시간이 API에 어떻게 전파되는지 측정한다. mock server는 가짜 비즈니스 결과를 증명하는 도구가 아니라 네트워크 경계의 latency와 status를 반복 가능한 입력으로 만드는 도구다.
+
+핵심 개념은 **동기 외부 호출**, **VU와 처리량의 차이**, **Little's Law에 가까운 동시 대기 관계**, **통제 변수**다. 같은 VU에서도 mock delay가 길어지면 각 사용자가 다음 요청을 늦게 보내므로 RPS가 낮아진다. 따라서 VU 숫자만으로 대규모 트래픽을 주장하지 않고 request 수, RPS, 상위 응답시간, 실패율을 함께 본다.
+
+아래 표는 지연 조건별 로컬 결과와 이전 부하 테스트의 VU/RPS 문맥을 원형으로 보존한다. 실제 Gemini 성능, 운영 네트워크, API quota 또는 사용자 품질을 나타내지 않는다.
+
+## 원본 측정 기록
 
 ## Purpose
 
@@ -7,7 +17,7 @@ This document records the plan and baseline shape for measuring the article AI s
 The goal is not to benchmark the real Gemini service.
 The goal is to measure how this backend behaves when the user-facing summary path includes a synchronous external AI call with predictable latency.
 
-## Portfolio Summary Candidate
+## 핵심 결과 요약
 
 ```text
 Gemini external call path was isolated with a local mock server and k6 load testing, so AI summary latency could be measured without API cost or quota noise.

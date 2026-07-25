@@ -1,4 +1,14 @@
-# Gemini timeout and upstream error policy
+# Gemini timeout 및 upstream 오류 정책
+
+## 한국어 학습 안내
+
+이 문서는 외부 Gemini 호출 실패를 하나의 내부 오류로 숨기지 않고 timeout, upstream non-success, 내부 응답 처리 실패로 분리한 HTTP 계약을 설명한다. timeout은 외부 작업을 빠르게 만드는 기능이 아니라 사용자가 기다릴 최대 시간을 제한하고 서버 자원이 무기한 점유되지 않게 하는 경계다.
+
+핵심 개념은 **upstream/downstream**, **timeout budget**, **오류 매핑**, **관측 가능한 실패 원인**이다. backend가 외부 서비스에서 받은 오류와 자체 처리 오류를 구분해야 프론트가 재시도·안내 UI를 결정하고 운영 로그에서도 원인을 좁힐 수 있다.
+
+mock 조건의 전후 결과는 대기 상한이 실제 응답시간에 반영됐음을 보여주지만 retry나 circuit breaker의 필요성을 증명하지 않는다. 재시도는 요청의 멱등성, 실패 빈도, 복구 목표가 정의된 뒤 별도로 판단한다.
+
+## 원본 정책·측정 기록
 
 ## Problem
 
@@ -98,7 +108,7 @@ The upstream response body, API key, prompt, article content, and user question 
 
 The test article's existing summary was restored after both before and after runs, and the temporary backup table was removed.
 
-## Portfolio Summary Candidate
+## 핵심 결과 요약
 
 ```text
 Gemini synchronous summary calls waited through a 15-second upstream delay and exposed dependency failures as generic 500 responses; a configurable 10-second timeout and 502/504 error separation bounded p95 to about 10.42 seconds and clarified the failure source using a cost-free mock server.

@@ -1,4 +1,14 @@
-# Gemini Servlet async before/after comparison
+# Gemini Servlet async 전후 비교
+
+## 한국어 학습 안내
+
+이 문서는 느린 Gemini 작업을 전용 executor로 넘겼을 때 servlet thread 점유와 관련 없는 API latency가 어떻게 달라지는지 동기 기준선과 비교한다. 비동기는 외부 API 응답 자체를 단축하지 않으며, 요청을 받아들이는 thread와 오래 걸리는 작업 thread를 격리하는 방식이다.
+
+핵심 개념은 **Spring MVC async**, **전용 executor**, **active worker**, **queue**, **전체 완료시간과 servlet 반환시간의 차이**다. 전용 worker가 모두 사용 중이면 작업은 queue에서 기다리므로 summary 상위 응답시간이 늘어날 수 있지만 Tomcat thread를 계속 붙잡지는 않는다.
+
+아래 결과는 자원 격리의 효과와 동시에 queue 대기가 커질 수 있음을 보여준다. 따라서 async 전환 다음에는 executor가 가득 찼을 때 무한 대기 대신 어떻게 보호할지 확인해야 한다.
+
+## 원본 구현·측정 기록
 
 ## Purpose
 
@@ -126,7 +136,7 @@ The result must be described accurately:
 
 Kafka or full reactive conversion is not justified by this result alone. Reconsider them only when durable background processing, job recovery, much higher event volume, or the need to remove blocking worker occupancy is demonstrated.
 
-## Portfolio Wording Candidate
+## 핵심 결과 요약
 
 ```text
 Gemini 동기 호출을 전용 bounded executor 기반 Servlet async로 격리해 50 VU 혼합 부하에서 일반 조회 API p95를 5.97초에서 173ms로 낮추고 Tomcat busy thread peak를 20에서 8로 개선했습니다.

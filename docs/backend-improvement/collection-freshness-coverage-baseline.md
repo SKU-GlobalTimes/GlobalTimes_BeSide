@@ -1,4 +1,14 @@
-# Collection Freshness And Coverage Baseline
+# 수집 freshness 및 coverage 기준선
+
+## 한국어 학습 안내
+
+이 문서는 RSS와 News API 수집 결과를 source, country, language, category, 수신·무효·중복·저장 개수와 발행 시각 범위로 관찰하는 기준선이다. scheduler가 정해진 주기로 실행된다는 사실만으로 각 외부 source의 기사가 최신이거나 국가별 coverage가 균형적이라고 볼 수 없다.
+
+핵심 개념은 **source freshness**, **coverage**, **upstream 편향**, **batch 통계**, **검색 실패 원인 분리**다. Perspectives 결과가 없을 때 retrieval이 실패한 것인지 관련 기사가 아직 DB에 수집되지 않은 것인지 구분하려면 검색 계층 밖의 수집 근거가 필요하다.
+
+fixture 검증은 통계 계산과 log field가 의도대로 동작함을 확인하지만 실제 외부 source의 갱신 품질을 증명하지 않는다. 운영에 가까운 판단을 하려면 실행 중인 DB의 read-only snapshot과 수집 시각을 별도로 기록해야 한다.
+
+## 원본 기준선 기록
 
 ## Purpose
 

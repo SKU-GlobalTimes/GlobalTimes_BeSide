@@ -1,4 +1,14 @@
-# Gemini servlet thread saturation baseline
+# Gemini servlet thread 포화 기준선
+
+## 한국어 학습 안내
+
+이 문서는 느린 동기 Gemini 호출이 Tomcat servlet thread를 점유할 때 관련 없는 인기 기사 API까지 영향을 받는지 확인한다. 요청 thread는 CPU를 계속 쓰지 않더라도 외부 응답을 기다리는 동안 다른 요청을 처리할 수 없으므로 제한된 pool이 모두 busy가 되면 queueing과 latency가 증가한다.
+
+핵심 개념은 **servlet thread pool**, **blocking I/O**, **busy/current thread**, **포화 경계**, **안전 중단 조건**이다. summary 부하와 가벼운 popular 부하를 동시에 보내 외부 호출의 느림이 DB 병목과 다른 형태로 전파되는지 본다.
+
+이 기준선은 제한된 로컬 설정에서 thread 포화 신호를 재현하기 위한 것이며 운영 서버 capacity가 아니다. 높은 VU 단계를 무조건 실행하지 않고 busy thread, 실패율, 노트북 자원 압박이 안전 조건을 넘으면 중단한다.
+
+## 원본 측정 기록
 
 ## Purpose
 
@@ -175,7 +185,7 @@ Both signals appeared at 20 summary VUs. Summary RPS still increased almost line
 
 This issue does not claim that async will reduce Gemini's own 3-second latency. The expected improvement is reduced servlet thread occupancy and less cross-API queueing.
 
-## Portfolio Wording Candidate
+## 핵심 결과 요약
 
 ```text
 Gemini 3초 동기 호출 부하 테스트에서 Tomcat request thread가 20/20 ceiling에 도달하고 일반 조회 API p95가 154ms에서 2.86초로 증가하는 지연 전파를 수치화했습니다.

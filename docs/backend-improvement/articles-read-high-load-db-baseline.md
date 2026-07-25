@@ -1,4 +1,14 @@
-# Articles read high-load DB baseline
+# 기사 조회 고부하 DB 기준선
+
+## 한국어 학습 안내
+
+이 문서는 latest, cursor, popular, explore, detail 기사 조회 API를 작은 smoke 부하로 실행하고 endpoint별 상위 응답시간과 repository query 형태를 연결한다. 목적은 곧바로 index를 추가하는 것이 아니라 어떤 API와 query가 고부하 후속 분석 후보인지 정하는 것이다.
+
+핵심 개념은 **offset paging과 cursor paging**, **복합 index의 선두 컬럼**, **optional filter**, **연관 데이터의 반복 조회와 query count**, **dbQueryMs와 totalMs**다. 같은 article table을 읽어도 필터·정렬·page 방식에 따라 사용할 수 있는 index가 달라진다.
+
+초기 smoke는 오류 없이 경로가 동작하고 측정 tag가 분리되는지 확인하는 수준이다. 낮은 VU 결과를 capacity로 해석하지 않으며, `Using filesort`가 확인된 popular 경로만 후속 집중 부하와 EXPLAIN ANALYZE로 좁혔다.
+
+## 원본 측정 기록
 
 ## Purpose
 
@@ -7,7 +17,7 @@ It is meant to reveal which API path should receive follow-up `EXPLAIN`, query, 
 
 This work does not change repository queries, DB indexes, API response shape, Redis policy, rate limiting, or async processing.
 
-## Portfolio Summary Candidate
+## 핵심 결과 요약
 
 ```text
 주요 기사 조회 API에 고부하 k6 시나리오를 적용해 p95/오류율과 DB 조회 로그를 함께 분석하고, EXPLAIN 기반 인덱스 개선 후보를 도출할 기준선을 수립했습니다.

@@ -9,6 +9,16 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Recently Completed
 
+### #243 - 백엔드 개선 영어 근거 문서 한국어 재정리 마무리
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/243
+- 작업 브랜치: `docs/#243-backend-docs-ko-journey`
+- 상태: `Done` ([PR #244](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/244))
+- 결과: Gemini·외부 호출·부하·DB·관측·수집 문서 13개에 한국어 목적·개념·결론을 먼저 읽는 안내를 추가하고 원본 명령·표·raw 측정 기록을 보존했다.
+- 학습 경로: `backend-phase1-learning-journey.md`에서 Implementer·Reviewer 협업 절차와 실제 작업 연대기, 문제 발견, 다음 작업의 필요성, 핵심 개념, 수행, 검증과 후속 결정을 Issue/PR 링크 76개와 연결했다.
+- 검증: 대상 문서별 숫자 token·code fence 수 원문 대조, 상대 링크, `git diff --check`, Backend CI가 통과했다.
+- 범위: production code·test·schema·workflow·신규 측정·신규 기술과 Issue #110은 제외했다.
+
 ### #241 - 검색·Perspectives 영어 문서 한국어 재정리
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/241

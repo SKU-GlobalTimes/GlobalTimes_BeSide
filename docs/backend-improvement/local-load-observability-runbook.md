@@ -1,4 +1,14 @@
-# Local load observability runbook
+# 로컬 부하 테스트 관측 runbook
+
+## 한국어 학습 안내
+
+이 문서는 부하 테스트 결과, 애플리케이션 단계별 log, Docker resource sample을 같은 run ID로 묶어 결과를 재현 가능하게 남기는 절차다. HTTP 상위 응답시간이 증가해도 DB query, Java 처리, 외부 대기, 로컬 CPU·memory 중 어디서 시간이 늘었는지 구분하지 못하면 잘못된 index나 기술을 선택할 수 있다.
+
+핵심 개념은 **correlation ID 역할의 run ID**, **관측 시각 정렬**, **application metric과 system resource의 상관관계**, **측정 환경 기록**이다. 부하 도구 출력만 남기지 않고 app log와 resource snapshot을 같은 디렉터리에 저장해 한 실행의 근거를 묶는다.
+
+이 runbook은 APM을 새로 도입하지 않고 기존 log, Actuator, Docker stats로 필요한 최소 신호를 수집한다. 반복 측정이 많아지고 장기 추세·분산 trace가 필요해질 때 별도 observability stack을 검토한다.
+
+## 원본 실행 절차
 
 ## Purpose
 
@@ -11,7 +21,7 @@ This runbook defines how to capture local load-test evidence in the same run win
 The goal is to avoid jumping from "p95 increased" directly to "DB index needed".
 For local tests, k6, Spring Boot, MySQL, Redis, IDE, and the OS share the same machine, so local CPU/memory or application thread pressure can look like API latency.
 
-## Portfolio Summary Candidate
+## 핵심 결과 요약
 
 ```text
 로컬 부하 테스트에서 k6 p95/RPS, 애플리케이션 dbQueryMs 로그, Docker 리소스 지표를 같은 실행 구간에 매칭해 DB 병목과 실행 환경 한계를 구분할 수 있는 관측 절차를 정리했습니다.

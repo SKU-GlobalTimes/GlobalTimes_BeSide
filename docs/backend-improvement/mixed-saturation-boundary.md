@@ -1,4 +1,14 @@
-# Mixed API single-instance saturation boundary
+# 혼합 API 단일 instance 포화 경계
+
+## 한국어 학습 안내
+
+이 문서는 안정적으로 처리된 mixed arrival-rate 기준선과 동일한 endpoint 비율·mock 지연·실행시간을 유지하면서 요청 도착률만 높여 최초 포화 신호를 찾는다. 여러 조건을 동시에 바꾸지 않아야 latency 증가를 arrival 변화와 연결할 수 있다.
+
+핵심 개념은 **포화 경계**, **재현성**, **connection pool pending**, **thread 증가**, **자원 상관분석**이다. 목표 RPS 달성 여부만으로 안정성을 판단하지 않고 endpoint별 상위 응답시간, Hikari active/pending, Tomcat busy/current, executor active/queued와 CPU·memory를 함께 본다.
+
+첫 실행과 반복 실행이 다르면 로컬 thermal·background process·warm-up 영향을 고려해야 한다. 이 문서의 경계는 제한된 노트북 환경에서 후속 고정 자원 container 측정이 필요하다는 근거이며, 운영 capacity나 scale-out 효율을 직접 증명하지 않는다.
+
+## 원본 측정 기록
 
 ## Status
 
