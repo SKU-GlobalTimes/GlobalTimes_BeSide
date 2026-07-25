@@ -20,9 +20,10 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ### P1. Trend Redis 갱신 시 기존 데이터 보존
 
-- 상태: `Backlog`
+- 상태: `Done` ([#237](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/237), [PR #238](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/238))
 - 근거: scheduler가 국가별 기존 trend key를 DELETE한 뒤 새 값을 SET하므로 직렬화·저장 실패 사이에 기존 데이터가 사라질 수 있다.
 - 범위: 선행 DELETE 제거, 성공 시 단일 SET 교체, 실패 시 기존 값 보존 회귀 테스트로 제한한다. Redis 자료구조 변경과 분산 락은 제외한다.
+- 결과: 선행 DELETE와 삭제 API를 제거하고 직렬화 후 SET 한 번으로 교체했다. 정상·직렬화 실패·write 실패 테스트와 Backend CI 전체 테스트가 통과했다.
 
 ### P1. Phase 1 백엔드 구조·정량 근거 맵 및 README 최신화
 

@@ -56,8 +56,7 @@ public class TrendScheduler {
                 continue;
             }
 
-            trendService.deleteTrendKeywords(countryCode);
-            trendService.saveTrendKeywords(countryCode, trendDTOS);
+            trendService.replaceTrendKeywords(countryCode, trendDTOS);
 
             totalKeywords += trendDTOS.size();
             successCount++;

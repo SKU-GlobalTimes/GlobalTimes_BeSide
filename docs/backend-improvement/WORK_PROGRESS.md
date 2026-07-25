@@ -9,6 +9,18 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Recently Completed
 
+### #237 - Trend Redis 갱신 실패 시 기존 데이터 보존
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/237
+- 작업 브랜치: `fix/#237-trend-redis-preserve`
+- 상태: `Done` ([PR #238](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/238))
+- 기준선: 매시간 국가별 Trend 목록을 완성한 뒤에도 기존 Redis key를 먼저 DELETE하고 SET해, 직렬화·저장 실패 시 기존 정상 데이터가 사라질 수 있었다.
+- 결과: 새 목록을 먼저 직렬화하고 Redis SET 한 번으로 교체하도록 변경해 의도적인 빈 key 구간을 제거했다. 명시적 삭제 API도 제거했다.
+- 검증: 정상 교체, 직렬화 실패 시 미변경, Redis write 실패 시 기존 fixture 조회와 DELETE 미호출 테스트 3개, Docker 비의존 61개 테스트와 Backend CI 전체 테스트가 통과했다.
+- 정책 경계: mock Redis는 실제 네트워크 장애를 재현하지 않지만 선행 DELETE 제거와 SET 단일 interaction을 고정한다. TTL, scheduler 주기와 flag는 유지했다.
+- overengineering 판단: Redis 자료구조·Lua/MULTI·분산 락·retry·batch 실패 격리·실제 외부 호출·queue·Kafka와 Issue #110은 제외했다.
+- 작업 문서: `docs/backend-improvement/trend-redis-refresh-preservation.md`
+
 ### #235 - Trend Gemini 프롬프트 인코딩 및 timeout·오류 정책 보강
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/235
