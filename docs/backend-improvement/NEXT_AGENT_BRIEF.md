@@ -9,12 +9,18 @@
 
 ## Recently Completed
 
+- #237 / PR #238: `Done`
+- 결과: Trend scheduler의 선행 DELETE와 삭제 API를 제거하고, 새 목록 직렬화 후 Redis SET 한 번으로 기존 값을 교체하도록 변경했다.
+- 검증: 정상 교체·직렬화 실패·write 실패 집중 테스트 3개, Docker 비의존 61개 테스트와 Backend CI 전체 테스트가 통과했다. AI Reviewer는 Blocking 없음·MERGE_READY로 판정했다.
+- 경계: mock Redis로 DELETE 미호출과 기존 fixture 조회를 검증했으며 실제 네트워크 장애 재현, TTL·scheduler·flag 변경, Lua/MULTI·분산 락·retry·queue·Kafka·Issue #110은 제외했다.
+- Phase 1 잔여 작업: 백엔드 구조·정량 근거 맵과 README 최신화 후 Phase 1 종료 판단.
+
 - #235 / PR #236: `Done`
 - 결과: 손상된 Trend Gemini prompt를 복구하고 기존 `gemini.timeout-ms`를 적용해 non-2xx 502, timeout 504, 내부 응답 처리 오류 500 계약을 고정했다.
 - 캐시: cache hit는 Gemini를 생략하며 Redis read 실패 fallback과 write 실패 시 정상 summary 반환을 유지했다.
 - 검증: mock HTTP·Redis 집중 테스트 7개, Docker 비의존 58개 테스트와 Backend CI 전체 테스트가 통과했고 AI Reviewer는 Blocking 없음·MERGE_READY로 판정했다.
 - 범위: 실제 Gemini·async·retry·circuit breaker·queue·Kafka·캐시 정책·Issue #110은 제외했다.
-- Phase 1 잔여 순서: Trend Redis 갱신 데이터 보존 → Phase 1 구조·정량 근거 맵과 README 최신화.
+- Phase 1 종료선은 위 #237 완료 결과와 잔여 작업을 기준으로 판단한다.
 
 - #233 / PR #234: `Done`
 - 결과: RSS/News API의 100·500·1,000건 신규 저장·중복 재실행과 mock upstream 순차 지연 전파를 MySQL Testcontainers에서 측정했다.

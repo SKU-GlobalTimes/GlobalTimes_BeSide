@@ -18,8 +18,8 @@ public class TrendService {
     private final RedisUtil redisUtil;
     private static final long EXPIRATION_TIME = 86400 * 2 + 600; // 48시간 + 10분 (다음날 실검 없을 경우 대비)
 
-    //검색어 저장
-    public void saveTrendKeywords(String countryCode, List<TrendDTO> keywords) {
+    // 새 목록의 직렬화가 끝난 뒤 Redis SET 한 번으로 기존 값을 교체한다.
+    public void replaceTrendKeywords(String countryCode, List<TrendDTO> keywords) {
         //나라별 코드로 키 값 생성
         String key = "trend:" + countryCode;
 
@@ -32,14 +32,6 @@ public class TrendService {
         } catch (JsonProcessingException e) {
             throw new BaseException(TrendErrorStatus._FAIL_SERIALIZATION.getResponse());
         }
-    }
-
-    //검색어 삭제
-    public void deleteTrendKeywords(String countryCode) {
-        //나라별 코드로 키 값 생성
-        String key = "trend:" + countryCode;
-
-        redisUtil.deleteData(key);
     }
 
     //검색어 조회
