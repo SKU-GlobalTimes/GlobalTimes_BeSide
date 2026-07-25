@@ -27,9 +27,17 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ### P1. Phase 1 백엔드 구조·정량 근거 맵 및 README 최신화
 
-- 상태: `Backlog`
+- 상태: `Done` ([#239](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/239), [PR #240](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/240))
 - 근거: 상세 PR·측정 문서는 남아 있지만 정량 인덱스에 #223 이후 작업이 빠져 있고 README의 legacy CI/CD 설명과 학습 진입 링크가 현재 상태를 반영하지 못한다.
 - 범위: 도메인별 `진입점 → Service → DB/Redis/외부 API → 문제 → 해결 → 수치 → 테스트/PR` 맵, 정량 인덱스, README 링크 최신화로 제한한다.
+- 결과: 14개 섹션의 구조·학습 맵과 관련 링크 150개를 검증하고 #223 이후 인덱스, README CI/legacy 배포 상태, Phase 1 완료·Phase 2 진입 조건을 갱신했다.
+
+## Phase 1 Status
+
+- 상태: `Completed`
+- 완료 근거: [Backend Phase 1 구조·근거 맵](backend-phase1-evidence-map.md)
+- 다음 판단: Phase 2는 Perspectives labeled sample 확대와 collection/retrieval/ranking 원인 분리를 우선 후보로 조사한다.
+- 기술 경계: Vector DB·Kafka·scale-out·retry/circuit breaker·분산 락은 각 도입 신호를 재현하기 전까지 보류한다.
 
 ## Recently Completed
 

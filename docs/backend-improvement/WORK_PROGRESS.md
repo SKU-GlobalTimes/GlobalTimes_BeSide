@@ -9,6 +9,19 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Recently Completed
 
+### #239 - Phase 1 백엔드 구조·정량 근거 맵 및 README 최신화
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/239
+- 작업 브랜치: `docs/#239-phase1-evidence-map`
+- 상태: `Done` ([PR #240](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/240))
+- 결과: 수집·Trend·검색/Perspectives·기사 AI·채팅·스크랩/인증·Flyway/CI의 실행 경로를 문제·해결·수치·검증·원본 MD/PR/코드에 연결한 14개 섹션의 학습 맵을 추가했다.
+- 정량·README: #223 이후 결과를 개선·기준선·정합성 계약으로 분류해 인덱스에 추가하고, 현재 Backend CI와 비활성 legacy EC2 배포를 README에서 구분했다.
+- 검증: 상대 Markdown·Java·SQL·workflow 링크 150개, 원본 수치와 현재 코드 경로를 대조했다. Backend CI가 통과했고 검색 API 경로 Blocking 수정 후 AI Reviewer가 Blocking 없음·MERGE_READY로 판정했다.
+- Phase 1 판단: 단일 인스턴스의 MySQL·Redis·외부 호출·수집·인증·재현성 주요 경계를 코드·테스트·수치·문서로 연결해 Phase 1을 완료한다.
+- Phase 2 경계: 기술 도입보다 Perspectives labeled sample 확대와 collection/retrieval/ranking 원인 분리를 첫 후보로 검토한다. Kafka·Vector DB·scale-out은 각 도입 신호가 확인될 때 비교한다.
+- 범위: 신규 측정·production code·test·schema·workflow·신규 기술과 Issue #110은 제외했다.
+- 구조 맵: `docs/backend-improvement/backend-phase1-evidence-map.md`
+
 ### #237 - Trend Redis 갱신 실패 시 기존 데이터 보존
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/237

@@ -40,7 +40,8 @@
 | 분류                | 기술                                                        |
 | ------------------- | ----------------------------------------------------------- |
 | **Backend**         | Spring Boot (Java 17), JPA, Lombok                          |
-| **Infra (CI / CD)** | GitHub Actions, Docker, DockerHub, EC2                      |
+| **Infra / CI**      | GitHub Actions, Docker Compose, Testcontainers              |
+| **Legacy Deploy**   | DockerHub, EC2 (해커톤 제출 당시 구성, 현재 비활성)         |
 | **Database**        | MySQL, Redis                                                |
 | **인증**            | Google OAuth2, JWT (jjwt)                                   |
 | **AI / API**        | Google Gemini API, Google RSS & Cloud Translation, News API |
@@ -52,10 +53,12 @@
 
 > 해커톤 제출 버전 기준 커밋: `43639bf`
 
-### 1️⃣ CI/CD 자동 배포 파이프라인
+### 1️⃣ CI 및 배포 이력
 
-- GitHub Actions를 이용해 빌드 → Docker 이미지 생성 → DockerHub Push 자동화
-- EC2 서버에서 `docker pull`을 통해 최신 버전으로 자동 배포
+- **현재 CI**: `develop` 대상 PR과 push마다 GitHub Actions에서 JDK 17 기반 전체 Gradle 테스트 실행
+- MySQL·Redis 의존 회귀 테스트는 Testcontainers로 임시 컨테이너를 생성해 검증
+- **해커톤 제출 당시 배포**: Docker 이미지 생성 → DockerHub Push → EC2 `docker pull` 자동 배포
+- 현재는 대상 EC2가 삭제되어 legacy 자동 배포는 비활성 상태이며, 활성 workflow는 Backend CI만 유지
 
 ### 2️⃣ RSS 기반 국가별 다국어 뉴스 수집
 
@@ -184,7 +187,7 @@
 - 기사 내용을 기반으로 Gemini API에 전달하여 실시간 스트리밍 질의응답 제공
 - AI 모델 OpenAI GPT → **Google Gemini** 로 마이그레이션
 - **로그인 유저**: 이전 대화 내역을 슬라이딩 윈도우(최근 10턴) 방식으로 누적 전달 → 맥락 기반 대화
-- **비로그인 유저**: 단일 질의로 처리
+- **비로그인 유저**: 익명 session ID 기준으로 Redis에 최근 대화와 기사 목록을 저장해 제한된 맥락 대화 제공
 
 ### 7️⃣ Google OAuth2 + JWT 로그인 
 
@@ -224,6 +227,31 @@
 - **Perspectives Redis 캐싱**  
   FULLTEXT 검색 + 번역 API 호출이 매 요청마다 발생  
   → 결과를 Redis에 1시간 캐싱하여 응답 속도 개선 및 외부 API 호출 절감
+
+---
+
+## 🔎 백엔드 개선 근거와 학습 경로
+
+해커톤 이후 백엔드 개선은 Issue 단위로 문제를 재현하고, 작은 변경을 적용한 뒤 k6·mock server·Testcontainers·EXPLAIN·Actuator로 검증하는 방식으로 진행했습니다.
+
+| 문서 | 내용 |
+| --- | --- |
+| [Phase 1 구조·근거 맵](docs/backend-improvement/backend-phase1-evidence-map.md) | 수집, 검색, AI, 채팅, 스크랩, schema·CI의 실제 실행 경로와 관련 코드·Issue·PR·MD를 탑다운으로 연결 |
+| [정량 결과 인덱스](docs/backend-improvement/backend-improvement-quantitative-index.md) | 개선 전후 수치, 성능 기준선, 정합성·장애 격리 결과와 해석 한계 |
+| [부하 테스트 기준선](docs/backend-improvement/load-test-baseline.md) | VU·arrival-rate·RPS·p95와 시나리오 실행 방법 |
+| [로컬 관측 runbook](docs/backend-improvement/local-load-observability-runbook.md) | k6, application latency, Actuator, Docker resource를 같은 구간에서 해석하는 방법 |
+| [Flyway schema 기준선](docs/backend-improvement/flyway-schema-baseline.md) | V1~V3 migration과 MySQL Testcontainers 재현 방식 |
+| [작업 진척 기록](docs/backend-improvement/WORK_PROGRESS.md) | 전체 Issue/PR 흐름과 의사결정 이력 |
+
+대표적인 검증 결과:
+
+- Gemini 동기 호출을 bounded async executor로 격리해 50 VU에서 동시 popular API p95 `5.97초 → 172.98ms`, RPS `0.91 → 22.40`
+- 기사 조회수 lost update를 DB 원자 UPDATE로 변경해 20개 성공 요청의 실제 증가량 `2 → 20`
+- 채팅·스크랩 목록 projection query로 SQL `101 → 1`, `201 → 1`
+- 스크랩 toggle 동시 요청 20건의 성공 `2 → 20`, 실패 `18 → 0`
+- 수집 1,000건 신규 저장과 중복 재실행을 MySQL에서 측정하고 재실행 추가 저장 0건 확인
+
+수치는 로컬·mock·fixture 조건의 결과이며 운영 SLA나 최대 처리량으로 일반화하지 않습니다. 각 수치의 실행 조건과 제한은 연결된 원본 문서를 기준으로 확인합니다.
 
 ---
 

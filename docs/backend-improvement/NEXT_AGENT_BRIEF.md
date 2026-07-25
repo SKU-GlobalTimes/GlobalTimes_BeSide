@@ -9,11 +9,18 @@
 
 ## Recently Completed
 
+- #239 / PR #240: `Done`, Backend Phase 1 `Completed`
+- 결과: 14개 섹션의 구조·근거 맵으로 수집부터 CI까지 실행 경로를 문제·해결·수치·검증·원본 MD/PR/코드에 연결하고, #223 이후 정량 인덱스와 README 현재 상태를 갱신했다.
+- 검증: 상대 Markdown·Java·SQL·workflow 링크 150개와 수치·코드 경로를 대조했다. 검색 API 경로 Blocking 수정 후 Backend CI 성공, AI Reviewer Blocking 없음·MERGE_READY.
+- Phase 1 완료 범위: MySQL query·transaction, Redis cache·동시성, 외부 API timeout·오류·thread 격리, 수집 정합성·처리량, 인증, Flyway·Testcontainers·CI.
+- Phase 2 첫 후보: Perspectives labeled sample 확대와 collection/retrieval/ranking 원인 분리. Vector DB·Kafka·scale-out 등은 구조 맵의 도입 신호를 먼저 확인한다.
+- 범위 밖: 신규 측정·production code·test·schema·workflow·신규 기술과 Issue #110.
+
 - #237 / PR #238: `Done`
 - 결과: Trend scheduler의 선행 DELETE와 삭제 API를 제거하고, 새 목록 직렬화 후 Redis SET 한 번으로 기존 값을 교체하도록 변경했다.
 - 검증: 정상 교체·직렬화 실패·write 실패 집중 테스트 3개, Docker 비의존 61개 테스트와 Backend CI 전체 테스트가 통과했다. AI Reviewer는 Blocking 없음·MERGE_READY로 판정했다.
 - 경계: mock Redis로 DELETE 미호출과 기존 fixture 조회를 검증했으며 실제 네트워크 장애 재현, TTL·scheduler·flag 변경, Lua/MULTI·분산 락·retry·queue·Kafka·Issue #110은 제외했다.
-- Phase 1 잔여 작업: 백엔드 구조·정량 근거 맵과 README 최신화 후 Phase 1 종료 판단.
+- Phase 1은 #239/#240에서 완료했다.
 
 - #235 / PR #236: `Done`
 - 결과: 손상된 Trend Gemini prompt를 복구하고 기존 `gemini.timeout-ms`를 적용해 non-2xx 502, timeout 504, 내부 응답 처리 오류 500 계약을 고정했다.
