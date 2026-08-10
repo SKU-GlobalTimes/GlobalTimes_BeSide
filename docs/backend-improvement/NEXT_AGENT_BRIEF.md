@@ -9,6 +9,11 @@
 
 ## Recently Completed
 
+- #245 / PR #246: `Done`
+- 결과: Gemini AI 질의의 로그인 DB·익명 Redis 대화 저장 처리 뒤 named SSE `end` 이벤트를 보내고 emitter를 완료하도록 Backend–Frontend 정상 종료 계약을 명시했다.
+- 검증: event builder payload와 `저장 → end → complete`, I/O·상태 오류 시 container 종료 위임을 포함한 집중 테스트 6개, 전체 103개 테스트와 Backend CI가 통과했다. AI Reviewer는 Blocking 없음·MERGE_READY로 판정했다.
+- 후속: Frontend에서 정상 `end`, REST 요약 `502/503/504`, SSE 실패 재시도와 중복 연결 방지를 연동한다. 실제 Gemini, 자동 retry, WebFlux, queue·Kafka와 Issue #110은 제외했다.
+
 - #243 / PR #244: `Done`
 - 결과: Gemini·외부 호출·부하·DB·관측·수집 문서 13개에 한국어 학습 안내를 추가하고 원본 측정 기록을 보존했다. Phase 1 작업·학습 여정에서 실제 협업 절차, 작업 연대기, 문제·개념·수행·검증·다음 선택 이유를 Issue/PR 링크와 연결했다.
 - 검증: 대상 문서 숫자 token·code fence 원문 대조, 상대 링크, `git diff --check`, Backend CI가 통과했다.
