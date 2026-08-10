@@ -41,6 +41,14 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## Recently Completed
 
+### P1 연동 후속. AI 질의 SSE 정상 종료 이벤트 계약
+
+- 상태: `Done` ([#245](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/245), [PR #246](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/246))
+- AS-IS: Frontend는 정상 완료를 `end` event로 구분하려 하지만 Backend는 emitter만 완료해 정상 종료와 연결 실패의 경계가 불명확했다.
+- 결과: 대화 저장 처리 뒤 `end` named event를 보내고 emitter를 완료해 후속 Frontend 재시도 UX가 정상 완료와 실패를 구분할 수 있게 했다.
+- 검증: 로그인 저장 성공·실패, 익명 Redis 저장, event builder payload와 send 실패 시 container 종료 위임을 집중 테스트 6개와 전체 103개 테스트로 고정했다. Backend CI가 통과했고 AI Reviewer는 Blocking 없음·MERGE_READY로 판정했다.
+- 범위: 기존 SSE payload·대화 저장 의미를 유지했으며 실제 Gemini, 자동 retry, WebFlux, queue·Kafka와 Issue #110은 제외했다.
+
 ### P1 문서 후속. 영어 근거 문서 한국어 재정리 및 작업·학습 여정
 
 - 상태: `Done` ([#243](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/243), [PR #244](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/244))

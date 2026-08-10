@@ -9,6 +9,18 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Recently Completed
 
+### #245 - AI 질의 SSE 정상 종료 이벤트 계약 명확화
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/245
+- 작업 브랜치: `fix/#245-ai-sse-end-event`
+- 상태: `Done` ([PR #246](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/246))
+- 기준선: Frontend `EventSource`는 `end` named event를 정상 완료 신호로 기다리지만, Backend `AiSseService`는 마지막 누적 답변과 대화 저장 후 emitter만 완료해 정상 종료도 `onerror` 연결 종료 경로로 전달될 수 있었다.
+- 변경: 로그인 DB 또는 익명 Redis 대화 저장 처리가 끝난 뒤 `event: end`, `data: completed`를 보내고 emitter를 완료하도록 Backend–Frontend 계약을 명시했다.
+- 저장 경계: 로그인 이력 저장은 기존처럼 best-effort이며 실패해도 이미 생성한 답변의 종료 이벤트를 보낸다. 익명 Redis append 경로도 유지한다.
+- 검증: mock emitter에서 로그인 저장 성공·실패와 익명 저장 경로의 `저장 → end 전송 → complete` 순서, 실제 event builder payload, I/O·상태 오류 시 container 종료 위임을 포함한 집중 테스트 6개와 전체 103개 테스트, Backend CI가 통과했다. AI Reviewer는 Blocking 없음·MERGE_READY로 판정했다.
+- 후속 Frontend: 정상 `end` 처리, REST 요약 `502/503/504` 재시도, SSE 연결 실패 질문 재시도와 중복 연결 방지를 별도 Frontend Issue로 진행한다.
+- overengineering 판단: 새로운 SSE 라이브러리·자동 retry·WebFlux·오류 event 프로토콜·queue·Kafka를 추가하지 않고 정상 종료 named event 하나만 고정한다. 실제 Gemini와 Issue #110은 제외한다.
+
 ### #243 - 백엔드 개선 영어 근거 문서 한국어 재정리 마무리
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/243

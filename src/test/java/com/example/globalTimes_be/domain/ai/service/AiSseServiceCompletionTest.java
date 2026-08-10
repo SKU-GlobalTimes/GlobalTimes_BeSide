@@ -13,14 +13,19 @@ import org.springframework.http.MediaType;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.publisher.Mono;
 
+import java.io.IOException;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -48,16 +53,22 @@ class AiSseServiceCompletionTest {
     }
 
     @Test
-    void completesLoginStreamAfterHistorySave() {
+    void completesLoginStreamAfterHistorySave() throws IOException {
         aiSseService.completeStreaming(emitter, "question", 1L, 2L, null, "answer");
 
-        verify(chatHistoryService).save(1L, 2L, "question", "answer");
-        verify(emitter).complete();
+        var completionEvent = forClass(SseEmitter.SseEventBuilder.class);
+        var ordered = inOrder(chatHistoryService, emitter);
+        ordered.verify(chatHistoryService).save(1L, 2L, "question", "answer");
+        ordered.verify(emitter).send(completionEvent.capture());
+        ordered.verify(emitter).complete();
+        assertThat(completionEvent.getValue().build())
+                .extracting(ResponseBodyEmitter.DataWithMediaType::getData)
+                .containsExactly("event:end\ndata:", "completed", "\n\n");
         verify(emitter, never()).completeWithError(org.mockito.ArgumentMatchers.any());
     }
 
     @Test
-    void historySaveFailureIsLoggedAndDoesNotFailCompletedAnswer(CapturedOutput output) {
+    void historySaveFailureIsLoggedAndDoesNotFailCompletedAnswer(CapturedOutput output) throws IOException {
         doThrow(new DataIntegrityViolationException("commit failed"))
                 .when(chatHistoryService)
                 .save(1L, 2L, "question", "answer");
@@ -66,7 +77,9 @@ class AiSseServiceCompletionTest {
                 aiSseService.completeStreaming(emitter, "question", 1L, 2L, null, "answer")
         ).doesNotThrowAnyException();
 
-        verify(emitter).complete();
+        var ordered = inOrder(emitter);
+        ordered.verify(emitter).send(any(SseEmitter.SseEventBuilder.class));
+        ordered.verify(emitter).complete();
         verify(emitter, never()).completeWithError(org.mockito.ArgumentMatchers.any());
         assertThat(output)
                 .contains("채팅 이력 저장 실패")
@@ -76,7 +89,7 @@ class AiSseServiceCompletionTest {
     }
 
     @Test
-    void anonymousCompletionKeepsExistingRedisAppendPath() {
+    void anonymousCompletionKeepsExistingRedisAppendPath() throws IOException {
         aiSseService.completeStreaming(
                 emitter,
                 "question",
@@ -86,12 +99,40 @@ class AiSseServiceCompletionTest {
                 "answer"
         );
 
-        verify(anonymousChatSessionService)
+        var ordered = inOrder(anonymousChatSessionService, emitter);
+        ordered.verify(anonymousChatSessionService)
                 .appendTurn("anonymous-session", 2L, "question", "answer", 10);
+        ordered.verify(emitter).send(any(SseEmitter.SseEventBuilder.class));
+        ordered.verify(emitter).complete();
         verify(chatHistoryService, never())
                 .save(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
                         org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
-        verify(emitter).complete();
+    }
+
+    @Test
+    void completionEventIoFailureDoesNotEscapeOrCompleteEmitterAgain() throws IOException {
+        doThrow(new IOException("client disconnected"))
+                .when(emitter)
+                .send(any(SseEmitter.SseEventBuilder.class));
+
+        assertThatCode(() ->
+                aiSseService.completeStreaming(emitter, "question", 1L, 2L, null, "answer")
+        ).doesNotThrowAnyException();
+
+        verify(emitter, never()).complete();
+    }
+
+    @Test
+    void completionEventStateFailureDoesNotEscapeOrCompleteEmitterAgain() throws IOException {
+        doThrow(new IllegalStateException("already completed"))
+                .when(emitter)
+                .send(any(SseEmitter.SseEventBuilder.class));
+
+        assertThatCode(() ->
+                aiSseService.completeStreaming(emitter, "question", 1L, 2L, null, "answer")
+        ).doesNotThrowAnyException();
+
+        verify(emitter, never()).complete();
     }
 
     @Test

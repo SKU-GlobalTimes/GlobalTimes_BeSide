@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,8 @@ public class AiSseService {
     private int contextWindowSize;
 
     private static final String GEMINI_MODEL = "gemini-2.5-flash";
+    static final String COMPLETION_EVENT_NAME = "end";
+    static final String COMPLETION_EVENT_DATA = "completed";
 
     private final ChatHistoryService chatHistoryService;
     private final AnonymousChatSessionService anonymousChatSessionService;
@@ -197,6 +200,24 @@ public class AiSseService {
                     anonymousSessionId, articleId, question, answer, contextWindowSize);
         }
 
+        if (sendCompletionEvent(emitter)) {
+            completeEmitter(emitter);
+        }
+    }
+
+    private boolean sendCompletionEvent(SseEmitter emitter) {
+        try {
+            emitter.send(SseEmitter.event()
+                    .name(COMPLETION_EVENT_NAME)
+                    .data(COMPLETION_EVENT_DATA));
+            return true;
+        } catch (IOException | IllegalStateException e) {
+            log.warn("[Gemini SSE] completion event 전송 실패: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    private void completeEmitter(SseEmitter emitter) {
         try {
             emitter.complete();
         } catch (Exception e) {
