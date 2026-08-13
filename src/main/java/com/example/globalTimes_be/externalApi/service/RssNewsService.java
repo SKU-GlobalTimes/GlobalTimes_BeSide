@@ -22,6 +22,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -37,8 +38,17 @@ public class RssNewsService {
     private final SourceService sourceService;
     private final RssFeedConfig rssFeedConfig;
 
-    @Value("${news-fetch.enabled:false}")
+    @Value("${news-fetch.rss-enabled:${news-fetch.enabled:false}}")
     private boolean fetchEnabled;
+
+    @Value("${news-fetch.rss-countries:}")
+    private String fetchCountries;
+
+    @Value("${news-fetch.rss-max-feeds-per-run:0}")
+    private int maxFeedsPerRun;
+
+    @Value("${news-fetch.rss-max-articles-per-feed:0}")
+    private int maxArticlesPerFeed;
 
     // RSS pubDate 파싱 포맷 목록 (언론사마다 포맷이 다름)
     // zzz = GMT/UTC 같은 이름형 타임존, Z = +0900/+0000 같은 숫자형 오프셋
@@ -54,7 +64,7 @@ public class RssNewsService {
     @PostConstruct
     public void init() {
         if (!fetchEnabled) {
-            log.info("[RSS 초기화] news-fetch.enabled=false → RSS 수집 건너뜀");
+            log.info("[RSS 초기화] RSS 수집 비활성화 → 건너뜀");
             return;
         }
         fetchAllFeeds("[RSS 초기 적재]");
@@ -69,7 +79,7 @@ public class RssNewsService {
 
     private void fetchAllFeeds(String logPrefix) {
         int totalSaved = 0;
-        for (RssFeedConfig.FeedSource feed : rssFeedConfig.getFeeds()) {
+        for (RssFeedConfig.FeedSource feed : selectedFeeds()) {
             totalSaved += fetchFeed(feed);
         }
         log.info("{} 전체 저장된 신규 기사: {}개", logPrefix, totalSaved);
@@ -91,7 +101,7 @@ public class RssNewsService {
             }
 
             Document doc = Jsoup.parse(xml, "", org.jsoup.parser.Parser.xmlParser());
-            Elements items = doc.select("item");
+            Elements items = limitArticles(doc.select("item"));
 
             if (items.isEmpty()) {
                 log.info("[수집 통계] {} | 응답 없음", feed.sourceName());
@@ -104,6 +114,32 @@ public class RssNewsService {
             log.error("[RSS 수집 오류] {} 처리 중 오류 발생", feed.sourceName(), e);
             return 0;
         }
+    }
+
+    List<RssFeedConfig.FeedSource> selectedFeeds() {
+        String configuredCountries = fetchCountries == null ? "" : fetchCountries;
+        Set<String> countries = Arrays.stream(configuredCountries.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isBlank())
+                .map(value -> value.toLowerCase(Locale.ROOT))
+                .collect(Collectors.toSet());
+
+        var feeds = rssFeedConfig.getFeeds().stream()
+                .filter(feed -> countries.isEmpty()
+                        || countries.contains(feed.country().toLowerCase(Locale.ROOT)));
+        if (maxFeedsPerRun > 0) {
+            feeds = feeds.limit(maxFeedsPerRun);
+        }
+        return feeds.toList();
+    }
+
+    Elements limitArticles(Elements items) {
+        if (maxArticlesPerFeed <= 0 || items.size() <= maxArticlesPerFeed) {
+            return items;
+        }
+        Elements limited = new Elements();
+        items.stream().limit(maxArticlesPerFeed).forEach(limited::add);
+        return limited;
     }
 
     int processItems(RssFeedConfig.FeedSource feed, Elements items) {

@@ -42,9 +42,8 @@ public class NewsApiService {
     @Value("${spring.newsapi.base-url:https://newsapi.org}")
     private String newsApiBaseUrl;
 
-    // false = 로컬 개발 중 스케줄러/초기 적재 비활성화 (API 할당량 절약)
-    // 수집 테스트 시 application.yml 에서 news-fetch.enabled: true 로 변경
-    @Value("${news-fetch.enabled:false}")
+    // 기존 통합 플래그를 기본값으로 사용하며 공급자별 플래그로 독립 제어한다.
+    @Value("${news-fetch.news-api-enabled:${news-fetch.enabled:false}}")
     private boolean fetchEnabled;
 
     private int totalNewArticles = 0;
@@ -62,7 +61,7 @@ public class NewsApiService {
     @PostConstruct
     public void init() {
         if (!fetchEnabled) {
-            log.info("[초기화] news-fetch.enabled=false → 초기 적재 건너뜀 (API 할당량 절약)");
+            log.info("[초기화] News API 수집 비활성화 → 초기 적재 건너뜀");
             return;
         }
         try {

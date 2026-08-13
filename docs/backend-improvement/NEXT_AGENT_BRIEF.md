@@ -5,7 +5,10 @@
 
 ## Current Active Work
 
-현재 진행 중인 backend improvement Issue는 없다.
+- #247 `[TEST] 실제 호출 E2E를 위한 수집기별 실행 범위 제어`: 구현과 전체 108개 테스트 검증 완료, PR/Reviewer 확인 전 상태다.
+- 기존 `NEWS_FETCH_ENABLED` 하위 호환을 유지하면서 News API/RSS/Trend 토글과 RSS 국가·feed·기사 후보 상한을 분리했다.
+- 후속 Frontend Playwright External Smoke는 실제 적재·번역·크롤링·Gemini 요약·익명/로그인 질의를 소수 호출로 검증한다.
+- Perspectives는 기술 경로만 Smoke 검증하며, 실시간 RSS coverage와 의미적 관련성은 자동 합격 조건이 아니다. Issue #110은 계속 제외한다.
 
 ## Recently Completed
 
