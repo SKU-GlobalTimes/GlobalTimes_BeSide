@@ -5,18 +5,18 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Current Active Work
 
+현재 진행 중인 backend improvement Issue는 없다.
+
+## Recently Completed
+
 ### #247 - 실제 호출 E2E를 위한 수집기별 실행 범위 제어
 
 - Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/247
-- 작업 브랜치: `test/247-external-e2e-fetch-controls`
-- 상태: `In Progress`
-- 목적: 단일 `NEWS_FETCH_ENABLED`가 News API, RSS, Trend를 함께 실행하는 구조를 공급자별로 제어하고, 후속 실제 호출 Smoke E2E에서 RSS 국가·feed·기사 수를 제한한다.
-- 구현: 기존 전역 플래그를 기본값으로 유지하면서 공급자별 활성화 설정과 RSS 국가·feed·feed별 기사 후보 상한을 추가했다.
-- 검증: 설정 기본값·전역 플래그 하위 호환·공급자별 override·RSS 필터/상한 집중 테스트와 전체 108개 테스트가 통과했다.
-- 검증 경계: 실제 적재·검색·번역·크롤링·Gemini 요약·질의·저장 연결을 검증하되, 실시간 RSS의 국가별 동일 사건 coverage가 비결정적이므로 Perspectives 관련성 품질과 결과 건수는 자동 합격 조건으로 사용하지 않는다.
-- 범위 제외: 실제 Google OAuth, 전체 News API·26개국 Trend 호출, 대규모 부하, 새 검색 기술 및 Issue #110.
-
-## Recently Completed
+- 상태: `Done` ([PR #248](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/pull/248))
+- 결과: 기존 `NEWS_FETCH_ENABLED` 하위 호환을 유지하면서 News API, RSS, Trend 활성화를 분리하고 RSS 국가·feed·feed별 기사 후보 상한을 추가했다.
+- 검증: 설정 기본값·전역 플래그 하위 호환·공급자별 override·RSS 필터/상한 집중 테스트와 전체 108개 테스트, Backend CI가 통과했다. AI Reviewer는 Blocking 없음·MERGE_READY로 판정했다.
+- 후속: Frontend Playwright 수동 External Smoke에서 실제 RSS 적재·검색/번역·크롤링·Gemini 요약·익명/로그인 질의 저장을 제한 호출로 검증한다.
+- 경계: 실시간 RSS의 국가별 동일 사건 coverage가 비결정적이므로 Perspectives 관련성 품질과 결과 건수는 자동 합격 조건으로 사용하지 않으며 Issue #110은 제외한다.
 
 ### #245 - AI 질의 SSE 정상 종료 이벤트 계약 명확화
 

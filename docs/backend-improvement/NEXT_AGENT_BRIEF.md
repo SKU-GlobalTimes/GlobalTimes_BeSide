@@ -5,12 +5,14 @@
 
 ## Current Active Work
 
-- #247 `[TEST] 실제 호출 E2E를 위한 수집기별 실행 범위 제어`: 구현과 전체 108개 테스트 검증 완료, PR/Reviewer 확인 전 상태다.
-- 기존 `NEWS_FETCH_ENABLED` 하위 호환을 유지하면서 News API/RSS/Trend 토글과 RSS 국가·feed·기사 후보 상한을 분리했다.
-- 후속 Frontend Playwright External Smoke는 실제 적재·번역·크롤링·Gemini 요약·익명/로그인 질의를 소수 호출로 검증한다.
-- Perspectives는 기술 경로만 Smoke 검증하며, 실시간 RSS coverage와 의미적 관련성은 자동 합격 조건이 아니다. Issue #110은 계속 제외한다.
+현재 진행 중인 backend improvement Issue는 없다.
 
 ## Recently Completed
+
+- #247 / PR #248: `Done`
+- 결과: 기존 전역 수집 플래그의 하위 호환을 유지하면서 News API/RSS/Trend 토글과 RSS 국가·feed·기사 후보 상한을 분리했다.
+- 검증: 집중 테스트와 전체 108개 테스트, Backend CI가 통과했고 AI Reviewer는 Blocking 없음·MERGE_READY로 판정했다.
+- 후속: Frontend Playwright 수동 External Smoke에서 실제 적재·번역·크롤링·Gemini 요약·익명/로그인 질의를 소수 호출로 검증한다. Perspectives 의미 품질과 Issue #110은 제외한다.
 
 - #245 / PR #246: `Done`
 - 결과: Gemini AI 질의의 로그인 DB·익명 Redis 대화 저장 처리 뒤 named SSE `end` 이벤트를 보내고 emitter를 완료하도록 Backend–Frontend 정상 종료 계약을 명시했다.
