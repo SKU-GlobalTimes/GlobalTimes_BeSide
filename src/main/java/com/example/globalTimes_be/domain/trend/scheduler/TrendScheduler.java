@@ -26,13 +26,13 @@ public class TrendScheduler {
     private final RestTemplate restTemplate;  // timeout 설정된 빈 주입
     private final TrendService trendService;
 
-    @Value("${news-fetch.enabled:false}")
+    @Value("${news-fetch.trend-enabled:${news-fetch.enabled:false}}")
     private boolean fetchEnabled;
 
     @PostConstruct
     public void init() {
         if (!fetchEnabled) {
-            log.info("[트렌드 초기화] news-fetch.enabled=false → 트렌드 수집 건너뜀");
+            log.info("[트렌드 초기화] Trend 수집 비활성화 → 건너뜀");
             return;
         }
         saveTrendApi();

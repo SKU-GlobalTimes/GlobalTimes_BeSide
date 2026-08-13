@@ -103,6 +103,36 @@ class RssNewsServiceTest {
         verifyNoInteractions(articleRepository, sourceService, rssFeedConfig);
     }
 
+    @Test
+    void selectedFeeds_filtersCountriesAndAppliesRunLimit() {
+        RssFeedConfig.FeedSource englishFeed = new RssFeedConfig.FeedSource(
+                "https://feed.example/en", "gb", "en", "English RSS", "general");
+        RssFeedConfig.FeedSource koreanFeed = new RssFeedConfig.FeedSource(
+                "https://feed.example/ko", "kr", "ko", "Korean RSS", "general");
+        RssFeedConfig.FeedSource secondKoreanFeed = new RssFeedConfig.FeedSource(
+                "https://feed.example/ko-2", "kr", "ko", "Korean RSS", "business");
+        when(rssFeedConfig.getFeeds()).thenReturn(List.of(englishFeed, koreanFeed, secondKoreanFeed));
+        ReflectionTestUtils.setField(service, "fetchCountries", " KR ");
+        ReflectionTestUtils.setField(service, "maxFeedsPerRun", 1);
+
+        assertThat(service.selectedFeeds()).containsExactly(koreanFeed);
+    }
+
+    @Test
+    void limitArticles_capsCandidatesForExternalSmokeRun() {
+        Elements items = items(
+                item("https://news.example/1", "one"),
+                item("https://news.example/2", "two"),
+                item("https://news.example/3", "three")
+        );
+        ReflectionTestUtils.setField(service, "maxArticlesPerFeed", 2);
+
+        Elements limited = service.limitArticles(items);
+
+        assertThat(limited).hasSize(2);
+        assertThat(limited.eachText()).allMatch(text -> !text.contains("three"));
+    }
+
     private Elements items(String... items) {
         return Jsoup.parse("<rss><channel>" + String.join("", items) + "</channel></rss>", "", Parser.xmlParser())
                 .select("item");

@@ -60,10 +60,16 @@ oauth2:
   redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:5173/oauth2/redirect}
 
 # 뉴스 수집 활성화 여부
-# false(기본): 로컬 개발 중 API 할당량 절약 목적으로 @PostConstruct/스케줄러 비활성화
-# true: 수집 테스트 시에만 변경 (주의: 무료 플랜 100 req/24h 제한)
+# enabled는 기존 통합 스위치이며 공급자별 설정이 없을 때 기본값으로 사용한다.
+# 실제 호출 Smoke에서는 공급자별 스위치와 RSS 상한을 함께 지정한다.
 news-fetch:
-  enabled: false
+  enabled: ${NEWS_FETCH_ENABLED:false}
+  news-api-enabled: ${NEWS_API_FETCH_ENABLED:${NEWS_FETCH_ENABLED:false}}
+  rss-enabled: ${RSS_FETCH_ENABLED:${NEWS_FETCH_ENABLED:false}}
+  trend-enabled: ${TREND_FETCH_ENABLED:${NEWS_FETCH_ENABLED:false}}
+  rss-countries: ${RSS_FETCH_COUNTRIES:}
+  rss-max-feeds-per-run: ${RSS_MAX_FEEDS_PER_RUN:0}
+  rss-max-articles-per-feed: ${RSS_MAX_ARTICLES_PER_FEED:0}
 
 # 국가별 시각 비교 API: Redis 캐시 (0이면 미사용, 동일 articleId 반복 요청 시 FULLTEXT 부하 감소)
 perspectives:
