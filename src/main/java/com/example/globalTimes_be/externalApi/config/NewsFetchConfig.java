@@ -1,5 +1,6 @@
 package com.example.globalTimes_be.externalApi.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -10,6 +11,12 @@ import java.util.List;
  */
 @Component
 public class NewsFetchConfig {
+
+    @Value("${news-fetch.news-api-page-size:100}")
+    private int pageSize;
+
+    @Value("${news-fetch.news-api-max-requests-per-run:30}")
+    private int maxRequestsPerRun;
 
     /**
      * 헤드라인 수집 대상 국가 코드 목록 (News API top-headlines 기준)
@@ -55,7 +62,7 @@ public class NewsFetchConfig {
      * 한 번 요청 시 가져올 최대 기사 수 (News API 최대: 100)
      */
     public int getPageSize() {
-        return 100;
+        return pageSize;
     }
 
     /**
@@ -63,7 +70,7 @@ public class NewsFetchConfig {
      * 무료 플랜: 100 req/24h → 초기 적재(1회) + 스케줄링(2~3회) 고려해 여유 있게 설정
      */
     public int getMaxRequestsPerRun() {
-        return 30;
+        return maxRequestsPerRun;
     }
 
     /**

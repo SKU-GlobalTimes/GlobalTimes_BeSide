@@ -5,7 +5,13 @@
 
 ## Current Active Work
 
-현재 진행 중인 backend improvement Issue는 없다.
+- #249: `In Progress`
+- 브랜치: `test/249-provider-smoke-limits`
+- 목표: 최종 수동 External Smoke에서 실제 News API와 Google Trends 호출 범위를 작게 강제할 수 있도록 News API 요청 수·page size와 Trend 국가·국가별 결과 상한을 설정화한다.
+- 하위 호환: 기본값은 기존 News API 최대 30회·page size 100, Trend 26개국·국가별 6건을 유지하며 수집기는 기본 비활성이다.
+- 검증: 설정·News API·Trend 집중 테스트 11개와 전체 112개 테스트가 통과했고, 기본 비활성 조건에서 실제 외부 호출은 0회다.
+- 후속: Frontend에서 News API·RSS·Trend 실수집과 Translation·Gemini 요약·로그인 질의·스크랩의 대표 사이클을 검증한다.
+- 경계: Perspectives 의미적 관련성과 결과 건수, 실제 Google OAuth, 자동 retry, Issue #110은 제외한다.
 
 ## Recently Completed
 

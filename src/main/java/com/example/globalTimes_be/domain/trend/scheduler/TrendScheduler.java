@@ -18,6 +18,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -28,6 +29,12 @@ public class TrendScheduler {
 
     @Value("${news-fetch.trend-enabled:${news-fetch.enabled:false}}")
     private boolean fetchEnabled;
+
+    @Value("${news-fetch.trend-countries:KR,AU,AT,BR,CA,CO,DK,EG,FR,DE,GR,HK,IN,ID,IT,JP,MY,MX,NL,RU,SG,TW,TR,GB,US,ES}")
+    private String fetchCountries;
+
+    @Value("${news-fetch.trend-max-items-per-country:6}")
+    private int maxItemsPerCountry;
 
     @PostConstruct
     public void init() {
@@ -41,15 +48,10 @@ public class TrendScheduler {
     @Scheduled(cron = "0 0 */1 * * *")
     public void saveTrendApi(){
         if (!fetchEnabled) return;
-        //나라 코드 리스트 생성
-        List<String> countries = new ArrayList<>
-                (Arrays.asList("KR", "AU", "AT", "BR", "CA", "CO", "DK", "EG", "FR", "DE", "GR", "HK", "IN",
-                        "ID", "IT", "JP", "MY", "MX", "NL", "RU", "SG", "TW", "TR", "GB", "US", "ES"));
-
         int totalKeywords = 0;
         int successCount = 0;
 
-        for (String countryCode : countries){
+        for (String countryCode : selectedCountries()){
             List<TrendDTO> trendDTOS = createTrendDTOS(countryCode);
 
             if(trendDTOS == null || trendDTOS.isEmpty()){
@@ -100,8 +102,8 @@ public class TrendScheduler {
 
         //반복문으로 items안에 있는 데이터 가져오기
         for (Element item : items) {
-            // item을 6개 저장하거나 item이 비어있으면 종료
-            if(count > 5 ){
+            // 설정된 국가별 최대 개수만 저장한다. 0 이하면 기존처럼 전체 item을 허용한다.
+            if(maxItemsPerCountry > 0 && count >= maxItemsPerCountry){
                 break;
             }
             
@@ -163,5 +165,17 @@ public class TrendScheduler {
         }
 
         return trendDTOS;
+    }
+
+    List<String> selectedCountries() {
+        if (fetchCountries == null || fetchCountries.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(fetchCountries.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isBlank())
+                .map(value -> value.toUpperCase(Locale.ROOT))
+                .distinct()
+                .toList();
     }
 }

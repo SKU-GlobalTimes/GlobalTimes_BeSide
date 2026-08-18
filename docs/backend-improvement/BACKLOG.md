@@ -7,7 +7,14 @@ GlobalTimes 백엔드의 개선 작업을 문제 정의부터 검증 결과까�
 
 ## Current Active Work
 
-현재 진행 중인 backend improvement Issue는 없다.
+### P1. News API·Google Trends 소규모 실호출 설정
+
+- 상태: `In Progress` ([#249](https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/249))
+- 근거: News API와 Trend를 토글만 켜면 각각 최대 30회와 26개국 요청이 시작돼 소규모 실제 호출 E2E의 비용·외부 부하 경계를 강제할 수 없다.
+- 범위: 기본 동작을 유지하는 News API 요청 수·page size, Trend 국가·국가별 결과 상한 설정과 회귀 테스트로 제한한다.
+- 검증: 집중 테스트 11개와 Testcontainers 포함 전체 112개 테스트 통과, 실제 외부 호출 0회.
+- 후속: Frontend 수동 External Smoke에서 각 공급자를 최소 호출하고 대표 로그인 사용자 사이클을 검증한다.
+- 제외: Perspectives 의미적 관련성 합격 판정, 실제 Google OAuth, ranking·schema·queue·Kafka, Issue #110.
 
 ## Phase 1 Exit Roadmap
 
