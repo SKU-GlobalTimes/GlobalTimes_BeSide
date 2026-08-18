@@ -5,7 +5,13 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Current Active Work
 
-현재 진행 중인 backend improvement Issue는 없다.
+### #251 - Backend README 데이터 구조와 후속 판단 기준 보완
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/251
+- 작업 브랜치: `docs/251-readme-data-model`
+- 상태: `In Progress`
+- 범위: 기존 README 구조와 이미지를 유지하면서 Perspectives 후속 판단 기준, MySQL 관계 ERD, 로그인·비로그인 채팅 저장 비교와 전체 테스트 실행 안내를 보완한다.
+- 경계: production code·schema·test·workflow를 변경하지 않고 실제 외부 API를 호출하지 않으며 Issue #110을 다루지 않는다.
 
 ## Recently Completed
 
