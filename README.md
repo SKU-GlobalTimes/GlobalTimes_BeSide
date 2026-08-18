@@ -168,7 +168,8 @@
 고정된 기사 표본에서 관련 기사가 DB에 존재하지만 표현 차이로 반복 누락되는 경우에만
 embedding·Vector DB와 현재 FULLTEXT 결과를 비교한다.
 
-수집 처리는 현재 1,000건 기준으로 다음 스케줄 실행 전에 완료된다.
+Testcontainers의 고정 fixture 1,000건 측정에서는 다음 스케줄 주기보다 짧게 완료됐다.
+이 결과는 실제 외부 공급자나 운영 환경의 처리량을 의미하지 않는다.
 따라서 Kafka나 별도 Queue는 도입하지 않았으며,
 수집 backlog·재처리·독립 consumer 요구가 생기는 시점에 비교한다.
 
@@ -283,7 +284,7 @@ embedding·Vector DB와 현재 FULLTEXT 결과를 비교한다.
 
 ```mermaid
 erDiagram
-    SOURCE ||--o{ ARTICLE : provides
+    SOURCE o|--o{ ARTICLE : provides
     USERS ||--o{ CHAT_HISTORY : owns
     ARTICLE ||--o{ CHAT_HISTORY : contains
     USERS ||--o{ SCRAP : owns
