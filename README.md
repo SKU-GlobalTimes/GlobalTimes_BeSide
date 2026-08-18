@@ -86,7 +86,7 @@
 > 본 서비스의 핵심 의의는 _"동일한 사건을 각국의 시선으로 비교"_ 하는 것이었으나,  
 > 각 RSS 피드는 **갱신 주기·기사 선택 기준이 언론사마다 상이**하여  
 > 동일 이슈에 대한 국가별 기사를 정확히 매핑하는 것이 구조적으로 어렵다는 한계가 존재.  
-> 국가·카테고리별 데이터셋을 최대한 폭넓게 수집하여 제공하도록 수정정.
+> 국가·카테고리별 데이터셋을 최대한 폭넓게 수집하여 제공하도록 수정.
 
 
 ### 3️⃣ News API 연동
@@ -156,13 +156,22 @@
 
 
 
-**➕ 향후 개선 가능**
+**➕ 다음 개선을 검토하는 기준**
 
-- **Elasticsearch** 도입 시 의미적 유사도 기반 검색으로 커버리지 확대
-- **벡터 DB 기반 유사 기사 탐색**: 기사 본문을 임베딩 벡터로 변환 후 코사인 유사도로 매칭  
-  → `pgvector`(PostgreSQL 확장), `Weaviate`, `Pinecone` 등 벡터 DB 활용 가능
-- **MSA 분리 고려**: 기사 수집·저장 / AI 처리 / 검색을 독립 마이크로서비스로 분리하면  
-  각 서비스별 언어·프레임워크 최적화 가능 (예: 검색 서비스는 Python + LangChain / FastAPI 조합)
+현재 Perspectives는 번역한 제목에서 키워드를 추출하고 MySQL FULLTEXT로 관련 기사를 찾는다.
+새로운 검색 기술을 바로 추가하기보다 현재 방식으로 찾지 못하는 원인을 먼저 구분한다.
+
+- 실제 관련 기사가 DB에 없는 경우: RSS·News API 수집 범위 문제
+- 관련 기사가 있지만 검색되지 않는 경우: 번역·키워드·FULLTEXT 검색 문제
+- 검색은 되지만 상위 결과가 부정확한 경우: 정렬과 ranking 문제
+
+고정된 기사 표본에서 관련 기사가 DB에 존재하지만 표현 차이로 반복 누락되는 경우에만
+embedding·Vector DB와 현재 FULLTEXT 결과를 비교한다.
+
+Testcontainers의 고정 fixture 1,000건 측정에서는 다음 스케줄 주기보다 짧게 완료됐다.
+이 결과는 실제 외부 공급자나 운영 환경의 처리량을 의미하지 않는다.
+따라서 Kafka나 별도 Queue는 도입하지 않았으며,
+수집 backlog·재처리·독립 consumer 요구가 생기는 시점에 비교한다.
 
 ---
 
@@ -188,6 +197,18 @@
 - AI 모델 OpenAI GPT → **Google Gemini** 로 마이그레이션
 - **로그인 유저**: 이전 대화 내역을 슬라이딩 윈도우(최근 10턴) 방식으로 누적 전달 → 맥락 기반 대화
 - **비로그인 유저**: 익명 session ID 기준으로 Redis에 최근 대화와 기사 목록을 저장해 제한된 맥락 대화 제공
+
+#### 로그인·비로그인 대화 저장
+
+| 구분 | 로그인 사용자 | 비로그인 사용자 |
+| --- | --- | --- |
+| 저장소 | MySQL `chat_history` | Redis List·Sorted Set |
+| 식별 기준 | JWT `userId` | 익명 session ID |
+| 대화 구분 | `user_id + article_id` | `sessionId + articleId` |
+| 저장 범위 | 전체 대화 영속 저장 | 최근 10턴 |
+| 보존 기간 | 별도 만료 없음 | 마지막 활동부터 7일 |
+| Gemini Context | 최근 10턴 | 최근 10턴 |
+| 주요 목적 | 기기 간 조회·관계 정합성 | 가입 없는 임시 대화 |
 
 ### 7️⃣ Google OAuth2 + JWT 로그인 
 
@@ -259,6 +280,17 @@
 
 <img width="876" height="577" alt="Image" src="https://github.com/user-attachments/assets/592241b7-2c04-486f-8239-d817e6ecbbf9" />
 
+### MySQL ERD
+
+```mermaid
+erDiagram
+    SOURCE o|--o{ ARTICLE : provides
+    USERS ||--o{ CHAT_HISTORY : owns
+    ARTICLE ||--o{ CHAT_HISTORY : contains
+    USERS ||--o{ SCRAP : owns
+    ARTICLE ||--o{ SCRAP : targets
+```
+
 ---
 
 ## 🚀 로컬 실행 가이드
@@ -307,6 +339,17 @@ docker compose -f docker-compose.dev.yml down   # 종료
 
 - Swagger UI: `http://localhost:8080/swagger-ui/index.html`
 - OAuth2 로그인 테스트: `http://localhost:8080/oauth2/authorization/google`
+
+### 3) 전체 테스트 실행
+
+```powershell
+.\gradlew.bat test
+```
+
+- MySQL·Redis 통합 테스트: Testcontainers
+- PR·push 회귀 검증: GitHub Actions Backend CI
+- 테스트 종료 후 임시 컨테이너 자동 정리
+- CI 통과와 실제 EC2 배포 성공은 별도 범위
 
 ---
 
