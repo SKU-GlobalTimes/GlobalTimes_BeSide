@@ -5,15 +5,16 @@
 
 ## Current Active Work
 
-- #249: `In Progress`
-- 브랜치: `test/249-provider-smoke-limits`
-- 목표: 최종 수동 External Smoke에서 실제 News API와 Google Trends 호출 범위를 작게 강제할 수 있도록 News API 요청 수·page size와 Trend 국가·국가별 결과 상한을 설정화한다.
-- 하위 호환: 기본값은 기존 News API 최대 30회·page size 100, Trend 26개국·국가별 6건을 유지하며 수집기는 기본 비활성이다.
-- 검증: 설정·News API·Trend 집중 테스트 11개와 전체 112개 테스트가 통과했고, 기본 비활성 조건에서 실제 외부 호출은 0회다.
-- 후속: Frontend에서 News API·RSS·Trend 실수집과 Translation·Gemini 요약·로그인 질의·스크랩의 대표 사이클을 검증한다.
-- 경계: Perspectives 의미적 관련성과 결과 건수, 실제 Google OAuth, 자동 retry, Issue #110은 제외한다.
+현재 진행 중인 backend improvement Issue는 없다.
 
 ## Recently Completed
+
+- #249 / PR #250: `Done`
+- 결과: News API 요청 수·page size와 Google Trends 국가·국가별 결과 상한을 설정화해 수동 External Smoke의 실제 호출 범위를 작게 강제할 수 있게 했다.
+- 하위 호환: 기본값은 기존 News API 최대 30회·page size 100, Trend 26개국·국가별 6건을 유지하며 수집기는 기본 비활성이다.
+- 검증: 집중 테스트 11개와 전체 112개 테스트, Backend CI가 통과했고 AI Reviewer는 Blocking 없음·MERGE_READY로 판정했다.
+- 후속: Frontend에서 News API·RSS·Trend 실수집과 Translation·Gemini 요약·로그인 질의·스크랩의 대표 사이클을 검증한다.
+- 경계: Perspectives 의미적 관련성과 결과 건수, 실제 Google OAuth, 자동 retry, Issue #110은 제외한다.
 
 - #247 / PR #248: `Done`
 - 결과: 기존 전역 수집 플래그의 하위 호환을 유지하면서 News API/RSS/Trend 토글과 RSS 국가·feed·기사 후보 상한을 분리했다.
