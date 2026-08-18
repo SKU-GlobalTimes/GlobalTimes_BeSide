@@ -65,8 +65,12 @@ oauth2:
 news-fetch:
   enabled: ${NEWS_FETCH_ENABLED:false}
   news-api-enabled: ${NEWS_API_FETCH_ENABLED:${NEWS_FETCH_ENABLED:false}}
+  news-api-page-size: ${NEWS_API_PAGE_SIZE:100}
+  news-api-max-requests-per-run: ${NEWS_API_MAX_REQUESTS_PER_RUN:30}
   rss-enabled: ${RSS_FETCH_ENABLED:${NEWS_FETCH_ENABLED:false}}
   trend-enabled: ${TREND_FETCH_ENABLED:${NEWS_FETCH_ENABLED:false}}
+  trend-countries: ${TREND_FETCH_COUNTRIES:KR,AU,AT,BR,CA,CO,DK,EG,FR,DE,GR,HK,IN,ID,IT,JP,MY,MX,NL,RU,SG,TW,TR,GB,US,ES}
+  trend-max-items-per-country: ${TREND_MAX_ITEMS_PER_COUNTRY:6}
   rss-countries: ${RSS_FETCH_COUNTRIES:}
   rss-max-feeds-per-run: ${RSS_MAX_FEEDS_PER_RUN:0}
   rss-max-articles-per-feed: ${RSS_MAX_ARTICLES_PER_FEED:0}

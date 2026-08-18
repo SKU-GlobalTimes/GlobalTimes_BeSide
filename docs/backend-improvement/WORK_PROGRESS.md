@@ -5,7 +5,18 @@ Codex 대화 context가 사라지거나 새 세션에서 이어서 작업해야 
 
 ## Current Active Work
 
-현재 진행 중인 backend improvement Issue는 없다.
+### #249 - News API·Google Trends 소규모 실호출 설정
+
+- Issue: https://github.com/SKU-GlobalTimes/GlobalTimes_BeSide/issues/249
+- 작업 브랜치: `test/249-provider-smoke-limits`
+- 상태: `In Progress`
+- 기준선: News API는 활성화 시 미국 7개 카테고리와 6개 도메인을 최대 30회 요청하고, Trend는 26개국을 조회한다. 최종 수동 External Smoke에서 실제 호출을 소규모로 제한할 설정이 없다.
+- 범위: 기존 기본 동작과 전역·공급자별 토글 하위 호환을 유지하면서 News API 요청 수·page size와 Trend 국가·국가별 결과 상한을 설정으로 분리한다.
+- 설정 문서: `docs/backend-improvement/news-trend-external-smoke-limits.md`
+- 구현 결과: News API `pageSize`·실행당 최대 요청 수와 Trend 대상 국가·국가별 최대 결과 수를 환경변수로 override할 수 있게 했고, 기본값은 기존 100건·30회 및 26개국·6건을 유지했다.
+- 검증: 설정·News API·Trend 집중 테스트 11개와 Testcontainers 포함 전체 112개 테스트가 통과했다. 기본 비활성 조건에서 실제 외부 API 호출은 0회다.
+- 후속: Frontend External Smoke에서 News API·RSS·Trend 실수집부터 실제 Translation·Gemini 요약·로그인 질의·스크랩 저장까지 대표 사용자 사이클을 검증한다.
+- 경계: Perspectives는 HTTP·번역·FULLTEXT·국가별 구성·Redis cache 기술 경로만 확인하며 실시간 기사 수·국가 수·의미적 관련성을 합격 조건으로 사용하지 않는다. Issue #110은 제외한다.
 
 ## Recently Completed
 

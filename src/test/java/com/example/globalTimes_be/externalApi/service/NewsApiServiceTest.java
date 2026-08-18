@@ -8,8 +8,10 @@ import com.example.globalTimes_be.domain.source.repository.SourceRepository;
 import com.example.globalTimes_be.domain.source.service.SourceService;
 import com.example.globalTimes_be.externalApi.config.NewsFetchConfig;
 import com.example.globalTimes_be.externalApi.dto.NewsApiArticleDto;
+import com.example.globalTimes_be.externalApi.dto.NewsApiResponseDto;
 import com.example.globalTimes_be.externalApi.dto.NewsApiSourceDto;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 
@@ -21,9 +23,12 @@ import java.util.stream.StreamSupport;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -112,6 +117,29 @@ class NewsApiServiceTest {
 
         verifyNoInteractions(restTemplate, articleRepository, sourceService, newsFetchConfig);
         verify(articleRepository, never()).saveAll(anyList());
+    }
+
+    @Test
+    void fetchTopHeadlines_stopsAtConfiguredRequestLimitAndUsesConfiguredPageSize() {
+        NewsApiResponseDto response = new NewsApiResponseDto();
+        response.setArticles(List.of());
+        ReflectionTestUtils.setField(service, "newsApiBaseUrl", "https://newsapi.org");
+        ReflectionTestUtils.setField(service, "apiKey", "test-key");
+        when(newsFetchConfig.getCountries()).thenReturn(List.of("us"));
+        when(newsFetchConfig.getCategories()).thenReturn(List.of("general", "business"));
+        when(newsFetchConfig.getMaxRequestsPerRun()).thenReturn(1);
+        when(newsFetchConfig.getPageSize()).thenReturn(1);
+        when(newsFetchConfig.getRequestDelayMs()).thenReturn(0L);
+        when(restTemplate.getForEntity(anyString(), eq(NewsApiResponseDto.class)))
+                .thenReturn(ResponseEntity.ok(response));
+
+        service.fetchTopHeadlines(false);
+
+        verify(restTemplate, times(1)).getForEntity(
+                argThat((String url) -> url.contains("country=us")
+                        && url.contains("category=general")
+                        && url.contains("pageSize=1")),
+                eq(NewsApiResponseDto.class));
     }
 
     private NewsApiArticleDto article(String url, String title) {
